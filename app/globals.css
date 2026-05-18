@@ -1,26 +1,60 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --green:    #4A6741;
+  --green-dk: #3a5233;
+  --wa:       #25D366;
+  --coral:    #F80F50;
+  --sand:     #F5F0E8;
+  --gray-50:  #FAFAF9;
+  --gray-100: #F3F2EF;
+  --gray-200: #E5E3DE;
+  --gray-400: #9CA3A0;
+  --gray-600: #4B5563;
+  --dark:     #1A1A1A;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html { scroll-behavior: smooth; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #fff;
+  color: var(--dark);
+  overflow-x: hidden;
 }
+
+/* Button hover helpers (usable in Server Components) */
+.btn-primary {
+  background: var(--green);
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background 200ms ease;
+}
+.btn-primary:hover { background: var(--green-dk); }
+
+.btn-secondary {
+  border: 1.5px solid var(--green);
+  color: var(--green);
+  border-radius: 8px;
+  font-weight: 600;
+  transition: background 200ms ease, color 200ms ease;
+}
+.btn-secondary:hover { background: var(--green); color: #fff; }
+
+.card-hover { transition: box-shadow 200ms ease, transform 200ms ease; }
+.card-hover:hover { box-shadow: 0 6px 24px rgba(0,0,0,.10); }
+
+/* Typography helpers */
+.font-serif { font-family: 'Playfair Display', Georgia, serif; }
+.font-sans  { font-family: 'Inter', system-ui, sans-serif; }
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee 28s linear infinite; }
