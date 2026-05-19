@@ -40,33 +40,22 @@ function formatDate(iso: string) {
 }
 
 function getPrixUnitaire(tarifs: Tarif[], type: FormuleType, totalQty: number): number {
-  // precommande → cherche dans les tarifs 'abonnement' ou 'precommande'
-  // groupe       → cherche dans les tarifs 'groupe' ou 'pack'
   const aliases: Record<FormuleType, string[]> = {
     precommande: ["abonnement", "precommande"],
     groupe:      ["groupe", "pack"],
     carte:       ["carte", "alacarte"],
   };
-  const allowed = aliases[type] ?? [type];
+  const allowed = aliases[type];
   const row = tarifs
     .filter((t) => allowed.includes(t.type.toLowerCase()))
     .find((t) => totalQty >= t.repas_de && totalQty <= t.repas_a);
   return row?.prix_unitaire ?? 0;
 }
 
-function genRef(): string {
-  const now = new Date();
-  const d = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}`;
-  const r = Math.random().toString(36).substring(2, 6).toUpperCase();
-  return `CLO-${d}-${r}`;
-}
-
-/** Retourne le mercredi 22h le plus proche (cette semaine ou la suivante) */
 function getOrderDeadline(): string {
   const now = new Date();
-  const dayOfWeek = now.getDay(); // 0=dim, 3=mer
+  const dayOfWeek = now.getDay();
   let daysUntilWed = (3 - dayOfWeek + 7) % 7;
-  // Si on est mercredi après 22h → deadline = mercredi prochain
   if (daysUntilWed === 0 && now.getHours() >= 22) daysUntilWed = 7;
   const deadline = new Date(now);
   deadline.setDate(now.getDate() + daysUntilWed);
@@ -75,12 +64,18 @@ function getOrderDeadline(): string {
 
 /* ─── Sub-components ─────────────────────────────────────────────────── */
 
-function StepIndicator({ current }: { current: Step }) {
+function StepIndicator({ current, formule }: { current: Step; formule: FormuleType | null }) {
+  const stepLabels: Record<FormuleType, Record<Step, string>> = {
+    precommande: { formule: "Formule", jours: "Mes jours",         infos: "Infos", done: "Confirmation" },
+    groupe:      { formule: "Formule", jours: "Jours & quantités", infos: "Infos", done: "Confirmation" },
+    carte:       { formule: "Formule", jours: "Mon repas",         infos: "Infos", done: "Confirmation" },
+  };
+  const labels = formule ? stepLabels[formule] : stepLabels.precommande;
   const steps: { key: Step; label: string }[] = [
-    { key: "formule", label: "Formule" },
-    { key: "jours",   label: "Jours & plats" },
-    { key: "infos",   label: "Infos" },
-    { key: "done",    label: "Confirmation" },
+    { key: "formule", label: labels.formule },
+    { key: "jours",   label: labels.jours },
+    { key: "infos",   label: labels.infos },
+    { key: "done",    label: labels.done },
   ];
   const idx = steps.findIndex((s) => s.key === current);
   return (
@@ -133,7 +128,7 @@ function Counter({ value, onChange, min = 0, max = 20 }: { value: number; onChan
   );
 }
 
-function VariantCard({ icon, label, platName, qty, onChange }: { icon: string; label: string; platName: string; qty: number; onChange: (v: number) => void }) {
+function VariantCard({ icon, label, platName, qty, onChange, max = 20 }: { icon: string; label: string; platName: string; qty: number; onChange: (v: number) => void; max?: number }) {
   const active = qty > 0;
   return (
     <div
@@ -150,7 +145,7 @@ function VariantCard({ icon, label, platName, qty, onChange }: { icon: string; l
       </div>
       <div className="flex items-center justify-between">
         <span className="text-xs" style={{ color: "var(--gray-400)" }}>Quantité</span>
-        <Counter value={qty} onChange={onChange} />
+        <Counter value={qty} onChange={onChange} max={max} />
       </div>
     </div>
   );
@@ -169,15 +164,11 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
   const [error,      setError]      = useState("");
   const [doneRef,    setDoneRef]    = useState<string[]>([]);
 
-  // Pré-sélectionner la formule depuis l'URL (?formule=precommande)
   useEffect(() => {
-    const param = searchParams.get("formule") as FormuleType | null;
-    if (param && ["precommande", "groupe"].includes(param)) {
-      setFormule(param);
-    }
-    // Rétrocompatibilité anciens liens avec ?formule=abonnement
-    if (searchParams.get("formule") === "abonnement") setFormule("precommande");
-    if (searchParams.get("formule") === "pack")        setFormule("groupe");
+    const param = searchParams.get("formule");
+    if (param === "precommande" || param === "abonnement") setFormule("precommande");
+    else if (param === "groupe" || param === "pack")       setFormule("groupe");
+    else if (param === "carte"  || param === "alacarte")   setFormule("carte");
   }, [searchParams]);
 
   /* ── Derived ── */
@@ -190,6 +181,7 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
     [tarifs, formule, totalQty]
   );
   const totalPrix = prixUnitaire * totalQty;
+
   const canContinueJours = useMemo(() => {
     if (selections.size === 0) return false;
     if (!Array.from(selections.values()).every((j) => j.qty_plat + j.qty_vege > 0)) return false;
@@ -259,7 +251,7 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
     try {
       const lignes = Array.from(selections.values()).flatMap((j) => {
         const rows = [];
-        if (j.qty_plat > 0) rows.push({ menu_id: j.menu_id, variante: "plat",     quantite: j.qty_plat });
+        if (j.qty_plat > 0) rows.push({ menu_id: j.menu_id, variante: "plat",      quantite: j.qty_plat });
         if (j.qty_vege > 0) rows.push({ menu_id: j.menu_id, variante: "plat_vege", quantite: j.qty_vege });
         return rows;
       });
@@ -281,6 +273,51 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
 
   const deadline = getOrderDeadline();
 
+  /* ── Tarifs triés par formule (pour UI) ── */
+  const precommandeTarifs = tarifs
+    .filter(t => ["abonnement","precommande"].includes(t.type.toLowerCase()))
+    .sort((a, b) => a.repas_de - b.repas_de);
+  const groupeTarifs = tarifs
+    .filter(t => ["groupe","pack"].includes(t.type.toLowerCase()))
+    .sort((a, b) => a.repas_de - b.repas_de);
+  const nextGroupeTier = groupeTarifs.find(t => t.repas_de > totalQty);
+
+  /* ── Shared UI blocks ── */
+  const waBanner = (
+    <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-6 text-sm" style={{ background: "var(--sand)", border: "1px solid rgba(0,0,0,.06)" }}>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
+        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+        <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.533 5.856L.057 23.884a.5.5 0 0 0 .613.613l6.028-1.476A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.807 9.807 0 0 1-5.012-1.376l-.36-.214-3.724.912.93-3.617-.234-.372A9.789 9.789 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
+      </svg>
+      <p style={{ color: "var(--gray-600)" }}>
+        Vous préférez WhatsApp ?{" "}
+        <a href="https://wa.me/33753791617?text=Bonjour%2C%20je%20souhaite%20commander%20avec%20Clodia%20%F0%9F%8D%BD%EF%B8%8F" target="_blank" rel="noopener noreferrer" className="font-semibold" style={{ color: "var(--green)" }}>
+          Commandez via notre bot →
+        </a>
+      </p>
+    </div>
+  );
+
+  const deadlineBanner = (
+    <div className="flex items-center gap-2 rounded-xl px-4 py-3 mb-5 text-xs" style={{ background: "var(--sand)", border: "1px solid rgba(74,103,65,.15)" }}>
+      <span>⏰</span>
+      <p style={{ color: "var(--green)" }}>
+        <span className="font-semibold">Commandez avant mercredi {deadline} à 22h</span>
+        {" "}pour la semaine suivante.
+      </p>
+    </div>
+  );
+
+  const emptyMenus = (
+    <div className="bg-white rounded-xl p-8 border text-center" style={{ borderColor: "var(--gray-200)" }}>
+      <span className="text-3xl block mb-3">📅</span>
+      <p className="text-sm font-medium mb-1" style={{ color: "var(--dark)" }}>Aucun menu disponible en ce moment</p>
+      <p className="text-xs" style={{ color: "var(--gray-400)" }}>Les menus de la prochaine semaine sont publiés chaque vendredi.</p>
+    </div>
+  );
+
+  const hasQtyError = Array.from(selections.values()).some((j) => j.qty_plat + j.qty_vege === 0);
+
   /* ══════════════════════════════════════════════════════════════════════
      RENDER
   ══════════════════════════════════════════════════════════════════════ */
@@ -299,43 +336,26 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
           </p>
         </div>
 
-        <StepIndicator current={step} />
+        <StepIndicator current={step} formule={formule} />
 
-        {/* Bandeau WhatsApp discret */}
-        <div className="flex items-center gap-3 rounded-xl px-4 py-3 mb-6 text-sm" style={{ background: "var(--sand)", border: "1px solid rgba(0,0,0,.06)" }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="#25D366" xmlns="http://www.w3.org/2000/svg" className="shrink-0">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-            <path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.533 5.856L.057 23.884a.5.5 0 0 0 .613.613l6.028-1.476A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.807 9.807 0 0 1-5.012-1.376l-.36-.214-3.724.912.93-3.617-.234-.372A9.789 9.789 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/>
-          </svg>
-          <p style={{ color: "var(--gray-600)" }}>
-            Vous préférez WhatsApp ?{" "}
-            <a href="https://wa.me/33753791617?text=Bonjour%2C%20je%20souhaite%20commander%20avec%20Clodia%20%F0%9F%8D%BD%EF%B8%8F" target="_blank" rel="noopener noreferrer" className="font-semibold" style={{ color: "var(--green)" }}>
-              Commandez via notre bot →
-            </a>
-          </p>
-        </div>
+        {waBanner}
 
-        {/* ── STEP 1 : Formule ── */}
+        {/* ══ STEP 1 : Formule ══ */}
         {step === "formule" && (
           <div>
             <h2 className="text-base font-semibold mb-5" style={{ color: "var(--dark)" }}>Choisissez votre formule</h2>
 
-            {/* Deadline banner */}
-            <div className="flex items-center gap-2 rounded-xl px-4 py-3 mb-5 text-sm" style={{ background: "var(--sand)", border: "1px solid rgba(74,103,65,.15)" }}>
-              <span>⏰</span>
-              <p style={{ color: "var(--green)" }}>
-                <span className="font-semibold">Commandez avant mercredi {deadline} à 22h</span>
-                {" "}pour la semaine suivante.
-              </p>
-            </div>
+            {deadlineBanner}
 
             <div className="flex flex-col gap-4 mb-8">
               {FORMULES.map((f) => {
                 const selected = formule === f.type;
-                const tarif = tarifs.find((t) => {
-                  const aliases: Record<FormuleType, string[]> = { precommande: ["abonnement","precommande"], groupe: ["groupe","pack"], carte: ["carte","alacarte"] };
-                  return aliases[f.type].includes(t.type.toLowerCase());
-                });
+                const aliases: Record<FormuleType, string[]> = {
+                  precommande: ["abonnement","precommande"],
+                  groupe:      ["groupe","pack"],
+                  carte:       ["carte","alacarte"],
+                };
+                const tarif = tarifs.find((t) => aliases[f.type].includes(t.type.toLowerCase()));
                 return (
                   <button key={f.type} type="button" onClick={() => setFormule(f.type)}
                     className="relative text-left rounded-xl p-5 border-2 transition-all duration-200"
@@ -378,7 +398,8 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
               })}
             </div>
 
-            <button type="button" disabled={!formule} onClick={() => setStep("jours")}
+            <button type="button" disabled={!formule}
+              onClick={() => { setSelections(new Map()); setStep("jours"); }}
               className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{ background: formule ? "var(--green)" : "var(--gray-200)", color: formule ? "#fff" : "var(--gray-400)", cursor: formule ? "pointer" : "not-allowed" }}>
               {formule === "precommande" ? "Choisir mes jours →" : formule === "carte" ? "Choisir mon repas →" : "Continuer →"}
@@ -386,25 +407,116 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
           </div>
         )}
 
-        {/* ── STEP 2 : Jours & variantes ── */}
-        {step === "jours" && (
+        {/* ══ STEP 2A : À la carte ══ */}
+        {step === "jours" && formule === "carte" && (
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-base font-semibold" style={{ color: "var(--dark)" }}>
-                {formule === "precommande" ? "Choisissez vos jours" : formule === "carte" ? "Choisissez votre repas" : "Choisissez les jours et quantités"}
-              </h2>
-              <button type="button" onClick={() => setStep("formule")} className="text-xs font-medium" style={{ color: "var(--gray-400)" }}>
-                ← Retour
-              </button>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-base font-semibold" style={{ color: "var(--dark)" }}>Choisissez votre repas</h2>
+                <p className="text-xs mt-0.5" style={{ color: "var(--gray-400)" }}>Prix fixe · 13,90 € par repas · plat + dessert inclus</p>
+              </div>
+              <button type="button" onClick={() => setStep("formule")} className="text-xs font-medium" style={{ color: "var(--gray-400)" }}>← Retour</button>
             </div>
 
-            {/* Deadline + semaine */}
-            <div className="flex items-center gap-2 rounded-xl px-4 py-3 mb-5 text-xs" style={{ background: "var(--sand)", border: "1px solid rgba(74,103,65,.15)" }}>
-              <span>⏰</span>
-              <p style={{ color: "var(--green)" }}>
-                <span className="font-semibold">Commandez avant mercredi {deadline} à 22h</span>
-              </p>
+            {deadlineBanner}
+
+            {menus.length === 0 ? emptyMenus : (
+              <div className="flex flex-col gap-3 mb-6">
+                {menus.map((menu) => {
+                  const sel = selections.get(menu.id);
+                  const checked = !!sel;
+                  return (
+                    <div key={menu.id} className="bg-white rounded-xl border-2 overflow-hidden transition-all duration-200"
+                      style={{ borderColor: checked ? "var(--green)" : "var(--gray-200)" }}>
+                      <button type="button" onClick={() => toggleJour(menu)}
+                        className="w-full flex items-center justify-between px-4 py-4 text-left"
+                        style={{ background: checked ? "rgba(74,103,65,.04)" : "#fff" }}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded border-2 flex items-center justify-center shrink-0"
+                            style={{ borderColor: checked ? "var(--green)" : "var(--gray-300)", background: checked ? "var(--green)" : "#fff" }}>
+                            {checked && <span style={{ color: "#fff", fontSize: 9 }}>✓</span>}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold" style={{ color: "var(--dark)" }}>{formatDate(menu.date_livraison)}</p>
+                            <p className="text-xs mt-0.5" style={{ color: "var(--gray-400)" }}>{menu.plat} · {menu.dessert}</p>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-bold" style={{ color: "var(--green)" }}>13,90 €</p>
+                          <p className="text-xs" style={{ color: "var(--gray-400)" }}>/repas</p>
+                        </div>
+                      </button>
+                      {checked && sel && (
+                        <div className="px-4 pb-4 pt-2 border-t flex gap-3" style={{ borderColor: "rgba(74,103,65,.12)" }}>
+                          <VariantCard icon="🍽️" label="Plat du jour" platName={menu.plat} qty={sel.qty_plat} onChange={(v) => setQty(menu.id, "plat", v)} />
+                          <VariantCard icon="🥗" label="Option végé"  platName={menu.plat_vege} qty={sel.qty_vege} onChange={(v) => setQty(menu.id, "vege", v)} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {totalQty > 0 && (
+              <div className="rounded-xl px-4 py-3 mb-4 flex items-center justify-between"
+                style={{ background: "rgba(74,103,65,.07)", border: "1px solid rgba(74,103,65,.2)" }}>
+                <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--green)" }}>
+                  {totalQty} repas · 13,90 €/repas
+                </p>
+                <p className="text-lg font-bold" style={{ color: "var(--dark)" }}>{totalPrix.toFixed(2).replace(".", ",")} €</p>
+              </div>
+            )}
+
+            {hasQtyError && (
+              <p className="text-xs mb-3 px-1" style={{ color: "var(--coral)" }}>⚠️ Chaque jour sélectionné doit avoir au moins 1 repas.</p>
+            )}
+
+            <button type="button" disabled={!canContinueJours || menus.length === 0} onClick={() => setStep("infos")}
+              className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all duration-200"
+              style={{ background: canContinueJours ? "var(--green)" : "var(--gray-200)", color: canContinueJours ? "#fff" : "var(--gray-400)", cursor: canContinueJours ? "pointer" : "not-allowed" }}>
+              {canContinueJours
+                ? `Continuer → ${totalQty} repas · ${totalPrix.toFixed(2).replace(".", ",")} €`
+                : "Sélectionnez un repas pour continuer"}
+            </button>
+          </div>
+        )}
+
+        {/* ══ STEP 2B : Pré-commande semaine ══ */}
+        {step === "jours" && formule === "precommande" && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-base font-semibold" style={{ color: "var(--dark)" }}>Choisissez vos jours</h2>
+                <p className="text-xs mt-0.5" style={{ color: "var(--gray-400)" }}>2 à 5 jours · tarif dégressif selon le nombre de repas</p>
+              </div>
+              <button type="button" onClick={() => setStep("formule")} className="text-xs font-medium" style={{ color: "var(--gray-400)" }}>← Retour</button>
             </div>
+
+            {deadlineBanner}
+
+            {/* Pricing pills */}
+            {precommandeTarifs.length > 0 && (
+              <div className="flex gap-2 mb-5 overflow-x-auto pb-1">
+                {precommandeTarifs.map((t) => {
+                  const active = totalQty >= t.repas_de && totalQty <= t.repas_a;
+                  return (
+                    <div key={t.id} className="flex-shrink-0 rounded-lg px-3 py-2 text-center transition-all duration-200"
+                      style={{
+                        background: active ? "var(--green)" : "var(--gray-100)",
+                        border: `1px solid ${active ? "var(--green)" : "var(--gray-200)"}`,
+                      }}>
+                      <p className="text-xs font-bold" style={{ color: active ? "#fff" : "var(--gray-400)" }}>
+                        {t.repas_de} jour{t.repas_de > 1 ? "s" : ""}
+                      </p>
+                      <p className="text-sm font-bold mt-0.5" style={{ color: active ? "#fff" : "var(--dark)" }}>
+                        {t.prix_unitaire.toFixed(2).replace(".", ",")} €
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {activeWeek && (
               <p className="text-xs mb-4" style={{ color: "var(--gray-400)" }}>
@@ -415,14 +527,8 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
               </p>
             )}
 
-            {menus.length === 0 ? (
-              <div className="bg-white rounded-xl p-8 border text-center" style={{ borderColor: "var(--gray-200)" }}>
-                <span className="text-3xl block mb-3">📅</span>
-                <p className="text-sm font-medium mb-1" style={{ color: "var(--dark)" }}>Aucun menu disponible en ce moment</p>
-                <p className="text-xs" style={{ color: "var(--gray-400)" }}>Les menus de la prochaine semaine sont publiés chaque vendredi.</p>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4 mb-6">
+            {menus.length === 0 ? emptyMenus : (
+              <div className="flex flex-col gap-3 mb-6">
                 {menus.map((menu) => {
                   const sel = selections.get(menu.id);
                   const checked = !!sel;
@@ -458,30 +564,142 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
                 style={{ background: "rgba(74,103,65,.07)", border: "1px solid rgba(74,103,65,.2)" }}>
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--green)" }}>
-                    {totalQty} repas · {prixUnitaire.toFixed(2).replace(".", ",")} €/repas
+                    {totalQty} repas{prixUnitaire > 0 ? ` · ${prixUnitaire.toFixed(2).replace(".", ",")} €/repas` : ""}
                   </p>
-                  {prixUnitaire === 0 && <p className="text-xs mt-0.5" style={{ color: "var(--coral)" }}>Tarif non configuré pour cette quantité</p>}
+                  {prixUnitaire === 0 && (
+                    <p className="text-xs mt-0.5" style={{ color: "var(--coral)" }}>Sélectionnez au minimum 2 jours</p>
+                  )}
                 </div>
-                <p className="text-lg font-bold" style={{ color: "var(--dark)" }}>{totalPrix.toFixed(2).replace(".", ",")} €</p>
+                {prixUnitaire > 0 && <p className="text-lg font-bold" style={{ color: "var(--dark)" }}>{totalPrix.toFixed(2).replace(".", ",")} €</p>}
               </div>
             )}
 
-            {Array.from(selections.values()).some((j) => j.qty_plat + j.qty_vege === 0) && (
+            {hasQtyError && (
               <p className="text-xs mb-3 px-1" style={{ color: "var(--coral)" }}>⚠️ Chaque jour sélectionné doit avoir au moins 1 repas.</p>
-            )}
-            {formule === "groupe" && totalQty > 0 && totalQty < 5 && (
-              <p className="text-xs mb-3 px-1" style={{ color: "var(--coral)" }}>⚠️ La commande groupée nécessite au minimum 5 repas.</p>
             )}
 
             <button type="button" disabled={!canContinueJours || menus.length === 0} onClick={() => setStep("infos")}
               className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{ background: canContinueJours ? "var(--green)" : "var(--gray-200)", color: canContinueJours ? "#fff" : "var(--gray-400)", cursor: canContinueJours ? "pointer" : "not-allowed" }}>
-              Continuer → ({totalQty} repas · {totalPrix.toFixed(2).replace(".", ",")} €)
+              {canContinueJours
+                ? `Continuer → ${totalQty} repas · ${totalPrix.toFixed(2).replace(".", ",")} €`
+                : "Sélectionnez vos jours (min. 2)"}
             </button>
           </div>
         )}
 
-        {/* ── STEP 3 : Infos client ── */}
+        {/* ══ STEP 2C : Commande groupée ══ */}
+        {step === "jours" && formule === "groupe" && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-base font-semibold" style={{ color: "var(--dark)" }}>Jours & quantités</h2>
+                <p className="text-xs mt-0.5" style={{ color: "var(--gray-400)" }}>Minimum 5 repas · tarif dégressif jusqu&apos;à 11,90 €/repas</p>
+              </div>
+              <button type="button" onClick={() => setStep("formule")} className="text-xs font-medium" style={{ color: "var(--gray-400)" }}>← Retour</button>
+            </div>
+
+            {deadlineBanner}
+
+            {/* Grille tarifaire */}
+            {groupeTarifs.length > 0 && (
+              <div className="rounded-xl mb-5 overflow-hidden" style={{ border: "1px solid var(--gray-200)" }}>
+                <div className="px-4 py-2.5" style={{ background: "var(--gray-50)", borderBottom: "1px solid var(--gray-200)" }}>
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--gray-400)" }}>Grille tarifaire</p>
+                </div>
+                <div className="divide-y" style={{ borderColor: "var(--gray-100)" }}>
+                  {groupeTarifs.map((t) => {
+                    const active = totalQty >= t.repas_de && totalQty <= t.repas_a;
+                    const label = t.repas_a >= 999 ? `${t.repas_de} repas et +` : `${t.repas_de}–${t.repas_a} repas`;
+                    return (
+                      <div key={t.id} className="flex items-center justify-between px-4 py-2.5 transition-colors"
+                        style={{ background: active ? "rgba(74,103,65,.06)" : "#fff" }}>
+                        <span className="text-xs flex items-center gap-1.5" style={{ color: active ? "var(--green)" : "var(--gray-600)" }}>
+                          {active && <span className="text-xs">▶</span>}{label}
+                        </span>
+                        <span className="text-sm font-bold" style={{ color: active ? "var(--green)" : "var(--dark)" }}>
+                          {t.prix_unitaire.toFixed(2).replace(".", ",")} €
+                          <span className="text-xs font-normal ml-0.5" style={{ color: "var(--gray-400)" }}>/repas</span>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {menus.length === 0 ? emptyMenus : (
+              <div className="flex flex-col gap-3 mb-6">
+                {menus.map((menu) => {
+                  const sel = selections.get(menu.id);
+                  const checked = !!sel;
+                  return (
+                    <div key={menu.id} className="bg-white rounded-xl border-2 overflow-hidden transition-all duration-200"
+                      style={{ borderColor: checked ? "var(--green)" : "var(--gray-200)" }}>
+                      <button type="button" onClick={() => toggleJour(menu)}
+                        className="w-full flex items-center justify-between px-4 py-3 text-left"
+                        style={{ background: checked ? "rgba(74,103,65,.04)" : "#fff" }}>
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 rounded border-2 flex items-center justify-center shrink-0"
+                            style={{ borderColor: checked ? "var(--green)" : "var(--gray-300)", background: checked ? "var(--green)" : "#fff" }}>
+                            {checked && <span style={{ color: "#fff", fontSize: 9 }}>✓</span>}
+                          </div>
+                          <span className="text-sm font-semibold capitalize" style={{ color: "var(--dark)" }}>{formatDate(menu.date_livraison)}</span>
+                        </div>
+                        {menu.dessert && <span className="text-xs" style={{ color: "var(--gray-400)" }}>🍮 {menu.dessert}</span>}
+                      </button>
+                      {checked && sel && (
+                        <div className="px-4 pb-4 pt-2 border-t flex gap-3" style={{ borderColor: "rgba(74,103,65,.12)" }}>
+                          <VariantCard icon="🍽️" label="Plat du jour" platName={menu.plat} qty={sel.qty_plat} onChange={(v) => setQty(menu.id, "plat", v)} max={30} />
+                          <VariantCard icon="🥗" label="Option végé"  platName={menu.plat_vege} qty={sel.qty_vege} onChange={(v) => setQty(menu.id, "vege", v)} max={30} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {totalQty > 0 && (
+              <div className="rounded-xl px-4 py-3 mb-4" style={{ background: "rgba(74,103,65,.07)", border: "1px solid rgba(74,103,65,.2)" }}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--green)" }}>
+                      {totalQty} repas{prixUnitaire > 0 ? ` · ${prixUnitaire.toFixed(2).replace(".", ",")} €/repas` : ""}
+                    </p>
+                    {totalQty < 5 && (
+                      <p className="text-xs mt-0.5" style={{ color: "var(--coral)" }}>
+                        Encore {5 - totalQty} repas pour atteindre le minimum
+                      </p>
+                    )}
+                    {prixUnitaire > 0 && nextGroupeTier && (
+                      <p className="text-xs mt-0.5" style={{ color: "var(--gray-400)" }}>
+                        +{nextGroupeTier.repas_de - totalQty} repas → {nextGroupeTier.prix_unitaire.toFixed(2).replace(".", ",")} €/repas
+                      </p>
+                    )}
+                  </div>
+                  {prixUnitaire > 0 && <p className="text-lg font-bold" style={{ color: "var(--dark)" }}>{totalPrix.toFixed(2).replace(".", ",")} €</p>}
+                </div>
+              </div>
+            )}
+
+            {hasQtyError && (
+              <p className="text-xs mb-3 px-1" style={{ color: "var(--coral)" }}>⚠️ Chaque jour sélectionné doit avoir au moins 1 repas.</p>
+            )}
+
+            <button type="button" disabled={!canContinueJours || menus.length === 0} onClick={() => setStep("infos")}
+              className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all duration-200"
+              style={{ background: canContinueJours ? "var(--green)" : "var(--gray-200)", color: canContinueJours ? "#fff" : "var(--gray-400)", cursor: canContinueJours ? "pointer" : "not-allowed" }}>
+              {canContinueJours
+                ? `Continuer → ${totalQty} repas · ${totalPrix.toFixed(2).replace(".", ",")} €`
+                : totalQty > 0 && totalQty < 5
+                  ? `Minimum 5 repas (encore ${5 - totalQty})`
+                  : "Sélectionnez des jours pour continuer"}
+            </button>
+          </div>
+        )}
+
+        {/* ══ STEP 3 : Infos client ══ */}
         {step === "infos" && (
           <div>
             <div className="flex items-center justify-between mb-5">
@@ -493,9 +711,9 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
             <div className="bg-white rounded-xl border mb-6 overflow-hidden" style={{ borderColor: "var(--gray-200)" }}>
               <div className="px-4 py-3 border-b" style={{ borderColor: "var(--gray-100)", background: "var(--gray-50)" }}>
                 <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--gray-400)" }}>
-                  Votre pré-commande
-                  {activeWeek && (
-                    <span className="ml-2 normal-case font-normal" style={{ color: "var(--gray-400)" }}>
+                  {formule === "carte" ? "Votre commande" : formule === "groupe" ? "Commande groupée" : "Votre pré-commande"}
+                  {formule === "precommande" && activeWeek && (
+                    <span className="ml-2 normal-case font-normal">
                       — Semaine du {new Date(activeWeek.dateDebut + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long" })} au {new Date(activeWeek.dateFin + "T12:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
                     </span>
                   )}
@@ -522,7 +740,9 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
                   </div>
                 ))}
                 <div className="px-4 py-3 flex items-center justify-between">
-                  <span className="text-sm font-bold" style={{ color: "var(--dark)" }}>Total · sans engagement</span>
+                  <span className="text-sm font-bold" style={{ color: "var(--dark)" }}>
+                    Total{formule !== "carte" ? " · sans engagement" : ""}
+                  </span>
                   <span className="text-base font-bold" style={{ color: "var(--green)" }}>{totalPrix.toFixed(2).replace(".", ",")} €</span>
                 </div>
               </div>
@@ -565,7 +785,7 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
               {loading ? (
                 <><svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>Réservation en cours…</>
               ) : (
-                `Confirmer ma pré-commande · ${totalPrix.toFixed(2).replace(".", ",")} €`
+                `${formule === "carte" ? "Commander" : "Confirmer ma commande"} · ${totalPrix.toFixed(2).replace(".", ",")} €`
               )}
             </button>
             <p className="text-xs text-center mt-3" style={{ color: "var(--gray-400)" }}>
@@ -577,12 +797,12 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
           </div>
         )}
 
-        {/* ── STEP 4 : Confirmation ── */}
+        {/* ══ STEP 4 : Confirmation ══ */}
         {step === "done" && (
           <div className="text-center py-8">
             <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl" style={{ background: "rgba(74,103,65,.12)" }}>✅</div>
             <h2 className="font-bold mb-2" style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(22px, 3vw, 28px)", color: "var(--dark)" }}>
-              Pré-commande confirmée !
+              {formule === "carte" ? "Commande confirmée !" : "Pré-commande confirmée !"}
             </h2>
             <p className="text-sm leading-relaxed mb-6" style={{ color: "var(--gray-600)", maxWidth: 380, margin: "0 auto 24px" }}>
               Votre commande a bien été enregistrée. Livraison avant 12h dans votre service. Bon appétit ! 🍽️
