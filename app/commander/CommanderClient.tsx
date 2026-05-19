@@ -15,7 +15,7 @@ interface Props {
   activeWeek?: ActiveWeek;
 }
 
-type FormuleType = "precommande" | "groupe";
+type FormuleType = "precommande" | "groupe" | "carte";
 
 interface JourSelection {
   menu_id: string;
@@ -45,6 +45,7 @@ function getPrixUnitaire(tarifs: Tarif[], type: FormuleType, totalQty: number): 
   const aliases: Record<FormuleType, string[]> = {
     precommande: ["abonnement", "precommande"],
     groupe:      ["groupe", "pack"],
+    carte:       ["carte", "alacarte"],
   };
   const allowed = aliases[type] ?? [type];
   const row = tarifs
@@ -191,8 +192,10 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
   const totalPrix = prixUnitaire * totalQty;
   const canContinueJours = useMemo(() => {
     if (selections.size === 0) return false;
-    return Array.from(selections.values()).every((j) => j.qty_plat + j.qty_vege > 0);
-  }, [selections]);
+    if (!Array.from(selections.values()).every((j) => j.qty_plat + j.qty_vege > 0)) return false;
+    if (formule === "groupe" && totalQty < 5) return false;
+    return true;
+  }, [selections, formule, totalQty]);
 
   /* ── Helpers ── */
   function toggleJour(menu: Menu) {
@@ -221,14 +224,22 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
   }
 
   /* ── Formules ── */
-  const FORMULES: { type: FormuleType; icon: string; label: string; desc: string; badge?: string; avantages: string[] }[] = [
+  const FORMULES: { type: FormuleType; icon: string; label: string; desc: string; badge?: string; avantages: string[]; flatPrice?: boolean }[] = [
     {
       type: "precommande",
       icon: "📅",
       label: "Pré-commande semaine",
       desc: "Je choisis mes jours pour la semaine à venir et je règle en une fois. Mon repas est déposé dans le frigo de mon service avant midi, sans que j'aie à y penser le jour J.",
       badge: "Le plus choisi",
-      avantages: ["De 2 à 5 jours par semaine", "Livraison avant 12h dans votre service", "Plat + dessert inclus", `Commandez avant mercredi 22h`, "Sans engagement"],
+      avantages: ["De 2 à 5 jours par semaine", "Tarif dégressif (dès 13,40 €/repas)", "Livraison avant 12h dans votre service", "Plat + dessert inclus", "Commandez avant mercredi 22h", "Sans engagement"],
+    },
+    {
+      type: "carte",
+      icon: "🍽️",
+      label: "À la carte",
+      desc: "Commandez à l'unité, sans vous engager sur la semaine. Parfait pour tester ou pour une occasion ponctuelle.",
+      flatPrice: true,
+      avantages: ["Au repas, sans engagement", "Livraison avant 12h dans votre service", "Plat + dessert inclus", "Commandez avant mercredi 22h"],
     },
     {
       type: "groupe",
@@ -322,8 +333,8 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
               {FORMULES.map((f) => {
                 const selected = formule === f.type;
                 const tarif = tarifs.find((t) => {
-                  const aliases: Record<FormuleType, string[]> = { precommande: ["abonnement","precommande"], groupe: ["groupe","pack"] };
-                  return (aliases[f.type] ?? [f.type]).includes(t.type.toLowerCase());
+                  const aliases: Record<FormuleType, string[]> = { precommande: ["abonnement","precommande"], groupe: ["groupe","pack"], carte: ["carte","alacarte"] };
+                  return aliases[f.type].includes(t.type.toLowerCase());
                 });
                 return (
                   <button key={f.type} type="button" onClick={() => setFormule(f.type)}
@@ -342,7 +353,7 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
                           <p className="text-sm font-bold" style={{ color: "var(--dark)" }}>{f.label}</p>
                           {tarif && (
                             <p className="text-sm font-bold shrink-0" style={{ color: "var(--green)" }}>
-                              dès {tarif.prix_unitaire.toFixed(2).replace(".", ",")} €
+                              {!f.flatPrice && "dès "}{tarif.prix_unitaire.toFixed(2).replace(".", ",")} €
                               <span className="text-xs font-normal" style={{ color: "var(--gray-400)" }}>/repas</span>
                             </p>
                           )}
@@ -370,7 +381,7 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
             <button type="button" disabled={!formule} onClick={() => setStep("jours")}
               className="w-full py-3.5 rounded-xl text-sm font-semibold transition-all duration-200"
               style={{ background: formule ? "var(--green)" : "var(--gray-200)", color: formule ? "#fff" : "var(--gray-400)", cursor: formule ? "pointer" : "not-allowed" }}>
-              {formule === "precommande" ? "Choisir mes jours →" : "Continuer →"}
+              {formule === "precommande" ? "Choisir mes jours →" : formule === "carte" ? "Choisir mon repas →" : "Continuer →"}
             </button>
           </div>
         )}
@@ -380,7 +391,7 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
           <div>
             <div className="flex items-center justify-between mb-1">
               <h2 className="text-base font-semibold" style={{ color: "var(--dark)" }}>
-                {formule === "precommande" ? "Choisissez vos jours" : "Choisissez les jours et quantités"}
+                {formule === "precommande" ? "Choisissez vos jours" : formule === "carte" ? "Choisissez votre repas" : "Choisissez les jours et quantités"}
               </h2>
               <button type="button" onClick={() => setStep("formule")} className="text-xs font-medium" style={{ color: "var(--gray-400)" }}>
                 ← Retour
@@ -457,6 +468,9 @@ export default function CommanderClient({ menus, tarifs, points, activeWeek }: P
 
             {Array.from(selections.values()).some((j) => j.qty_plat + j.qty_vege === 0) && (
               <p className="text-xs mb-3 px-1" style={{ color: "var(--coral)" }}>⚠️ Chaque jour sélectionné doit avoir au moins 1 repas.</p>
+            )}
+            {formule === "groupe" && totalQty > 0 && totalQty < 5 && (
+              <p className="text-xs mb-3 px-1" style={{ color: "var(--coral)" }}>⚠️ La commande groupée nécessite au minimum 5 repas.</p>
             )}
 
             <button type="button" disabled={!canContinueJours || menus.length === 0} onClick={() => setStep("infos")}
