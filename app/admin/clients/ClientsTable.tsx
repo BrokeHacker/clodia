@@ -5,6 +5,7 @@ import { Client, PointLivraison } from "@/lib/types";
 
 interface EnrichedClient extends Client {
   nbCommandes: number;
+  derniereCommande: string | null;
   pointLivraisonObj: PointLivraison | null;
 }
 
@@ -88,7 +89,7 @@ export default function ClientsTable({ clients, points }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ background: "#F5F5F0" }}>
-              {["Client", "Téléphone", "Email", "Point de livraison", "Commandes", "Inscription"].map((h) => (
+              {["Client", "Téléphone", "Email", "Point de livraison", "Commandes", "Dernière commande"].map((h) => (
                 <th
                   key={h}
                   className="text-left px-5 py-3 text-xs font-bold uppercase tracking-wider"
@@ -150,7 +151,9 @@ export default function ClientsTable({ clients, points }: Props) {
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-xs" style={{ color: "#aaa" }}>
-                    {new Date(client.created_at).toLocaleDateString("fr-FR")}
+                    {client.derniereCommande
+                      ? new Date(client.derniereCommande).toLocaleDateString("fr-FR")
+                      : "—"}
                   </td>
                 </tr>
               ))

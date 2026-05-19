@@ -1,11 +1,12 @@
 const items = [
   "Cuisine gastronomique",
-  "Livraison directement dans votre service",
+  "Livraison avant 12h dans votre service",
   "Chef Gault & Millau",
-  "Avant 12h chaque jour",
+  "Dès 12,20 €/repas",
   "Option végétarienne disponible",
-  "Commande via WhatsApp",
+  "Commande avant mercredi 22h",
   "Sans engagement",
+  "Plat + dessert inclus",
 ];
 
 export default function Marquee() {

@@ -6,6 +6,17 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Client, CommandeAvecMenu, PointLivraison } from "@/lib/types";
 
+/* ─── Deadline helper (mercredi 22h) ── */
+function getNextDeadlineLabel(): string {
+  const now = new Date();
+  const day = now.getDay();
+  let daysUntilWed = (3 - day + 7) % 7;
+  if (daysUntilWed === 0 && now.getHours() >= 22) daysUntilWed = 7;
+  const d = new Date(now);
+  d.setDate(now.getDate() + daysUntilWed);
+  return d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+}
+
 interface Props {
   client: Client;
   commandes: CommandeAvecMenu[];
@@ -59,14 +70,9 @@ export default function MonCompteClient({ client, commandes, pointLivraison, fav
             </div>
             <div className="flex-1">
               <h1 className="font-semibold text-base" style={{ color: "var(--dark)" }}>
-                {client.prenom} {client.nom}
+                Bonjour {client.prenom} 👋
               </h1>
               <p className="text-xs mt-0.5" style={{ color: "var(--gray-400)" }}>{client.telephone}</p>
-              {isAbonne && (
-                <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: "#D1FAE5", color: "#065F46" }}>
-                  Client fidèle
-                </span>
-              )}
             </div>
             <div className="flex gap-5 shrink-0">
               <div className="text-center">
@@ -80,6 +86,24 @@ export default function MonCompteClient({ client, commandes, pointLivraison, fav
             </div>
           </div>
         </div>
+
+        {/* CTA Pré-commande */}
+        <Link
+          href="/commander"
+          className="bg-white rounded-xl px-5 py-4 border mb-4 flex items-center justify-between gap-3 transition-all duration-200 hover:shadow-md block"
+          style={{ borderColor: "var(--green)", background: "rgba(74,103,65,.04)" }}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-xl">📅</span>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: "var(--dark)" }}>Commander la semaine prochaine</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--gray-400)" }}>
+                Deadline : mercredi {getNextDeadlineLabel()} à 22h
+              </p>
+            </div>
+          </div>
+          <span className="text-sm font-semibold shrink-0" style={{ color: "var(--green)" }}>→</span>
+        </Link>
 
         {/* Point livraison */}
         {pointLivraison && (

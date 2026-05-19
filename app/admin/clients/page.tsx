@@ -10,18 +10,18 @@ export default async function ClientsPage() {
     supabase.from("points_livraison").select("*").order("hopital"),
   ]);
 
-  // Compter les commandes par client
+  // Commandes : comptage + dernière date
   const { data: commandeCounts } = await supabase
     .from("commandes")
-    .select("client_id");
+    .select("client_id, created_at")
+    .order("created_at", { ascending: false });
 
-  const counts = (commandeCounts ?? []).reduce(
-    (acc, c) => {
-      acc[c.client_id] = (acc[c.client_id] ?? 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+  const counts: Record<string, number> = {};
+  const lastOrder: Record<string, string> = {};
+  for (const c of commandeCounts ?? []) {
+    counts[c.client_id] = (counts[c.client_id] ?? 0) + 1;
+    if (!lastOrder[c.client_id]) lastOrder[c.client_id] = c.created_at;
+  }
 
   // Enrichir les clients
   const pointsMap = Object.fromEntries(
@@ -31,6 +31,7 @@ export default async function ClientsPage() {
   const enriched = ((clients as Client[]) ?? []).map((c) => ({
     ...c,
     nbCommandes: counts[c.id] ?? 0,
+    derniereCommande: lastOrder[c.id] ?? null,
     pointLivraisonObj: c.point_livraison ? pointsMap[c.point_livraison] ?? null : null,
   }));
 
