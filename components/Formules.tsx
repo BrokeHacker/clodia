@@ -3,20 +3,38 @@ import { Tarif } from "@/lib/types";
 import Link from "next/link";
 
 function typeLabel(type: string) {
-  const map: Record<string, string> = { abonnement: "Abonnement", pack: "Pack", unique: "Repas unique", "repas-unique": "Repas unique", "one-shot": "Repas unique" };
+  const map: Record<string, string> = {
+    abonnement:   "Pré-commande semaine",
+    precommande:  "Pré-commande semaine",
+    pack:         "Commande groupée",
+    groupe:       "Commande groupée",
+    unique:       "Repas unique",
+    "repas-unique": "Repas unique",
+    "one-shot":   "Repas unique",
+  };
   return map[type.toLowerCase()] ?? type;
 }
 function typeIcon(type: string) {
-  const map: Record<string, string> = { abonnement: "🔄", pack: "📦", unique: "🍽️", "repas-unique": "🍽️", "one-shot": "🍽️" };
+  const map: Record<string, string> = {
+    abonnement:   "📅",
+    precommande:  "📅",
+    pack:         "👥",
+    groupe:       "👥",
+    unique:       "🍽️",
+    "repas-unique": "🍽️",
+    "one-shot":   "🍽️",
+  };
   return map[type.toLowerCase()] ?? "✨";
 }
 function typeDesc(type: string) {
   const map: Record<string, string> = {
-    abonnement: "Recevez vos repas chaque semaine, sans y penser. Tarif dégressif.",
-    pack: "Achetez un lot de repas à l'avance et profitez d'un meilleur tarif.",
-    unique: "Commandez ponctuellement selon vos envies du moment.",
+    abonnement:   "Je choisis mes jours pour la semaine à venir et je règle en une fois. Livraison avant 12h, sans engagement.",
+    precommande:  "Je choisis mes jours pour la semaine à venir et je règle en une fois. Livraison avant 12h, sans engagement.",
+    pack:         "Commandez pour plusieurs collègues en une seule transaction. Tarif dégressif selon le volume.",
+    groupe:       "Commandez pour plusieurs collègues en une seule transaction. Tarif dégressif selon le volume.",
+    unique:       "Commandez ponctuellement selon vos envies du moment.",
     "repas-unique": "Commandez ponctuellement selon vos envies du moment.",
-    "one-shot": "Commandez ponctuellement selon vos envies du moment.",
+    "one-shot":   "Commandez ponctuellement selon vos envies du moment.",
   };
   return map[type.toLowerCase()] ?? "";
 }
@@ -46,7 +64,7 @@ export default async function Formules() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Object.entries(grouped).map(([type, items]) => {
-              const popular = type.toLowerCase() === "abonnement";
+              const popular = ["abonnement", "precommande"].includes(type.toLowerCase());
               return (
                 <div
                   key={type}
@@ -58,7 +76,7 @@ export default async function Formules() {
                 >
                   {popular && (
                     <div className="absolute -top-px left-8 px-3 py-1 rounded-b-lg text-xs font-bold" style={{ background: "var(--green)", color: "#fff" }}>
-                      Le plus populaire
+                      Le plus choisi
                     </div>
                   )}
                   <div className="text-3xl mb-4">{typeIcon(type)}</div>
@@ -83,7 +101,7 @@ export default async function Formules() {
                     href={`/commander?formule=${type.toLowerCase()}`}
                     className={`block w-full text-center py-3 text-sm ${popular ? "btn-primary" : "btn-secondary"}`}
                   >
-                    Choisir cette formule
+                    {popular ? "Choisir mes jours →" : "Choisir cette formule"}
                   </Link>
                 </div>
               );

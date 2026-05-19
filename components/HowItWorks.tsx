@@ -1,27 +1,27 @@
 const steps = [
   {
     num: "01",
-    icon: "💬",
-    title: "Ouvrez WhatsApp",
-    desc: "Scannez le QR code ou cliquez sur le lien. Notre bot vous guide en 2 minutes, sans téléchargement.",
+    icon: "🎛️",
+    title: "Je choisis mes jours",
+    desc: "De 2 à 5 jours dans la semaine. Je sélectionne mes plats et ma variante — plat du jour ou option végé.",
   },
   {
     num: "02",
-    icon: "🍽️",
-    title: "Choisissez votre repas",
-    desc: "Plat du jour ou option végétarienne — formule unique, pack ou abonnement hebdomadaire.",
+    icon: "✏️",
+    title: "Je valide avant mercredi 22h",
+    desc: "Ma pré-commande est confirmée pour la semaine suivante en quelques clics. Sans engagement.",
   },
   {
     num: "03",
-    icon: "💳",
-    title: "Payez en ligne",
-    desc: "Paiement sécurisé via Stripe directement dans la conversation WhatsApp.",
+    icon: "🚚",
+    title: "Livraison avant 12h",
+    desc: "Mon repas est déposé dans le réfrigérateur de mon service, prêt à récupérer à la pause déjeuner.",
   },
   {
     num: "04",
-    icon: "📍",
-    title: "Récupérez votre repas",
-    desc: "Livraison avant 12h dans votre service. Chaque repas est emballé avec soin, prêt à déguster.",
+    icon: "🍽️",
+    title: "Plat + dessert inclus",
+    desc: "Chaque menu inclut un plat (ou option végé) et un dessert cuisiné par notre chef Gault & Millau.",
   },
 ];
 
@@ -36,10 +36,10 @@ export default function HowItWorks() {
           className="font-bold mb-4 tracking-tight"
           style={{ fontFamily: "'Playfair Display', serif", fontSize: "clamp(28px, 4vw, 42px)", color: "var(--dark)" }}
         >
-          Simple comme un message
+          Commandé en 2 minutes, livré avant midi
         </h2>
         <p className="text-base leading-relaxed mb-14" style={{ color: "var(--gray-600)", maxWidth: 460 }}>
-          Pas d'app à installer, pas de compte à créer. Tout se passe dans WhatsApp.
+          Chaque semaine, choisissez vos jours et vos plats. On s&apos;occupe du reste.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

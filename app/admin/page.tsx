@@ -24,10 +24,14 @@ export default async function AdminDashboard() {
   const supabase = await createServerSupabaseClient();
   const { monday, sunday } = getWeekBounds();
 
+  const firstOfMonth = new Date();
+  firstOfMonth.setDate(1);
+  firstOfMonth.setHours(0, 0, 0, 0);
+
   const [
     { data: allCommandes },
     { data: commandesSemaine },
-    { count: nbClients },
+    { data: commandesMois },
   ] = await Promise.all([
     supabase.from("commandes").select("prix_total, statut").neq("statut", "annule"),
     supabase
@@ -35,8 +39,14 @@ export default async function AdminDashboard() {
       .select("prix_total, statut")
       .gte("created_at", monday.toISOString())
       .lte("created_at", sunday.toISOString()),
-    supabase.from("clients").select("*", { count: "exact", head: true }),
+    supabase
+      .from("commandes")
+      .select("client_id")
+      .gte("created_at", firstOfMonth.toISOString())
+      .neq("statut", "annule"),
   ]);
+
+  const clientsMois = new Set((commandesMois ?? []).map((c) => c.client_id)).size;
 
   const caTotal = (allCommandes ?? []).reduce((s, c) => s + c.prix_total, 0);
   const caSemaine = (commandesSemaine ?? []).reduce((s, c) => s + c.prix_total, 0);
@@ -53,7 +63,7 @@ export default async function AdminDashboard() {
   const statCards = [
     { label: "CA total", value: `${caTotal.toFixed(2).replace(".", ",")} €`, icon: "💶" },
     { label: "CA cette semaine", value: `${caSemaine.toFixed(2).replace(".", ",")} €`, icon: "📈" },
-    { label: "Clients actifs", value: String(nbClients ?? 0), icon: "👥" },
+    { label: "Clients ce mois", value: String(clientsMois), icon: "👥" },
     { label: "Commandes cette semaine", value: String(commandesSemaine?.length ?? 0), icon: "📦" },
   ];
 
