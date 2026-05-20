@@ -28,13 +28,13 @@ export default function Home() {
       {/* ── 1. HERO ── */}
       <section className="relative min-h-screen flex items-center">
         <Image
-          src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1920&q=95&auto=format&fit=crop"
-          alt="Repas gastronomique"
+          src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1920&q=95&auto=format&fit=crop"
+          alt="Repas gastronomiques Clodia"
           fill
-          className="object-cover"
+          className="object-cover object-center"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/40 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-black/15" />
 
         <div className="relative z-10 max-w-6xl mx-auto px-6 py-32 w-full">
           <h1
@@ -45,15 +45,16 @@ export default function Home() {
             <span className="text-[#EAFF33]">On prend soin de vous.</span>
           </h1>
 
-          <ul className="flex flex-col gap-3 mb-10 mt-6">
+          <ul className="flex flex-col gap-4 mb-10 mt-6 max-w-md">
             {[
               "Livré avant 12h directement dans votre frigo de service",
               "Menu du jour élaboré à base de produits frais et de saison",
               "Sans engagement",
             ].map((item) => (
-              <li key={item} className="flex items-start gap-3">
-                <span className="w-1.5 h-1.5 rounded-full bg-white/60 shrink-0 mt-2 inline-block" />
-                <span className="text-white/85 text-base leading-snug">{item}</span>
+              <li key={item} className="flex items-start">
+                <span className="text-white text-base leading-snug pl-4 border-l-2 border-white/70">
+                  {item}
+                </span>
               </li>
             ))}
           </ul>
