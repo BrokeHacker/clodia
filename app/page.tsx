@@ -28,13 +28,13 @@ export default function Home() {
       {/* ── 1. HERO ── */}
       <section className="relative min-h-screen flex items-center">
         <Image
-          src="https://images.unsplash.com/photo-1547592180-85f173990554?w=1920&h=1080&fit=crop&q=90&auto=format"
+          src="https://images.unsplash.com/photo-1547592180-85f173990554?w=1920&q=95&auto=format&fit=crop"
           alt="Repas gastronomique"
           fill
           className="object-cover"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-br from-[#4D0F1F]/90 via-[#4D0F1F]/70 to-[#4D0F1F]/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/40 to-black/10" />
 
         <div className="relative z-10 max-w-6xl mx-auto px-6 py-32 w-full">
           <h1
@@ -52,19 +52,9 @@ export default function Home() {
               "Sans engagement",
             ].map((item) => (
               <li key={item} className="flex items-start gap-3">
-                <svg
-                  className="shrink-0 mt-0.5"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#4A6741"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
+                <span className="text-white/40 font-light text-lg leading-none shrink-0 mt-0.5">
+                  —
+                </span>
                 <span className="text-white/85 text-base leading-snug">{item}</span>
               </li>
             ))}
