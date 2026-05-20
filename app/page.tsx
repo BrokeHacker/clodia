@@ -45,16 +45,11 @@ export default function Home() {
             <span className="text-[#EAFF33]">On prend soin de vous.</span>
           </h1>
 
-          <p className="text-white font-semibold text-xl leading-relaxed mb-6 max-w-lg">
-            Un chef élabore chaque jour un menu pour le personnel soignant.
-            Livraison avant 12h directement dans votre établissement.
-          </p>
-
-          <ul className="flex flex-col gap-3 mb-10 max-w-md">
+          <ul className="flex flex-col gap-3 mb-10 max-w-xl">
             {[
-              "Livré avant 12h directement dans votre frigo de service",
-              "Menu du jour élaboré à base de produits frais et de saison",
-              "Sans engagement",
+              "Menu du jour élaboré par notre Chef à base de produits frais et de saison.",
+              "Livraison avant 12h directement dans le frigo de votre service.",
+              "Sans engagement.",
             ].map((item) => (
               <li key={item} className="flex items-center gap-3">
                 <span className="text-white text-xl leading-none shrink-0">·</span>
