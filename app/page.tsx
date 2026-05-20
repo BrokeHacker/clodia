@@ -28,7 +28,7 @@ export default function Home() {
       {/* ── 1. HERO ── */}
       <section className="relative min-h-screen flex items-center">
         <Image
-          src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=1920&q=95&auto=format&fit=crop"
+          src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1920&q=95&auto=format&fit=crop"
           alt="Repas gastronomiques Clodia"
           fill
           className="object-cover object-center"
@@ -45,16 +45,20 @@ export default function Home() {
             <span className="text-[#EAFF33]">On prend soin de vous.</span>
           </h1>
 
-          <ul className="flex flex-col gap-4 mb-10 mt-6 max-w-md">
+          <p className="text-white font-semibold text-xl leading-relaxed mb-6 max-w-lg">
+            Un chef élabore chaque jour un menu pour le personnel soignant.
+            Livraison avant 12h directement dans votre établissement.
+          </p>
+
+          <ul className="flex flex-col gap-3 mb-10 max-w-md">
             {[
               "Livré avant 12h directement dans votre frigo de service",
               "Menu du jour élaboré à base de produits frais et de saison",
               "Sans engagement",
             ].map((item) => (
-              <li key={item} className="flex items-start">
-                <span className="text-white text-base leading-snug pl-4 border-l-2 border-white/70">
-                  {item}
-                </span>
+              <li key={item} className="flex items-center gap-3">
+                <span className="text-white text-xl leading-none shrink-0">·</span>
+                <span className="text-white/85 text-sm leading-snug">{item}</span>
               </li>
             ))}
           </ul>
