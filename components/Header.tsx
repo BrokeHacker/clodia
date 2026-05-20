@@ -30,9 +30,9 @@ export default function Header() {
             <Link
               key={l.href}
               href={l.href}
-              className={`text-sm transition-colors ${
+              className={`nav-link-underline text-sm transition-colors ${
                 pathname === l.href
-                  ? "text-[#FD3D6B] font-medium"
+                  ? "text-[#FD3D6B] font-medium active"
                   : "text-gray-600 hover:text-[#4D0F1F]"
               }`}
             >
