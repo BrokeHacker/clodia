@@ -28,7 +28,7 @@ export default function Home() {
       {/* ── 1. HERO ── */}
       <section className="relative min-h-screen flex items-center">
         <Image
-          src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1920&h=1080&fit=crop&auto=format"
+          src="https://images.unsplash.com/photo-1547592180-85f173990554?w=1920&h=1080&fit=crop&q=90&auto=format"
           alt="Repas gastronomique"
           fill
           className="object-cover"
@@ -45,29 +45,35 @@ export default function Home() {
             <span className="text-[#EAFF33]">On prend soin de vous.</span>
           </h1>
 
-          <p className="text-white/75 text-lg leading-relaxed mb-10 max-w-lg">
-            Un chef élabore chaque jour un menu pour le personnel soignant.
-            Livraison avant 12h directement dans votre établissement.
-          </p>
+          <ul className="flex flex-col gap-3 mb-10 mt-6">
+            {[
+              "Livré avant 12h directement dans votre frigo de service",
+              "Menu du jour élaboré à base de produits frais et de saison",
+              "Sans engagement",
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-3">
+                <svg
+                  className="shrink-0 mt-0.5"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#4A6741"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 6L9 17l-5-5" />
+                </svg>
+                <span className="text-white/85 text-base leading-snug">{item}</span>
+              </li>
+            ))}
+          </ul>
 
           <div className="flex flex-wrap items-center gap-3">
             <Link href="/commander" className="btn-punch text-sm px-7 py-3.5 inline-block">
               Je découvre →
             </Link>
-          </div>
-
-          <div className="flex flex-wrap gap-6 mt-14">
-            {[
-              { icon: "⭐", label: "Chef Gault & Millau" },
-              { icon: "🕐", label: "Livraison avant 12h" },
-              { icon: "🏥", label: "CHU & cliniques" },
-              { icon: "🌿", label: "Option végétarienne" },
-            ].map((p) => (
-              <div key={p.label} className="flex items-center gap-2">
-                <span>{p.icon}</span>
-                <span className="text-white/70 text-sm">{p.label}</span>
-              </div>
-            ))}
           </div>
         </div>
       </section>
