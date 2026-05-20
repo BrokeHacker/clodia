@@ -11,13 +11,10 @@ import MenuCard from "@/components/MenuCard";
 import FAQAccordion from "@/components/FAQAccordion";
 
 const marqueeItems = [
-  "Chef Gault & Millau",
-  "Livraison avant 12h",
-  "CHU & cliniques de Limoges",
   "Option végétarienne",
-  "Produits frais & locaux",
-  "Véhicule électrique",
-  "Paiement sécurisé Stripe",
+  "1 menu du jour — plat + dessert",
+  "Livraison avant 12h dans le frigo de votre service",
+  "Approche nutritive adaptée au personnel soignant",
 ];
 
 export default function Home() {
@@ -67,15 +64,15 @@ export default function Home() {
       </section>
 
       {/* ── 2. MARQUEE ── */}
-      <section className="bg-[#4D0F1F] py-4 overflow-hidden">
+      <section className="bg-[#F5F0E8] border-y border-[#E8E3D8] py-3 overflow-hidden">
         <div className="animate-marquee">
           {doubled.map((item, i) => (
             <span
               key={i}
-              className="inline-flex items-center gap-6 text-sm font-medium text-[#EAFF33] whitespace-nowrap px-6"
+              className="inline-flex items-center gap-8 text-sm font-medium text-[#4A4A4A] whitespace-nowrap px-8"
             >
               {item}
-              <span className="w-1.5 h-1.5 rounded-full bg-[#EAFF33]/40 inline-block" />
+              <span className="w-1 h-1 rounded-full bg-[#4A4A4A]/30 inline-block" />
             </span>
           ))}
         </div>
