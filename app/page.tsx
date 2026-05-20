@@ -58,7 +58,7 @@ export default function Home() {
             ].map((item) => (
               <li key={item} className="flex items-center gap-3">
                 <span className="text-white text-xl leading-none shrink-0">·</span>
-                <span className="text-white/85 text-sm leading-snug">{item}</span>
+                <span className="text-white font-semibold text-base leading-snug">{item}</span>
               </li>
             ))}
           </ul>
