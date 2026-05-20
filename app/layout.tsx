@@ -1,30 +1,31 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Clodia — Repas gastronomiques livrés à l'hôpital",
+  title: "Clodia — Repas gastronomiques en milieu hospitalier",
   description:
-    "Des repas cuisinés par un chef Gault & Millau, livrés avant 12h directement dans votre service.",
+    "Des repas gastronomiques livrés chaque midi aux soignants du CHU et des cliniques de Limoges. Menus élaborés par un chef Gault & Millau.",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="fr" className="h-full antialiased">
+    <html lang="fr">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap"
+          href="https://api.fontshare.com/v2/css?f[]=chillax@200,300,400,500,600,700&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body
-        className="min-h-full flex flex-col"
-        style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
-      >
-        {children}
+      <body>
+        <Header />
+        <main className="pt-16">{children}</main>
+        <Footer />
       </body>
     </html>
   );

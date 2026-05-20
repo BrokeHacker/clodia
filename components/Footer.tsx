@@ -2,38 +2,81 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="border-t px-6 md:px-10 py-10" style={{ background: "#fff", borderColor: "var(--gray-200)" }}>
-      <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div>
-          <span
-            className="text-lg font-bold"
-            style={{ fontFamily: "'Playfair Display', serif", color: "var(--dark)" }}
-          >
-            clodia
-          </span>
-          <p className="text-xs mt-1" style={{ color: "var(--gray-400)" }}>
-            Repas gastronomiques livrés à l&rsquo;hôpital · Limoges
-          </p>
+    <footer className="bg-[#4D0F1F] text-white pt-16 pb-8">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
+          <div className="md:col-span-2">
+            <p className="text-3xl font-semibold mb-4">Clodia</p>
+            <p className="text-white/60 text-sm leading-relaxed max-w-xs">
+              Des repas gastronomiques livrés chaque midi aux soignants du CHU
+              et des cliniques de Limoges. Parce que vous méritez de bien manger.
+            </p>
+            <div className="mt-6 flex items-center gap-2 flex-wrap">
+              <span className="bg-[#EAFF33] text-[#4D0F1F] text-xs font-semibold px-3 py-1 rounded-full">
+                Chef Gault &amp; Millau
+              </span>
+              <span className="bg-white/10 text-white/70 text-xs px-3 py-1 rounded-full">
+                Livraison ⚡
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-5">
+              Navigation
+            </p>
+            <ul className="flex flex-col gap-3 text-sm">
+              <li>
+                <Link href="/" className="text-white/70 hover:text-white transition-colors">
+                  Accueil
+                </Link>
+              </li>
+              <li>
+                <Link href="/comment-ca-marche" className="text-white/70 hover:text-white transition-colors">
+                  Comment ça marche
+                </Link>
+              </li>
+              <li>
+                <Link href="/nos-engagements" className="text-white/70 hover:text-white transition-colors">
+                  Nos engagements
+                </Link>
+              </li>
+              <li>
+                <Link href="/formules" className="text-white/70 hover:text-white transition-colors">
+                  Formules
+                </Link>
+              </li>
+              <li>
+                <Link href="/commander" className="text-white/70 hover:text-white transition-colors">
+                  Commander
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-white/40 mb-5">
+              Informations
+            </p>
+            <ul className="flex flex-col gap-3 text-sm">
+              <li>
+                <Link href="/faq" className="text-white/70 hover:text-white transition-colors">
+                  FAQ
+                </Link>
+              </li>
+              <li>
+                <Link href="/mentions-legales" className="text-white/70 hover:text-white transition-colors">
+                  Mentions légales
+                </Link>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        <div className="flex items-center gap-6">
-          <a href="#comment-ca-marche" className="text-xs font-medium transition-colors hover:text-gray-900" style={{ color: "var(--gray-400)" }}>
-            Comment ça marche
-          </a>
-          <a href="#formules" className="text-xs font-medium transition-colors hover:text-gray-900" style={{ color: "var(--gray-400)" }}>
-            Formules
-          </a>
-          <Link href="/mon-compte" className="text-xs font-medium transition-colors hover:text-gray-900" style={{ color: "var(--gray-400)" }}>
-            Mon espace
-          </Link>
-          <Link href="/admin" className="text-xs font-medium transition-colors hover:text-gray-900" style={{ color: "var(--gray-400)" }}>
-            Admin
-          </Link>
+        <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/40">
+          <p>© 2025 Clodia. Tous droits réservés.</p>
+          <p>Conçu avec soin pour les soignants de Limoges</p>
         </div>
-
-        <p className="text-xs" style={{ color: "var(--gray-200)" }}>
-          © {new Date().getFullYear()} Clodia
-        </p>
       </div>
     </footer>
   );
