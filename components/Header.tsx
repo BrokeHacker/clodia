@@ -22,7 +22,7 @@ export default function Header() {
           className="text-2xl font-semibold text-[#4D0F1F] tracking-tight"
           onClick={() => setOpen(false)}
         >
-          Clodia
+          clodia
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
