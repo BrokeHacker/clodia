@@ -28,7 +28,7 @@ export default function Home() {
       {/* ── 1. HERO ── */}
       <section className="relative min-h-screen flex items-center">
         <Image
-          src="https://images.unsplash.com/photo-1547592180-85f173990554?w=1920&q=95&auto=format&fit=crop"
+          src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=1920&q=95&auto=format&fit=crop"
           alt="Repas gastronomique"
           fill
           className="object-cover"
@@ -52,9 +52,7 @@ export default function Home() {
               "Sans engagement",
             ].map((item) => (
               <li key={item} className="flex items-start gap-3">
-                <span className="text-white/40 font-light text-lg leading-none shrink-0 mt-0.5">
-                  —
-                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-white/60 shrink-0 mt-2 inline-block" />
                 <span className="text-white/85 text-base leading-snug">{item}</span>
               </li>
             ))}
