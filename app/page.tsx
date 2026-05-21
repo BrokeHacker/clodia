@@ -2,12 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   menusCurrentWeek,
-  pointsLivraison,
   faqItems,
   etapes,
 } from "@/lib/data";
 import MenuCarousel from "@/components/MenuCarousel";
 import FAQAccordion from "@/components/FAQAccordion";
+import PointLivraisonSelector from "@/components/PointLivraisonSelector";
 
 const marqueeItems = [
   "Option végétarienne",
@@ -147,37 +147,14 @@ export default function Home() {
               Proche de vous
             </span>
             <h2 className="text-4xl font-semibold text-[#4D0F1F]">
-              Points de livraison
+              Je trouve mon frigidaire
             </h2>
             <p className="text-gray-400 mt-4 max-w-md mx-auto text-sm">
-              Livraison avant 12h dans ces établissements. Vous ne voyez pas le vôtre ?
+              Sélectionnez votre établissement pour trouver votre point de livraison.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
-            {pointsLivraison.map((p) => (
-              <div
-                key={p.id}
-                className="bg-[#E8FFF8] rounded-2xl p-6 flex items-start gap-4"
-              >
-                <span className="text-3xl">{p.emoji}</span>
-                <div>
-                  <p className="font-semibold text-[#4D0F1F]">{p.hopital}</p>
-                  <p className="text-sm text-gray-600 mt-0.5">{p.batiment}</p>
-                  <p className="text-xs text-[#00CCCC] mt-1 font-medium">{p.service}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center">
-            <a
-              href="mailto:contact@clodia.fr?subject=Demande de nouveau point de livraison"
-              className="btn-outline-wine text-sm px-7 py-3 inline-block"
-            >
-              Demander un nouveau point
-            </a>
-          </div>
+          <PointLivraisonSelector />
         </div>
       </section>
 

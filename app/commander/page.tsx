@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { menusCurrentWeek, menusNextWeek, pointsLivraison } from "@/lib/data";
 
 type Variante = "plat" | "plat_vege";
@@ -21,10 +22,52 @@ function formatPrice(p: number) {
   return p.toFixed(2).replace(".", ",") + " €";
 }
 
+const hopitaux = [...new Set(pointsLivraison.map((p) => p.hopital))];
+
+function getBatiments(hopital: string) {
+  return [...new Set(pointsLivraison.filter((p) => p.hopital === hopital).map((p) => p.batiment))];
+}
+
+function getServices(hopital: string, batiment: string) {
+  return pointsLivraison.filter((p) => p.hopital === hopital && p.batiment === batiment);
+}
+
 export default function CommanderPage() {
+  const searchParams = useSearchParams();
+
   const [semaineKey, setSemaineKey] = useState<"courante" | "suivante">("courante");
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [pointId, setPointId] = useState<number>(pointsLivraison[0].id);
+
+  const [hopital, setHopital] = useState("");
+  const [batiment, setBatiment] = useState("");
+  const [service, setService] = useState("");
+
+  useEffect(() => {
+    const pointParam = searchParams.get("point");
+    if (pointParam) {
+      const found = pointsLivraison.find((p) => p.id === Number(pointParam));
+      if (found) {
+        setHopital(found.hopital);
+        setBatiment(found.batiment);
+        setService(found.service);
+      }
+    }
+  }, [searchParams]);
+
+  const selectedPoint = pointsLivraison.find(
+    (p) => p.hopital === hopital && p.batiment === batiment && p.service === service
+  );
+
+  function handleHopitalChange(val: string) {
+    setHopital(val);
+    setBatiment("");
+    setService("");
+  }
+
+  function handleBatimentChange(val: string) {
+    setBatiment(val);
+    setService("");
+  }
 
   const currentMenus = SEMAINES.find((s) => s.key === semaineKey)!.menus;
 
@@ -292,20 +335,48 @@ export default function CommanderPage() {
 
                   {/* Point de livraison */}
                   <div className="mb-5">
-                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest block mb-2">
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest block mb-3">
                       Point de livraison
                     </label>
-                    <select
-                      value={pointId}
-                      onChange={(e) => setPointId(Number(e.target.value))}
-                      className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 text-[#4D0F1F] focus:outline-none focus:border-[#FD3D6B]"
-                    >
-                      {pointsLivraison.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.hopital} — {p.batiment}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex flex-col gap-2">
+                      <select
+                        value={hopital}
+                        onChange={(e) => handleHopitalChange(e.target.value)}
+                        className="w-full text-sm bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[#4D0F1F] focus:outline-none focus:border-[#FD3D6B]"
+                      >
+                        <option value="">Hôpital…</option>
+                        {hopitaux.map((h) => (
+                          <option key={h} value={h}>{h}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={batiment}
+                        onChange={(e) => handleBatimentChange(e.target.value)}
+                        disabled={!hopital}
+                        className="w-full text-sm bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[#4D0F1F] focus:outline-none focus:border-[#FD3D6B] disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <option value="">Bâtiment…</option>
+                        {getBatiments(hopital).map((b) => (
+                          <option key={b} value={b}>{b}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={service}
+                        onChange={(e) => setService(e.target.value)}
+                        disabled={!batiment}
+                        className="w-full text-sm bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[#4D0F1F] focus:outline-none focus:border-[#FD3D6B] disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <option value="">Service…</option>
+                        {getServices(hopital, batiment).map((p) => (
+                          <option key={p.service} value={p.service}>{p.service}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {selectedPoint && (
+                      <p className="text-xs text-[#00CCCC] mt-2 leading-relaxed">
+                        {selectedPoint.description}
+                      </p>
+                    )}
                   </div>
 
                   <button

@@ -16,6 +16,7 @@ export interface PointLivraison {
   hopital: string;
   batiment: string;
   service: string;
+  description: string;
   emoji: string;
 }
 
@@ -188,29 +189,33 @@ export const pointsLivraison: PointLivraison[] = [
     id: 1,
     hopital: "CHU Limoges",
     batiment: "Hôpital Dupuytren",
-    service: "Hall principal — niveau 0",
+    service: "Cardiologie",
+    description: "Frigo soignants au niveau 2, couloir B, en face de la salle de pause.",
     emoji: "🏥",
   },
   {
     id: 2,
     hopital: "CHU Limoges",
-    batiment: "Hôpital de la Mère et de l'Enfant",
-    service: "Accueil — rez-de-chaussée",
-    emoji: "👶",
+    batiment: "Hôpital Dupuytren",
+    service: "Urgences",
+    description: "Frigo dédié Clodia dans la salle de repos soignants, accès badge.",
+    emoji: "🚑",
   },
   {
     id: 3,
-    hopital: "Clinique Chénieux",
-    batiment: "Bâtiment principal",
-    service: "Cafétéria — niveau 1",
-    emoji: "🏨",
+    hopital: "CHU Limoges",
+    batiment: "Hôpital de la Mère et de l'Enfant",
+    service: "Maternité",
+    description: "Frigo soignants au niveau 3, salle de pause principale.",
+    emoji: "👶",
   },
   {
     id: 4,
-    hopital: "Polyclinique de Limoges",
-    batiment: "Entrée principale",
-    service: "Espace détente soignants",
-    emoji: "💊",
+    hopital: "CHU Limoges",
+    batiment: "Hôpital de la Mère et de l'Enfant",
+    service: "Pédiatrie",
+    description: "Frigo Clodia dans le couloir soignants, niveau 2 aile ouest.",
+    emoji: "🧒",
   },
 ];
 
