@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   menusCurrentWeek,
   pointsLivraison,
-  formules,
   faqItems,
   etapes,
 } from "@/lib/data";
@@ -182,74 +181,106 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── 6. LES FORMULES ── */}
-      <section className="py-24 bg-[#E8F4FF]">
+      {/* ── 6. NOTRE PROMESSE ── */}
+      <section className="py-24 bg-[#FAFAF8]">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <span className="text-xs font-semibold uppercase tracking-widest text-[#007FFF] block mb-3">
-              Tarifs
-            </span>
-            <h2 className="text-4xl font-semibold text-[#4D0F1F]">
-              À partir de{" "}
-              <span className="text-[#FD3D6B]">14,50 €</span>
+
+          <div className="text-center mb-14">
+            <h2 className="text-4xl md:text-5xl font-semibold text-[#1A1A1A] leading-tight">
+              Chaque jour, un vrai repas.<br />
+              <span className="text-[#4A6741]">Pas un compromis.</span>
             </h2>
-            <p className="text-gray-400 mt-4 max-w-sm mx-auto text-sm">
-              Choisissez la formule qui correspond à vos habitudes.
-            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {formules.map((f) => (
-              <div
-                key={f.id}
-                className={`rounded-3xl p-8 flex flex-col ${
-                  f.highlight ? "ring-2 ring-[#FD3D6B] shadow-lg" : ""
-                }`}
-                style={{ background: f.couleur }}
-              >
-                {f.highlight && (
-                  <span className="bg-[#FD3D6B] text-white text-xs font-semibold px-3 py-1 rounded-full self-start mb-4">
-                    Le plus populaire
-                  </span>
-                )}
-                <p
-                  className="text-xs font-semibold uppercase tracking-widest mb-4"
-                  style={{ color: f.couleurBadge }}
-                >
-                  {f.nom}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-stretch">
+
+            <div className="relative rounded-2xl overflow-hidden min-h-[520px]">
+              <Image
+                src="/images/plats-clodia.jpg"
+                alt="Les plats Clodia"
+                fill
+                className="object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-8">
+                <p className="text-white/60 text-xs uppercase tracking-widest mb-2 font-medium">
+                  Notre cuisine
                 </p>
-                <p className="text-4xl font-semibold text-[#4D0F1F] mb-1">
-                  {f.prix.toFixed(2).replace(".", ",")} €
+                <p className="text-white text-2xl font-semibold leading-snug">
+                  Cuisiné ce matin.<br />Dans votre frigo avant midi.
                 </p>
-                <p className="text-xs text-gray-400 mb-4">{f.unite}</p>
-                <p className="text-sm text-gray-500 mb-6 leading-relaxed">{f.tagline}</p>
-                <ul className="flex flex-col gap-2.5 mb-8 flex-1">
-                  {f.avantages.map((a, i) => (
-                    <li key={i} className="text-sm text-gray-700 flex items-start gap-2">
-                      <span style={{ color: f.couleurBadge }} className="shrink-0 font-bold">✓</span>
-                      {a}
-                    </li>
-                  ))}
-                </ul>
-                <Link
-                  href="/commander"
-                  className={`block text-center text-sm font-semibold py-3 rounded-full transition-colors ${
-                    f.highlight
-                      ? "bg-[#FD3D6B] text-white hover:bg-[#e8345e]"
-                      : "border border-[#4D0F1F]/30 text-[#4D0F1F] hover:bg-[#4D0F1F] hover:text-white"
-                  }`}
-                >
-                  Choisir cette formule
-                </Link>
               </div>
-            ))}
+            </div>
+
+            <div className="flex flex-col gap-5">
+
+              <div className="rounded-2xl bg-[#4A6741] p-8 flex-1 flex flex-col justify-between">
+                <p className="text-white/40 text-xs uppercase tracking-widest font-medium">
+                  La cuisine
+                </p>
+                <div>
+                  <p className="text-white text-2xl font-semibold leading-snug mb-3">
+                    Un chef. Des produits frais.<br />
+                    Un menu différent chaque jour.
+                  </p>
+                  <p className="text-white/55 text-sm leading-relaxed">
+                    Rien de surgelé, rien d&apos;industriel. Notre chef cuisine
+                    à partir de zéro chaque matin — avec ce que
+                    les producteurs du Limousin ont livré la veille.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-[#F5F0E8] p-8 flex-1 flex flex-col justify-between">
+                <p className="text-[#6B6B6B] text-xs uppercase tracking-widest font-medium">
+                  Le service
+                </p>
+                <div>
+                  <p className="text-[#1A1A1A] text-2xl font-semibold leading-snug mb-3">
+                    Sans engagement,<br />
+                    sans contrainte.
+                  </p>
+                  <p className="text-[#6B6B6B] text-sm leading-relaxed">
+                    Vous commandez la semaine qui vous convient.
+                    Clodia s&apos;adapte à vos gardes, vos repos, vos envies —
+                    pas l&apos;inverse.
+                  </p>
+                </div>
+              </div>
+
+            </div>
           </div>
 
-          <div className="text-center mt-10">
-            <Link href="/formules" className="text-sm text-[#007FFF] hover:underline">
-              Voir le détail des formules →
+          <div className="mt-5 grid grid-cols-3 gap-5">
+            <div className="rounded-2xl bg-[#1A1A1A] p-6 text-center">
+              <p className="text-white text-3xl font-semibold mb-1">5</p>
+              <p className="text-white/40 text-xs uppercase tracking-widest leading-relaxed">
+                Menus différents<br />chaque semaine
+              </p>
+            </div>
+            <div className="rounded-2xl bg-[#1A1A1A] p-6 text-center">
+              <p className="text-white text-3xl font-semibold mb-1">12h</p>
+              <p className="text-white/40 text-xs uppercase tracking-widest leading-relaxed">
+                Livraison dans<br />votre service
+              </p>
+            </div>
+            <div className="rounded-2xl bg-[#1A1A1A] p-6 text-center">
+              <p className="text-white text-3xl font-semibold mb-1">0</p>
+              <p className="text-white/40 text-xs uppercase tracking-widest leading-relaxed">
+                Engagement<br />ni abonnement
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-10 text-center">
+            <Link
+              href="/commander"
+              className="inline-flex items-center gap-2 bg-[#4A6741] text-white text-sm font-semibold px-8 py-4 rounded-full hover:bg-[#3d5836] transition-colors"
+            >
+              Je découvre les menus →
             </Link>
           </div>
+
         </div>
       </section>
 
