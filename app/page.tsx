@@ -217,40 +217,95 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-5">
+            {/* Droite — layout éditorial, pas de cards */}
+            <div className="flex flex-col justify-between h-full py-2" style={{ minHeight: "520px" }}>
 
-              <div className="rounded-2xl bg-[#4A6741] p-8 flex-1 flex flex-col justify-between">
-                <p className="text-white/40 text-xs uppercase tracking-widest font-medium">
+              {/* Block 1 */}
+              <div>
+                <p style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: "#4A6741",
+                  marginBottom: "14px",
+                }}>
                   La cuisine
                 </p>
-                <div>
-                  <p className="text-white text-2xl font-semibold leading-snug mb-3">
-                    Un chef. Des produits frais.<br />
-                    Un menu différent chaque jour.
-                  </p>
-                  <p className="text-white/55 text-sm leading-relaxed">
-                    Rien de surgelé, rien d&apos;industriel. Notre chef cuisine
-                    à partir de zéro chaque matin — avec ce que
-                    les producteurs du Limousin ont livré la veille.
-                  </p>
-                </div>
+                <p style={{
+                  fontSize: "28px",
+                  fontWeight: 700,
+                  lineHeight: 1.2,
+                  color: "#1A1A1A",
+                  marginBottom: "12px",
+                }}>
+                  Un chef.<br />
+                  Des produits frais.<br />
+                  <span style={{ color: "#4A6741" }}>Chaque matin.</span>
+                </p>
+                <p style={{
+                  fontSize: "14px",
+                  color: "#6B6B6B",
+                  lineHeight: 1.7,
+                  maxWidth: "420px",
+                }}>
+                  Rien de surgelé, rien d&apos;industriel. Notre chef cuisine
+                  à partir de zéro — avec ce que les producteurs
+                  du Limousin ont livré la veille.
+                </p>
               </div>
 
-              <div className="rounded-2xl bg-[#F5F0E8] p-8 flex-1 flex flex-col justify-between">
-                <p className="text-[#6B6B6B] text-xs uppercase tracking-widest font-medium">
+              {/* Séparateur */}
+              <div style={{
+                height: "1px",
+                background: "linear-gradient(to right, #E8E3D8, transparent)",
+                margin: "0",
+              }} />
+
+              {/* Block 2 */}
+              <div>
+                <p style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  letterSpacing: "0.14em",
+                  textTransform: "uppercase",
+                  color: "#C4704F",
+                  marginBottom: "14px",
+                }}>
                   Le service
                 </p>
-                <div>
-                  <p className="text-[#1A1A1A] text-2xl font-semibold leading-snug mb-3">
-                    Sans engagement,<br />
-                    sans contrainte.
-                  </p>
-                  <p className="text-[#6B6B6B] text-sm leading-relaxed">
-                    Vous commandez la semaine qui vous convient.
-                    Clodia s&apos;adapte à vos gardes, vos repos, vos envies —
-                    pas l&apos;inverse.
-                  </p>
-                </div>
+                <p style={{
+                  fontSize: "28px",
+                  fontWeight: 700,
+                  lineHeight: 1.2,
+                  color: "#1A1A1A",
+                  marginBottom: "12px",
+                }}>
+                  Sans engagement.<br />
+                  <span style={{ color: "#C4704F" }}>Clodia s&apos;adapte<br />à votre rythme.</span>
+                </p>
+                <p style={{
+                  fontSize: "14px",
+                  color: "#6B6B6B",
+                  lineHeight: 1.7,
+                  maxWidth: "420px",
+                }}>
+                  Vous commandez la semaine qui vous convient.
+                  Vos gardes, vos repos, vos envies —
+                  pas l&apos;inverse.
+                </p>
+              </div>
+
+              {/* CTA inline */}
+              <div>
+                <Link
+                  href="/commander"
+                  className="inline-flex items-center gap-2 text-sm font-semibold transition-colors"
+                  style={{ color: "#4A6741" }}
+                >
+                  Je découvre les menus
+                  <span style={{ fontSize: "18px", lineHeight: 1 }}>→</span>
+                </Link>
               </div>
 
             </div>
