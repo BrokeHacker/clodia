@@ -38,14 +38,6 @@ export default function MenuCard({ menu }: MenuCardProps) {
           <span>{menu.dessert}</span>
         </p>
 
-        <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
-          <span className="text-[#FF9933] font-semibold text-lg">
-            {menu.prix.toFixed(2).replace(".", ",")} €
-          </span>
-          <span className="text-xs text-gray-300 bg-gray-50 px-2 py-1 rounded-full">
-            plat + dessert
-          </span>
-        </div>
       </div>
     </div>
   );

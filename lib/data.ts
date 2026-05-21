@@ -1,6 +1,7 @@
 export interface Menu {
   id: number;
   date: string;
+  date_livraison?: string;
   jourSemaine: string;
   plat: string;
   platVege: string;
@@ -55,6 +56,7 @@ export const menusCurrentWeek: Menu[] = [
   {
     id: 1,
     date: "26 mai",
+    date_livraison: "2026-05-25",
     jourSemaine: "Lundi",
     plat: "Filet de bœuf Rossini, sauce périgourdine & légumes confits",
     platVege: "Risotto aux cèpes et parmesan 24 mois d'affinage",
@@ -67,6 +69,7 @@ export const menusCurrentWeek: Menu[] = [
   {
     id: 2,
     date: "27 mai",
+    date_livraison: "2026-05-26",
     jourSemaine: "Mardi",
     plat: "Suprême de volaille fermière, jus aux herbes fraîches",
     platVege: "Quiche aux légumes printaniers du marché",
@@ -79,6 +82,7 @@ export const menusCurrentWeek: Menu[] = [
   {
     id: 3,
     date: "28 mai",
+    date_livraison: "2026-05-27",
     jourSemaine: "Mercredi",
     plat: "Pavé de saumon label rouge, beurre blanc aux agrumes",
     platVege: "Gratin dauphinois aux champignons et crème fraîche",
@@ -91,6 +95,7 @@ export const menusCurrentWeek: Menu[] = [
   {
     id: 4,
     date: "29 mai",
+    date_livraison: "2026-05-28",
     jourSemaine: "Jeudi",
     plat: "Magret de canard du Périgord, sauce cerise et poivre",
     platVege: "Tartine de légumes rôtis, chèvre frais et feta",
@@ -103,6 +108,7 @@ export const menusCurrentWeek: Menu[] = [
   {
     id: 5,
     date: "30 mai",
+    date_livraison: "2026-05-29",
     jourSemaine: "Vendredi",
     plat: "Côte de veau fermière, purée maison et jus corsé",
     platVege: "Curry de légumes de saison au lait de coco",

@@ -7,7 +7,7 @@ import {
   faqItems,
   etapes,
 } from "@/lib/data";
-import MenuCard from "@/components/MenuCard";
+import MenuCarousel from "@/components/MenuCarousel";
 import FAQAccordion from "@/components/FAQAccordion";
 
 const marqueeItems = [
@@ -132,17 +132,11 @@ export default function Home() {
               href="/commander"
               className="btn-punch text-sm px-6 py-3 inline-block shrink-0"
             >
-              Voir &amp; commander
+              Je choisis mes menus →
             </Link>
           </div>
 
-          <div className="flex gap-5 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
-            {menusCurrentWeek.map((menu) => (
-              <div key={menu.id} className="snap-start shrink-0 w-[260px]">
-                <MenuCard menu={menu} />
-              </div>
-            ))}
-          </div>
+          <MenuCarousel menus={menusCurrentWeek} />
         </div>
       </section>
 
