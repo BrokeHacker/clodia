@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { menusCurrentWeek, menusNextWeek, pointsLivraison } from "@/lib/data";
@@ -32,7 +32,7 @@ function getServices(hopital: string, batiment: string) {
   return pointsLivraison.filter((p) => p.hopital === hopital && p.batiment === batiment);
 }
 
-export default function CommanderPage() {
+function CommanderContent() {
   const searchParams = useSearchParams();
 
   const [semaineKey, setSemaineKey] = useState<"courante" | "suivante">("courante");
@@ -401,5 +401,13 @@ export default function CommanderPage() {
         </div>
       </div>
     </>
+  );
+}
+
+export default function CommanderPage() {
+  return (
+    <Suspense fallback={null}>
+      <CommanderContent />
+    </Suspense>
   );
 }
