@@ -312,21 +312,26 @@ export default function Home() {
           </div>
 
           <div className="mt-5 grid grid-cols-3 gap-5">
-            <div className="rounded-2xl bg-[#1A1A1A] p-6 text-center">
-              <p className="text-white text-3xl font-semibold mb-1">5</p>
-              <p className="text-white/40 text-xs uppercase tracking-widest leading-relaxed">
+            {/* Card 1 */}
+            <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "#F5F0E8" }}>
+              <p className="text-3xl font-semibold mb-1" style={{ color: "#1A1A1A" }}>5</p>
+              <p className="text-xs uppercase tracking-widest leading-relaxed" style={{ color: "#6B6B6B" }}>
                 Menus différents<br />chaque semaine
               </p>
             </div>
-            <div className="rounded-2xl bg-[#1A1A1A] p-6 text-center">
-              <p className="text-white text-3xl font-semibold mb-1">12h</p>
-              <p className="text-white/40 text-xs uppercase tracking-widest leading-relaxed">
-                Livraison dans<br />votre service
+
+            {/* Card 2 */}
+            <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "#F5F0E8" }}>
+              <p className="text-3xl font-semibold mb-1" style={{ color: "#1A1A1A" }}>12h</p>
+              <p className="text-xs uppercase tracking-widest leading-relaxed" style={{ color: "#6B6B6B" }}>
+                Livraison dans le frigo<br />de votre service
               </p>
             </div>
-            <div className="rounded-2xl bg-[#1A1A1A] p-6 text-center">
-              <p className="text-white text-3xl font-semibold mb-1">0</p>
-              <p className="text-white/40 text-xs uppercase tracking-widest leading-relaxed">
+
+            {/* Card 3 */}
+            <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "#F5F0E8" }}>
+              <p className="text-3xl font-semibold mb-1" style={{ color: "#1A1A1A" }}>0</p>
+              <p className="text-xs uppercase tracking-widest leading-relaxed" style={{ color: "#6B6B6B" }}>
                 Engagement<br />ni abonnement
               </p>
             </div>
