@@ -33,6 +33,34 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/45 to-black/15" />
 
         <div className="relative z-10 max-w-6xl mx-auto px-6 py-32 w-full">
+          <div className="mb-5">
+            <span style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              background: "rgba(255,255,255,0.12)",
+              border: "1px solid rgba(255,255,255,0.30)",
+              backdropFilter: "blur(8px)",
+              borderRadius: "999px",
+              padding: "7px 16px",
+              color: "#ffffff",
+              fontSize: "12px",
+              fontWeight: 600,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+            }}>
+              <span style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                backgroundColor: "#C4704F",
+                flexShrink: 0,
+                display: "inline-block",
+              }} />
+              Service sur mesure dédié au personnel soignant &amp; hospitalier
+            </span>
+          </div>
+
           <h1
             className="text-white font-semibold leading-tight mb-6"
             style={{ fontSize: "clamp(40px, 6vw, 72px)", maxWidth: 700 }}
@@ -43,9 +71,9 @@ export default function Home() {
 
           <ul className="flex flex-col gap-3 mb-10 max-w-xl">
             {[
-              "Menu du jour élaboré par notre Chef à base de produits frais et de saison.",
-              "Livraison avant 12h directement dans le frigo de votre service.",
-              "Sans engagement.",
+              "Menu du jour élaboré par notre Chef à base de produits frais et de saison",
+              "Livraison avant 12h directement dans le frigo de votre service",
+              "Sans engagement",
             ].map((item) => (
               <li key={item} className="flex items-center gap-3">
                 <span className="text-white text-xl leading-none shrink-0">·</span>
