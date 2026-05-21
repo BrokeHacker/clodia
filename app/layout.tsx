@@ -3,6 +3,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import CookieBanner from "@/components/CookieBanner";
 
 export const metadata: Metadata = {
   title: "Clodia — Repas gastronomiques en milieu hospitalier",
@@ -28,6 +29,7 @@ export default function RootLayout({
         <main className="pt-16">{children}</main>
         <Footer />
 
+        <CookieBanner />
         {/* ── FIXED BOTTOM BAR ── */}
         <div
           className="fixed bottom-0 left-0 right-0 z-50"

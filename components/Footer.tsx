@@ -8,17 +8,9 @@ export default function Footer() {
           <div className="md:col-span-2">
             <p className="text-3xl font-semibold mb-4">Clodia</p>
             <p className="text-white/60 text-sm leading-relaxed max-w-xs">
-              Des repas gastronomiques livrés chaque midi aux soignants du CHU
+              Des repas sur mesure livrés chaque midi aux soignants du CHU
               et des cliniques de Limoges. Parce que vous méritez de bien manger.
             </p>
-            <div className="mt-6 flex items-center gap-2 flex-wrap">
-              <span className="bg-[#EAFF33] text-[#4D0F1F] text-xs font-semibold px-3 py-1 rounded-full">
-                Chef Gault &amp; Millau
-              </span>
-              <span className="bg-white/10 text-white/70 text-xs px-3 py-1 rounded-full">
-                Livraison ⚡
-              </span>
-            </div>
           </div>
 
           <div>
@@ -27,8 +19,8 @@ export default function Footer() {
             </p>
             <ul className="flex flex-col gap-3 text-sm">
               <li>
-                <Link href="/" className="text-white/70 hover:text-white transition-colors">
-                  Accueil
+                <Link href="/notre-histoire" className="text-white/70 hover:text-white transition-colors">
+                  Notre histoire
                 </Link>
               </li>
               <li>
