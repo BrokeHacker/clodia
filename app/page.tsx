@@ -13,7 +13,7 @@ const marqueeItems = [
   "Option végétarienne",
   "1 menu du jour — plat + dessert",
   "Livraison avant 12h dans le frigo de votre service",
-  "Approche nutritive adaptée au personnel soignant",
+  "Approche nutritive adaptée au personnel soignant et hospitalier",
 ];
 
 export default function Home() {
