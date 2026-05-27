@@ -47,7 +47,6 @@ export interface Engagement {
 }
 
 export interface Etape {
-  numero: number;
   titre: string;
   description: string;
   icone: string;
@@ -327,25 +326,28 @@ export const faqItems: FAQItem[] = [
 
 export const etapes: Etape[] = [
   {
-    numero: 1,
     titre: "Choisissez votre menu",
     description:
-      "Chaque semaine, notre chef compose un nouveau menu. Consultez le programme et choisissez le ou les jours qui vous conviennent, en plat traditionnel ou végétarien.",
-    icone: "🍽️",
+      "Commandez jusqu'à la veille à minuit pour la semaine en cours, ou avant mercredi minuit pour la semaine suivante.",
+    icone: "ti-calendar",
   },
   {
-    numero: 2,
-    titre: "Commandez en ligne",
+    titre: "Choisissez votre frigidaire",
     description:
-      "Sélectionnez votre point de livraison parmi nos établissements partenaires, choisissez votre formule et payez en toute sécurité par carte bancaire avant 22h la veille.",
-    icone: "📱",
+      "Sélectionnez votre point de livraison parmi nos établissements partenaires et payez en ligne en toute sécurité.",
+    icone: "ti-map-pin",
   },
   {
-    numero: 3,
-    titre: "Savourez avant midi",
+    titre: "Livraison avant midi",
     description:
-      "Le lendemain, récupérez votre repas au point de livraison avant 12h. Votre plateau gastronomique vous attend dans son emballage isotherme, prêt à être dégusté.",
-    icone: "⭐",
+      "Votre repas est déposé avant 12h dans le frigidaire de votre service, prêt à être récupéré.",
+    icone: "ti-fridge",
+  },
+  {
+    titre: "Prêt en 2 minutes",
+    description:
+      "Un passage au micro-ondes et votre repas gastronomique est prêt à déguster.",
+    icone: "ti-microwave",
   },
 ];
 

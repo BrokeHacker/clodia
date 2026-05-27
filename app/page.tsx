@@ -109,27 +109,16 @@ export default function Home() {
       <section className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <span className="text-xs font-semibold uppercase tracking-widest text-[#FD3D6B] block mb-3">
-              Simple & rapide
-            </span>
-            <h2 className="text-4xl font-semibold text-[#4D0F1F]">
+            <h2 className="text-4xl md:text-5xl font-semibold text-[#4A6741]">
               Comment ça marche ?
             </h2>
-            <p className="text-gray-400 mt-4 max-w-md mx-auto text-sm leading-relaxed">
-              Trois étapes suffisent pour profiter chaque midi d&apos;un repas gastronomique.
-            </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-10">
+          <div className="grid md:grid-cols-4 gap-10 items-start">
             {etapes.map((e) => (
-              <div key={e.numero} className="text-center">
-                <div className="w-16 h-16 rounded-full bg-[#EAFF33] flex items-center justify-center text-2xl mx-auto mb-6">
-                  {e.icone}
-                </div>
-                <p className="text-xs font-semibold text-[#FD3D6B] uppercase tracking-widest mb-2">
-                  Étape {e.numero}
-                </p>
-                <h3 className="text-xl font-semibold text-[#4D0F1F] mb-3">{e.titre}</h3>
+              <div key={e.titre} className="flex flex-col text-center">
+                <i className={`ti ${e.icone}`} style={{ fontSize: 48, color: "#C4704F" }} />
+                <h3 className="text-xl font-semibold text-[#C4704F] mt-5 mb-3 min-h-[56px] flex items-center justify-center">{e.titre}</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">{e.description}</p>
               </div>
             ))}

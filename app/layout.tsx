@@ -23,6 +23,10 @@ export default function RootLayout({
           href="https://api.fontshare.com/v2/css?f[]=chillax@200,300,400,500,600,700&display=swap"
           rel="stylesheet"
         />
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css"
+        />
       </head>
       <body className="pb-20">
         <Header />

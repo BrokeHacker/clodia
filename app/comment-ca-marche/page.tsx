@@ -33,24 +33,24 @@ export default function CommentCaMarchePage() {
           <div className="flex flex-col gap-20">
             {etapes.map((e, i) => (
               <div
-                key={e.numero}
+                key={i}
                 className={`flex flex-col md:flex-row items-start gap-10 ${
                   i % 2 === 1 ? "md:flex-row-reverse" : ""
                 }`}
               >
                 <div className="shrink-0">
-                  <div className="w-24 h-24 rounded-3xl bg-[#EAFF33] flex items-center justify-center text-4xl">
-                    {e.icone}
+                  <div className="w-24 h-24 rounded-3xl bg-[#EAFF33] flex items-center justify-center">
+                    <i className={`ti ${e.icone}`} style={{ fontSize: 40, color: "#4D0F1F" }} />
                   </div>
                 </div>
                 <div className="flex-1">
                   <p className="text-xs font-semibold text-[#FD3D6B] uppercase tracking-widest mb-3">
-                    Étape {e.numero}
+                    Étape {i + 1}
                   </p>
                   <h2 className="text-3xl font-semibold text-[#4D0F1F] mb-4">{e.titre}</h2>
                   <p className="text-gray-500 leading-relaxed mb-6">{e.description}</p>
 
-                  {e.numero === 1 && (
+                  {i === 0 && (
                     <div className="bg-[#E8F4FF] rounded-2xl p-5">
                       <p className="text-sm text-gray-600 font-medium mb-2">Chaque semaine vous trouverez :</p>
                       <ul className="text-sm text-gray-500 flex flex-col gap-1">
@@ -62,7 +62,7 @@ export default function CommentCaMarchePage() {
                     </div>
                   )}
 
-                  {e.numero === 2 && (
+                  {i === 1 && (
                     <div className="bg-[#FDD5D9] rounded-2xl p-5">
                       <p className="text-sm text-gray-600 font-medium mb-2">À savoir :</p>
                       <ul className="text-sm text-gray-500 flex flex-col gap-1">
@@ -74,7 +74,7 @@ export default function CommentCaMarchePage() {
                     </div>
                   )}
 
-                  {e.numero === 3 && (
+                  {i === 2 && (
                     <div className="bg-[#E8FFF8] rounded-2xl p-5">
                       <p className="text-sm text-gray-600 font-medium mb-2">La livraison en pratique :</p>
                       <ul className="text-sm text-gray-500 flex flex-col gap-1">
