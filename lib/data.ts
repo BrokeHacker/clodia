@@ -328,25 +328,25 @@ export const etapes: Etape[] = [
   {
     titre: "Choisissez votre menu",
     description:
-      "Commandez jusqu'à la veille à minuit pour la semaine en cours, ou avant mercredi minuit pour la semaine suivante.",
+      "Commandez jusqu'à la veille à minuit pour la semaine en cours, ou bénéficiez de tarifs préférentiels en commandant avant mercredi minuit pour la semaine suivante.",
     icone: "ti-calendar",
   },
   {
     titre: "Choisissez votre frigidaire",
     description:
-      "Sélectionnez votre point de livraison parmi nos établissements partenaires et payez en ligne en toute sécurité.",
+      "Sélectionnez votre point de livraison le plus proche de votre service et payez en ligne en toute sécurité.",
     icone: "ti-map-pin",
   },
   {
     titre: "Livraison avant midi",
     description:
-      "Votre repas est déposé avant 12h dans le frigidaire de votre service, prêt à être récupéré.",
+      "Votre repas est déposé avant midi dans le frigidaire sélectionné, prêt à être récupéré.",
     icone: "ti-fridge",
   },
   {
     titre: "Prêt en 2 minutes",
     description:
-      "Un passage au micro-ondes et votre repas gastronomique est prêt à déguster.",
+      "Un passage au micro-ondes et votre repas est prêt à déguster.",
     icone: "ti-microwave",
   },
 ];

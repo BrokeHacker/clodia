@@ -157,7 +157,7 @@ export default function Home() {
       </section>
 
       {/* ── 5. LIVRAISON ── */}
-      <section className="py-24 bg-white">
+      <section id="frigidaire" className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <span className="text-xs font-semibold uppercase tracking-widest text-[#00CCCC] block mb-3">

@@ -43,6 +43,11 @@ function CommanderContent() {
   const [service, setService] = useState("");
 
   useEffect(() => {
+    const semaineParam = searchParams.get("semaine");
+    if (semaineParam === "courante" || semaineParam === "suivante") {
+      setSemaineKey(semaineParam);
+    }
+
     const pointParam = searchParams.get("point");
     if (pointParam) {
       const found = pointsLivraison.find((p) => p.id === Number(pointParam));
@@ -127,7 +132,7 @@ function CommanderContent() {
   return (
     <>
       {/* Header de page */}
-      <section className="bg-[#FDD5D9] py-16">
+      <section className="bg-[#FDD5D9] py-10">
         <div className="max-w-6xl mx-auto px-6">
           <span className="text-xs font-semibold uppercase tracking-widest text-[#FD3D6B] block mb-3">
             Réservez votre repas
@@ -140,12 +145,12 @@ function CommanderContent() {
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="flex flex-col lg:flex-row gap-10">
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* Colonne principale */}
           <div className="flex-1">
             {/* Onglets semaines */}
-            <div className="flex gap-2 mb-8">
+            <div className="flex gap-2 mb-5">
               {SEMAINES.map((s) => (
                 <button
                   key={s.key}
@@ -162,7 +167,7 @@ function CommanderContent() {
             </div>
 
             {/* Grille menus */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {currentMenus.map((menu) => {
                 const item = getCartItem(menu.id);
                 const inCart = item !== null;
@@ -198,9 +203,9 @@ function CommanderContent() {
                       )}
                     </div>
 
-                    <div className="p-5">
+                    <div className="p-4">
                       {/* Variante selector */}
-                      <div className="flex gap-2 mb-4">
+                      <div className="flex gap-2 mb-3">
                         <button
                           onClick={() => {
                             if (inCart) {
@@ -285,7 +290,7 @@ function CommanderContent() {
           <div className="lg:w-80 shrink-0">
             <div className="sticky top-24">
               <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden">
-                <div className="bg-[#4D0F1F] px-6 py-5">
+                <div className="bg-[#4D0F1F] px-5 py-4">
                   <h2 className="text-white font-semibold">Votre panier</h2>
                   {cart.length > 0 && (
                     <p className="text-white/60 text-xs mt-1">
@@ -295,7 +300,7 @@ function CommanderContent() {
                   )}
                 </div>
 
-                <div className="p-6">
+                <div className="p-5">
                   {cart.length === 0 ? (
                     <p className="text-gray-400 text-sm text-center py-6">
                       Aucun repas sélectionné
