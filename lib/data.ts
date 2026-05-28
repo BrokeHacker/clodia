@@ -20,16 +20,22 @@ export interface PointLivraison {
   emoji: string;
 }
 
+export interface PalierTarif {
+  label: string;
+  prix: number;
+  highlight?: boolean;
+}
+
 export interface Formule {
   id: number;
   nom: string;
   tagline: string;
-  prix: number;
-  unite: string;
-  avantages: string[];
+  description: string;
   couleur: string;
-  couleurBadge: string;
+  couleurAccent: string;
   highlight: boolean;
+  paliers: PalierTarif[];
+  avantages: string[];
 }
 
 export interface FAQItem {
@@ -221,55 +227,46 @@ export const pointsLivraison: PointLivraison[] = [
 export const formules: Formule[] = [
   {
     id: 1,
-    nom: "Découverte",
-    tagline: "Sans engagement, testez Clodia",
-    prix: 17.5,
-    unite: "par repas",
-    avantages: [
-      "Plat du jour + dessert",
-      "Option végétarienne incluse",
-      "Livraison au point choisi",
-      "Commande à l'unité",
-      "Sans abonnement",
+    nom: "Pré-commande",
+    tagline: "Notre recommandation — commandez avant mercredi minuit",
+    description:
+      "Réservez vos repas pour la semaine suivante et bénéficiez de tarifs préférentiels. Disponibilité garantie, zéro gaspillage.",
+    couleur: "#E8FFF8",
+    couleurAccent: "#00CCCC",
+    highlight: true,
+    paliers: [
+      { label: "1 plat", prix: 0 },
+      { label: "2 plats", prix: 0 },
+      { label: "3 plats", prix: 0 },
+      { label: "4 plats", prix: 0 },
+      { label: "5 plats", prix: 0 },
+      { label: "10 plats et +", prix: 0, highlight: true },
     ],
-    couleur: "#E8F4FF",
-    couleurBadge: "#007FFF",
-    highlight: false,
+    avantages: [
+      "Disponibilité garantie sur tous les menus",
+      "Menu connu dès le jeudi",
+      "Zéro gaspillage — on cuisine exactement ce qu'il faut",
+      "Commande avant mercredi minuit",
+    ],
   },
   {
     id: 2,
-    nom: "Semaine",
-    tagline: "Un chef à votre table chaque midi",
-    prix: 15.5,
-    unite: "par repas · 5 repas/semaine",
-    avantages: [
-      "5 repas par semaine",
-      "Plat + dessert chaque jour",
-      "Option végétarienne incluse",
-      "Livraison prioritaire",
-      "Économisez 10 € / semaine",
-    ],
-    couleur: "#FDD5D9",
-    couleurBadge: "#FD3D6B",
-    highlight: true,
-  },
-  {
-    id: 3,
-    nom: "Prestige",
-    tagline: "L'expérience gastronomique complète",
-    prix: 14.5,
-    unite: "par repas · à partir de 10",
-    avantages: [
-      "10 à 20 repas par mois",
-      "Plat + dessert + amuse-bouche",
-      "Option végétarienne incluse",
-      "Livraison prioritaire garantie",
-      "Menu exclusif le vendredi",
-      "Économisez jusqu'à 30 € / mois",
-    ],
-    couleur: "#E8FFF8",
-    couleurBadge: "#00CCCC",
+    nom: "Semaine en cours",
+    tagline: "Flexibilité totale, commande possible la veille",
+    description:
+      "Commandez au fil de la semaine selon vos gardes et vos envies. Tarif unique, sous réserve des disponibilités restantes.",
+    couleur: "#F5F0E8",
+    couleurAccent: "#C4704F",
     highlight: false,
+    paliers: [
+      { label: "Tarif unique", prix: 13.9 },
+    ],
+    avantages: [
+      "Flexibilité totale selon vos gardes",
+      "Commande possible jusqu'à la veille à minuit",
+      "Tarif unique sans surprise",
+      "Sous réserve des disponibilités restantes",
+    ],
   },
 ];
 
