@@ -181,7 +181,7 @@ function CommanderContent() {
                         : "border-gray-100 hover:border-gray-200"
                     }`}
                   >
-                    <div className="relative aspect-[16/9]">
+                    <div className="relative aspect-square">
                       <Image
                         src={menu.photo}
                         alt={menu.plat}

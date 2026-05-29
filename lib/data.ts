@@ -69,7 +69,7 @@ export const menusCurrentWeek: Menu[] = [
     dessert: "Mille-feuille vanille bourbon maison",
     prix: 17.5,
     photo:
-      "https://images.unsplash.com/photo-1544025162-d76694265947?w=600&h=400&fit=crop&auto=format",
+      "/images/Plat 01.jpeg",
     semaine: "courante",
   },
   {
@@ -82,7 +82,7 @@ export const menusCurrentWeek: Menu[] = [
     dessert: "Tarte Tatin aux pommes caramélisées",
     prix: 16.5,
     photo:
-      "https://images.unsplash.com/photo-1559847844-5315695dadae?w=600&h=400&fit=crop&auto=format",
+      "/images/Plat 02.jpeg",
     semaine: "courante",
   },
   {
@@ -95,7 +95,7 @@ export const menusCurrentWeek: Menu[] = [
     dessert: "Panna cotta fruits rouges, coulis framboise",
     prix: 17.0,
     photo:
-      "https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=600&h=400&fit=crop&auto=format",
+      "/images/Plat 03.jpeg",
     semaine: "courante",
   },
   {
@@ -108,7 +108,7 @@ export const menusCurrentWeek: Menu[] = [
     dessert: "Crème brûlée à la lavande de Provence",
     prix: 18.0,
     photo:
-      "https://images.unsplash.com/photo-1432139555190-58524dae6a55?w=600&h=400&fit=crop&auto=format",
+      "/images/Plat 04.jpeg",
     semaine: "courante",
   },
   {
@@ -121,7 +121,7 @@ export const menusCurrentWeek: Menu[] = [
     dessert: "Charlotte aux framboises et coulis de mangue",
     prix: 17.5,
     photo:
-      "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&h=400&fit=crop&auto=format",
+      "/images/Plat 05.jpeg",
     semaine: "courante",
   },
 ];
@@ -136,7 +136,7 @@ export const menusNextWeek: Menu[] = [
     dessert: "Éclair au chocolat noir Valrhona",
     prix: 17.0,
     photo:
-      "https://images.unsplash.com/photo-1546833998-877b37c2e5c6?w=600&h=400&fit=crop&auto=format",
+      "/images/Plat 01.jpeg",
     semaine: "suivante",
   },
   {
@@ -148,7 +148,7 @@ export const menusNextWeek: Menu[] = [
     dessert: "Île flottante et caramel beurre salé breton",
     prix: 16.5,
     photo:
-      "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=400&fit=crop&auto=format",
+      "/images/Plat 02.jpeg",
     semaine: "suivante",
   },
   {
@@ -160,7 +160,7 @@ export const menusNextWeek: Menu[] = [
     dessert: "Tarte au citron meringuée façon grand-mère",
     prix: 17.0,
     photo:
-      "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=400&fit=crop&auto=format",
+      "/images/Plat 03.jpeg",
     semaine: "suivante",
   },
   {
@@ -172,7 +172,7 @@ export const menusNextWeek: Menu[] = [
     dessert: "Soufflé chaud au Grand Marnier, anglaise vanille",
     prix: 18.5,
     photo:
-      "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&h=400&fit=crop&auto=format",
+      "/images/Plat 04.jpeg",
     semaine: "suivante",
   },
   {
@@ -184,7 +184,7 @@ export const menusNextWeek: Menu[] = [
     dessert: "Baba au rhum authentique et chantilly mascarpone",
     prix: 18.0,
     photo:
-      "https://images.unsplash.com/photo-1481931098730-318b6f776db0?w=600&h=400&fit=crop&auto=format",
+      "/images/Plat 05.jpeg",
     semaine: "suivante",
   },
 ];

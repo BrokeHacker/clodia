@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import CTASemaineButtons from "@/components/CTASemaineButtons";
 
 export const metadata: Metadata = {
@@ -114,7 +115,7 @@ export default function CommentCaMarchePage() {
       </section>
 
       {/* Étape 2 */}
-      <section className="py-24 bg-[#F5F0E8]">
+      <section className="py-24 bg-[#F5F0E8]/70">
         <div className="max-w-5xl mx-auto px-6">
           <p
             className="font-semibold leading-none mb-4"
@@ -126,61 +127,85 @@ export default function CommentCaMarchePage() {
             Choisissez votre frigidaire
           </h2>
 
-          <div className="flex flex-col lg:flex-row gap-10 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
-            {/* Colonne gauche */}
-            <div className="flex-1 flex flex-col">
-              <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex-1">
-                <h3 className="text-xl font-semibold text-[#4D0F1F] mb-3">
-                  Comment trouver votre frigidaire ?
-                </h3>
-                <p className="text-gray-500 text-sm leading-relaxed mb-4">
-                  La sélection se fait en 3 étapes simples :
-                </p>
-                <ol className="flex flex-col gap-2">
-                  {[
-                    "Choisissez votre hôpital",
-                    "Sélectionnez votre bâtiment",
-                    "Choisissez votre service — l'emplacement exact du frigidaire s'affiche",
-                  ].map((texte, i) => (
-                    <li key={i} className="flex items-start gap-3 text-sm text-[#4D0F1F]">
-                      <span className="shrink-0 font-semibold text-[#C4704F]">{i + 1}.</span>
-                      {texte}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </div>
-
-            {/* Colonne droite — sticky */}
-            <div className="lg:w-80 shrink-0 flex flex-col">
-              <div className="sticky top-24 flex-1 flex flex-col">
-                <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm flex-1">
-                  <p className="text-sm font-semibold text-[#4D0F1F] mb-3">
-                    Vous ne savez pas où est votre frigidaire ?
-                  </p>
-                  <p className="text-xs text-gray-500 leading-relaxed mb-5">
-                    Utilisez notre outil de recherche pour trouver le point de livraison le
-                    plus proche de votre service.
-                  </p>
-                  <a
-                    href="/#frigidaire"
-                    className="bg-[#007FFF] hover:bg-[#0066cc] text-white text-sm font-semibold px-7 py-4 rounded-full w-full block text-center transition-colors"
-                  >
-                    Trouver mon frigidaire
-                  </a>
-                  <p className="text-xs text-gray-400 text-center mt-3 leading-relaxed">
-                    Vous ne trouvez pas votre service ?{" "}
-                    <a
-                      href="mailto:contact@clodia.fr?subject=Demande de nouveau point de livraison"
-                      className="underline hover:text-gray-600"
-                    >
-                      Demandez l&apos;ouverture
-                    </a>{" "}
-                    d&apos;un nouveau point.
+            {/* Colonne 1 — Photo */}
+            <div className="lg:col-span-1">
+              <div className="relative w-full aspect-[3/4] rounded-2xl overflow-hidden">
+                <Image
+                  src="/images/Frigo.png"
+                  alt="Frigidaire Clodia dans un service hospitalier"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 33vw"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-4 py-4">
+                  <p className="text-white text-xs italic">
+                    Votre frigidaire Clodia dans votre service
                   </p>
                 </div>
               </div>
+            </div>
+
+            {/* Colonne 2 — Texte principal */}
+            <div className="lg:col-span-1">
+              <h3 className="text-xl font-semibold text-[#4D0F1F] mb-4">
+                Une livraison au cœur de votre service
+              </h3>
+              <p className="text-gray-500 text-sm leading-relaxed">
+                Pas de détour par la cafétéria. Votre repas est déposé directement dans un
+                frigidaire dédié Clodia, installé au sein de votre service.
+              </p>
+
+              <div className="my-6 border-t border-gray-200" />
+
+              <h3 className="text-xl font-semibold text-[#4D0F1F] mb-4">
+                Comment trouver votre frigidaire ?
+              </h3>
+              <p className="text-gray-500 text-sm leading-relaxed mb-4">
+                La sélection se fait en 3 étapes simples :
+              </p>
+              <ol className="flex flex-col gap-2">
+                {[
+                  "Choisissez votre hôpital",
+                  "Sélectionnez votre bâtiment",
+                  "Choisissez votre service — l'emplacement exact du frigidaire s'affiche",
+                ].map((texte, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-[#4D0F1F]">
+                    <span className="shrink-0 font-semibold text-[#C4704F]">{i + 1}.</span>
+                    {texte}
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            {/* Colonne 3 — CTA */}
+            <div className="lg:col-span-1">
+              <p className="font-semibold text-[#4D0F1F] mb-3">
+                Vous ne savez pas où est votre frigidaire ?
+              </p>
+              <p className="text-sm text-gray-500 leading-relaxed mb-5">
+                Utilisez notre outil de recherche pour trouver le point de livraison le
+                plus proche de votre service.
+              </p>
+              <a
+                href="/#frigidaire"
+                className="bg-[#007FFF] hover:bg-[#0066cc] text-white text-sm font-semibold px-7 py-4 rounded-full w-full block text-center transition-colors"
+              >
+                Trouver mon frigidaire
+              </a>
+
+              <div className="my-6 border-t border-gray-200" />
+
+              <p className="text-sm text-gray-500 mb-2">
+                Vous ne trouvez pas votre service ?
+              </p>
+              <a
+                href="mailto:contact@clodia.fr?subject=Demande de nouveau point de livraison"
+                className="text-sm text-[#007FFF] hover:underline"
+              >
+                Demandez l&apos;ouverture d&apos;un nouveau point →
+              </a>
             </div>
 
           </div>
@@ -203,71 +228,69 @@ export default function CommentCaMarchePage() {
             Vous ne faites rien, on s&apos;occupe de tout.
           </p>
 
-          <div className="flex flex-col lg:flex-row gap-10 items-stretch">
+          <div className="flex flex-col lg:flex-row gap-10 items-start">
 
-            {/* Colonne gauche */}
-            <div className="flex-1 flex flex-col">
-              <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex-1">
-                <h3 className="text-xl font-semibold text-[#4D0F1F] mb-5">
-                  Une livraison pensée pour vous
-                </h3>
-                <ul className="flex flex-col gap-4">
-                  <li className="flex items-start gap-3 text-sm text-gray-600">
-                    <span
-                      className="shrink-0 flex items-center justify-center rounded-full mt-0.5"
-                      style={{ background: "#4D0F1F", width: 22, height: 22 }}
-                    >
-                      <i className="ti ti-bolt" style={{ fontSize: 13, color: "#EAFF33" }} />
-                    </span>
-                    Livraison en véhicule 100% électrique
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-gray-600">
-                    <i className="ti ti-snowflake shrink-0 mt-0.5" style={{ fontSize: 18, color: "#007FFF" }} />
-                    Chaîne du froid respectée — caisses de transport réfrigérées
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-gray-600">
-                    <i className="ti ti-clock shrink-0 mt-0.5" style={{ fontSize: 18, color: "#00CCCC" }} />
-                    Dépôt dans votre frigidaire avant 12h, sans aucune intervention de votre part
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-gray-600">
-                    <i className="ti ti-tag shrink-0 mt-0.5" style={{ fontSize: 18, color: "#C4704F" }} />
-                    Chaque plat est étiqueté à votre nom
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-gray-600">
-                    <i className="ti ti-bell shrink-0 mt-0.5" style={{ fontSize: 18, color: "#FD3D6B" }} />
-                    Notification envoyée dès que votre repas est dans le frigidaire
-                  </li>
-                </ul>
-              </div>
+            {/* Colonne gauche — Liste */}
+            <div className="flex-1">
+              <h3 className="text-xl font-semibold text-[#4D0F1F] mb-6">
+                Une livraison pensée pour vous
+              </h3>
+              <ul className="flex flex-col gap-4">
+                <li className="flex items-start gap-3 text-sm text-gray-600">
+                  <span
+                    className="shrink-0 flex items-center justify-center rounded-full mt-0.5"
+                    style={{ background: "#4D0F1F", width: 22, height: 22 }}
+                  >
+                    <i className="ti ti-bolt" style={{ fontSize: 13, color: "#EAFF33" }} />
+                  </span>
+                  Livraison en véhicule 100% électrique
+                </li>
+                <li className="flex items-start gap-3 text-sm text-gray-600">
+                  <i className="ti ti-snowflake shrink-0 mt-0.5" style={{ fontSize: 18, color: "#007FFF" }} />
+                  Chaîne du froid respectée — caisses de transport réfrigérées
+                </li>
+                <li className="flex items-start gap-3 text-sm text-gray-600">
+                  <i className="ti ti-clock shrink-0 mt-0.5" style={{ fontSize: 18, color: "#00CCCC" }} />
+                  Dépôt dans votre frigidaire avant 12h, sans aucune intervention de votre part
+                </li>
+                <li className="flex items-start gap-3 text-sm text-gray-600">
+                  <i className="ti ti-tag shrink-0 mt-0.5" style={{ fontSize: 18, color: "#C4704F" }} />
+                  Chaque plat est étiqueté à votre nom
+                </li>
+                <li className="flex items-start gap-3 text-sm text-gray-600">
+                  <i className="ti ti-bell shrink-0 mt-0.5" style={{ fontSize: 18, color: "#FD3D6B" }} />
+                  Notification envoyée dès que votre repas est dans le frigidaire
+                </li>
+              </ul>
             </div>
 
-            {/* Colonne droite */}
-            <div className="lg:w-80 shrink-0 flex flex-col">
-              <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm h-full flex flex-col">
-                <p className="text-sm font-semibold text-[#4D0F1F] mb-3">
-                  Vous avez une question sur la livraison ?
-                </p>
-                <p className="text-xs text-gray-500 leading-relaxed mb-5">
-                  Consultez notre FAQ pour tout savoir sur le déroulé de la livraison, les
-                  horaires et la chaîne du froid.
-                </p>
-                <a
-                  href="/faq"
-                  className="btn-outline-wine text-sm px-7 py-4 w-full block text-center rounded-full"
-                >
-                  Consulter la FAQ
-                </a>
-                <div className="border-t border-gray-100 my-4" />
-                <p className="text-sm text-gray-500 mb-2">
-                  Un problème avec votre livraison ?
-                </p>
-                <a
-                  href="mailto:contact@clodia.fr?subject=Problème de livraison"
-                  className="text-sm text-[#007FFF] hover:underline"
-                >
-                  Contactez-nous → contact@clodia.fr
-                </a>
-              </div>
+            {/* Colonne droite — CTA */}
+            <div className="lg:w-80 shrink-0">
+              <p className="font-semibold text-[#4D0F1F] mb-3">
+                Vous avez une question sur la livraison ?
+              </p>
+              <p className="text-sm text-gray-500 leading-relaxed mb-5">
+                Consultez notre FAQ pour tout savoir sur le déroulé de la livraison, les
+                horaires et la chaîne du froid.
+              </p>
+              <a
+                href="/faq"
+                className="btn-outline-wine text-sm px-7 py-4 w-full block text-center rounded-full"
+              >
+                Consulter la FAQ
+              </a>
+
+              <div className="my-6 border-t border-gray-200" />
+
+              <p className="text-sm text-gray-500 mb-2">
+                Un problème avec votre livraison ?
+              </p>
+              <a
+                href="mailto:contact@clodia.fr?subject=Problème de livraison"
+                className="text-sm text-[#007FFF] hover:underline"
+              >
+                Contactez-nous → contact@clodia.fr
+              </a>
             </div>
 
           </div>
@@ -275,7 +298,7 @@ export default function CommentCaMarchePage() {
       </section>
 
       {/* Étape 4 */}
-      <section className="py-24 bg-[#F5F0E8]">
+      <section className="py-24 bg-[#F5F0E8]/70">
         <div className="max-w-5xl mx-auto px-6">
           <p
             className="font-semibold leading-none mb-4"
@@ -290,56 +313,68 @@ export default function CommentCaMarchePage() {
             Prêt en 2 minutes, savouré à votre rythme.
           </p>
 
-          <div className="flex flex-col lg:flex-row gap-10 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
-            {/* Colonne gauche */}
-            <div className="flex-1 flex flex-col">
-              <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm flex-1">
-                <h3 className="text-xl font-semibold text-[#4D0F1F] mb-5">
-                  Tout est pensé jusqu&apos;au bout
-                </h3>
-                <ul className="flex flex-col gap-4">
-                  <li className="flex items-start gap-3 text-sm text-gray-600">
-                    <i className="ti ti-microwave shrink-0 mt-0.5" style={{ fontSize: 18, color: "#C4704F" }} />
-                    Barquette en carton recyclé — passe au micro-ondes et au four
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-gray-600">
-                    <i className="ti ti-alert-circle shrink-0 mt-0.5" style={{ fontSize: 18, color: "#FF9933" }} />
-                    Étiquette allergènes sur chaque barquette
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-gray-600">
-                    <i className="ti ti-calendar-time shrink-0 mt-0.5" style={{ fontSize: 18, color: "#007FFF" }} />
-                    DLC inscrite sur la barquette — profitez de votre plat le lendemain ou le surlendemain si besoin
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-gray-600">
-                    <i className="ti ti-heart shrink-0 mt-0.5" style={{ fontSize: 18, color: "#FD3D6B" }} />
-                    Vous avez adoré ? Ou pas ? Dites-le nous depuis votre espace client
-                  </li>
-                </ul>
+            {/* Colonne 1 — Photo */}
+            <div className="lg:col-span-1">
+              <div className="relative aspect-[3/4] rounded-2xl overflow-hidden w-full">
+                <Image
+                  src="/images/Plat 05.jpeg"
+                  alt="Plat Clodia"
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                <p className="absolute bottom-4 left-4 right-4 text-white text-xs italic">
+                  Cuisiné ce matin, dans votre frigidaire avant midi.
+                </p>
               </div>
             </div>
 
-            {/* Colonne droite */}
-            <div className="lg:w-80 shrink-0 flex flex-col">
-              <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm h-full flex flex-col">
-                <p className="text-sm font-semibold text-[#4D0F1F] mb-3">
-                  Prêt à essayer ?
-                </p>
-                <p className="text-xs text-gray-500 leading-relaxed mb-5">
-                  Commandez votre premier repas Clodia et découvrez une gastronomie pensée
-                  pour les soignants.
-                </p>
-                <a
-                  href="/commander"
-                  className="bg-[#FD3D6B] hover:bg-[#e8345e] text-white text-sm font-semibold px-7 py-4 rounded-full w-full block text-center transition-colors"
-                >
-                  Je commande mon premier repas
-                </a>
-                <div className="border-t border-gray-100 my-4" />
-                <p className="text-xs text-gray-400 text-center">
-                  Sans engagement · Paiement sécurisé Stripe · Livraison avant 12h
-                </p>
-              </div>
+            {/* Colonne 2 — Liste */}
+            <div className="lg:col-span-1">
+              <h3 className="text-xl font-semibold text-[#4D0F1F] mb-6">
+                Tout est pensé jusqu&apos;au bout
+              </h3>
+              <ul className="flex flex-col gap-4">
+                <li className="flex items-start gap-3 text-sm text-gray-600">
+                  <i className="ti ti-microwave shrink-0 mt-0.5" style={{ fontSize: 18, color: "#C4704F" }} />
+                  Barquette en carton recyclé — passe au micro-ondes et au four
+                </li>
+                <li className="flex items-start gap-3 text-sm text-gray-600">
+                  <i className="ti ti-alert-circle shrink-0 mt-0.5" style={{ fontSize: 18, color: "#FF9933" }} />
+                  Étiquette allergènes sur chaque barquette
+                </li>
+                <li className="flex items-start gap-3 text-sm text-gray-600">
+                  <i className="ti ti-calendar-time shrink-0 mt-0.5" style={{ fontSize: 18, color: "#007FFF" }} />
+                  DLC inscrite sur la barquette — profitez de votre plat le lendemain ou le surlendemain si besoin
+                </li>
+                <li className="flex items-start gap-3 text-sm text-gray-600">
+                  <i className="ti ti-heart shrink-0 mt-0.5" style={{ fontSize: 18, color: "#FD3D6B" }} />
+                  Vous avez adoré ? Ou pas ? Dites-le nous depuis votre espace client
+                </li>
+              </ul>
+            </div>
+
+            {/* Colonne 3 — CTA */}
+            <div className="lg:col-span-1">
+              <p className="font-semibold text-[#4D0F1F] mb-3">
+                Prêt à essayer ?
+              </p>
+              <p className="text-sm text-gray-500 leading-relaxed mb-5">
+                Commandez votre premier repas Clodia et découvrez une gastronomie pensée
+                pour les soignants.
+              </p>
+              <a
+                href="/commander"
+                className="bg-[#FD3D6B] hover:bg-[#e8345e] text-white text-sm font-semibold px-7 py-4 rounded-full w-full block text-center transition-colors"
+              >
+                Je commande mon premier repas
+              </a>
+              <div className="my-6 border-t border-gray-200" />
+              <p className="text-xs text-gray-400 text-center">
+                Sans engagement · Paiement sécurisé Stripe · Livraison avant 12h
+              </p>
             </div>
 
           </div>
