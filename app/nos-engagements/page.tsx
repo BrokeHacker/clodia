@@ -25,9 +25,9 @@ export default function NosEngagementsPage() {
           Ce qui nous définit
         </p>
         <h1 style={{
-          fontSize: "clamp(48px, 7vw, 96px)",
+          fontSize: "clamp(36px, 5vw, 64px)",
           fontWeight: 600, color: "#1A1A1A",
-          lineHeight: 1.0, letterSpacing: "-0.03em",
+          lineHeight: 1.0, letterSpacing: "-0.025em",
           textTransform: "uppercase",
           margin: "0 0 32px",
           maxWidth: "800px",

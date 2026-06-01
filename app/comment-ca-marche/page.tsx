@@ -19,20 +19,41 @@ export default function CommentCaMarchePage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-[#FFF9D6] py-24">
-        <div className="max-w-5xl mx-auto px-6">
-          <span className="text-xs font-semibold uppercase tracking-widest text-[#FD3D6B] block mb-4">
-            Simple & rapide
-          </span>
-          <h1 className="text-5xl font-semibold text-[#4D0F1F] leading-tight mb-6">
-            Comment ça marche ?
-          </h1>
-          <p className="text-gray-500 text-lg leading-relaxed max-w-xl">
-            De la commande à la dégustation, tout est pensé pour s&apos;adapter à votre quotidien
-            de soignant.
-          </p>
-        </div>
+      <section style={{
+        maxWidth: "1100px", margin: "0 auto",
+        padding: "88px 64px 72px",
+      }}>
+        <p style={{
+          fontSize: "11px", fontWeight: 600,
+          letterSpacing: "0.16em", textTransform: "uppercase",
+          color: "#C4704F", marginBottom: "24px",
+        }}>
+          Simple &amp; rapide
+        </p>
+        <h1 style={{
+          fontSize: "clamp(36px, 5vw, 64px)",
+          fontWeight: 600, color: "#1A1A1A",
+          lineHeight: 1.0, letterSpacing: "-0.025em",
+          textTransform: "uppercase",
+          margin: "0 0 32px",
+          maxWidth: "800px",
+        }}>
+          Comment<br />
+          <span style={{ color: "#C4704F" }}>ça marche ?</span>
+        </h1>
+        <p style={{
+          fontSize: "18px", color: "#6B6B6B",
+          lineHeight: 1.75, maxWidth: "520px",
+        }}>
+          De la commande à la dégustation, tout est pensé
+          pour s&apos;adapter à votre quotidien de soignant.
+        </p>
       </section>
+
+      {/* Séparateur */}
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 64px" }}>
+        <div style={{ height: "1px", background: "#E8E3D8" }} />
+      </div>
 
       {/* Étape 1 */}
       <section className="py-24 bg-white">

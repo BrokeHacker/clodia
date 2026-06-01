@@ -133,7 +133,7 @@ export default function Home() {
       </section>
 
       {/* ── 4. NOS MENUS ── */}
-      <section className="py-24 bg-[#FFF9D6]">
+      <section className="py-24 bg-[#F5F0E8]/70">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
@@ -338,53 +338,72 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── 7. LA PROMESSE ── */}
-      <section className="py-24 bg-[#4D0F1F]">
+      {/* ── 7. NOTRE HISTOIRE ── */}
+      <section className="py-24 bg-[#F5F0E8]/70">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <span className="text-xs font-semibold uppercase tracking-widest text-[#EAFF33] block mb-3">
-              Notre promesse
-            </span>
-            <h2 className="text-4xl font-semibold text-white">
-              Une gastronomie sans compromis
-            </h2>
-            <p className="text-white/50 mt-4 max-w-md mx-auto text-sm">
-              Parce que bien manger ne devrait pas être un privilège, même en milieu hospitalier.
-            </p>
-          </div>
+          <div className="flex flex-col lg:flex-row gap-16 items-start">
 
-          <div className="grid md:grid-cols-3 gap-10">
-            {[
-              {
-                icon: "🌱",
-                titre: "Produits frais & locaux",
-                desc: "Producteurs du Limousin et du Périgord sélectionnés pour leur qualité. Fruits, légumes et viandes de saison, livrés chaque matin à notre cuisine.",
-              },
-              {
-                icon: "👨‍🍳",
-                titre: "Chef Gault & Millau",
-                desc: "Nos menus sont créés par un chef distingué au Guide Gault & Millau. Une exigence gastronomique quotidienne, accessible à tous les soignants.",
-              },
-              {
-                icon: "⚡",
-                titre: "Livraison 100% électrique",
-                desc: "Tous nos trajets de livraison sont effectués en véhicule électrique. Moins d'émissions, plus de saveur : nos engagements vont de pair.",
-              },
-            ].map((item) => (
-              <div key={item.titre} className="text-center">
-                <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center text-3xl mx-auto mb-6">
-                  {item.icon}
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-3">{item.titre}</h3>
-                <p className="text-white/50 text-sm leading-relaxed">{item.desc}</p>
+            {/* Colonne gauche — texte */}
+            <div className="flex-1">
+              <span className="text-xs font-semibold uppercase tracking-widest text-[#C4704F] block mb-4">
+                Notre histoire
+              </span>
+              <h2
+                style={{ fontSize: "clamp(28px, 4vw, 42px)" }}
+                className="font-semibold text-[#1A1A1A] leading-tight mb-8"
+              >
+                Trois passionnés.<br />
+                <span className="text-[#C4704F]">Une évidence.</span>
+              </h2>
+
+              <div className="flex flex-col gap-5">
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  L&apos;aventure commence en 2020, quand Christophe fonde Evidence Traiteur avec
+                  une conviction simple : une cuisine généreuse, sincère, qui ne fait aucun
+                  compromis sur la qualité. Son frère Alexandre est le premier conquis — et il
+                  pense aussitôt à François, un ami de longue date, pour faire grandir l&apos;idée.
+                  L&apos;enthousiasme est là, mais le timing ne l&apos;est pas encore.
+                </p>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Tout bascule en 2023. François s&apos;installe à Limoges avec sa femme,
+                  gynécologue au CHU. Au fil des dîners, elle lui raconte la même réalité :
+                  entre deux gardes, impossible de trouver quelque chose de bon à manger.
+                  Ce constat-là, François ne peut plus l&apos;ignorer.
+                </p>
+                <p className="text-sm text-gray-600 leading-relaxed">
+                  Mi-2025, il franchit le pas. Il quitte son emploi et appelle Alexandre et
+                  Christophe. En quelques minutes, c&apos;est décidé — tous les trois embarquent,
+                  avec l&apos;envie de construire quelque chose de concret pour les soignants
+                  de Limoges.
+                </p>
+                <p className="text-sm text-[#4D0F1F] font-medium leading-relaxed">
+                  Clodia, c&apos;est le prénom de leur grand-mère. Un prénom qui porte la douceur
+                  du fait-maison, la chaleur d&apos;une table familiale — exactement ce qu&apos;on
+                  veut mettre dans chaque barquette.
+                </p>
               </div>
-            ))}
-          </div>
 
-          <div className="text-center mt-12">
-            <Link href="/nos-engagements" className="text-sm text-[#EAFF33] hover:underline">
-              Tous nos engagements →
-            </Link>
+              <Link href="/notre-histoire" className="text-sm text-[#007FFF] hover:underline mt-6 inline-block">
+                En savoir plus sur notre projet →
+              </Link>
+            </div>
+
+            {/* Colonne droite — photo */}
+            <div className="lg:w-[420px] shrink-0">
+              <div className="relative aspect-[4/5] rounded-2xl overflow-hidden w-full">
+                <Image
+                  src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=1000&fit=crop"
+                  alt="Christophe, Alexandre et François — fondateurs de Clodia"
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                <p className="absolute bottom-0 left-0 right-0 text-white text-xs italic p-6">
+                  Christophe, Alexandre &amp; François — fondateurs de Clodia
+                </p>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>

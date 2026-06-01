@@ -130,19 +130,34 @@ function CommanderContent() {
   }
 
   return (
-    <>
+    <div style={{ background: "#FAFAF8", minHeight: "100vh" }}>
       {/* Header de page */}
-      <section className="bg-[#FDD5D9] py-10">
-        <div className="max-w-6xl mx-auto px-6">
-          <span className="text-xs font-semibold uppercase tracking-widest text-[#FD3D6B] block mb-3">
-            Réservez votre repas
-          </span>
-          <h1 className="text-4xl font-semibold text-[#4D0F1F]">Commander</h1>
-          <p className="text-gray-500 mt-3 text-sm max-w-lg">
-            Choisissez vos menus, sélectionnez votre variante et votre point de livraison.
-            Commandez avant 22h pour une livraison le lendemain avant 12h.
-          </p>
-        </div>
+      <section style={{
+        maxWidth: "1100px", margin: "0 auto",
+        padding: "72px 48px 56px",
+      }}>
+        <p style={{
+          fontSize: "11px", fontWeight: 600, letterSpacing: "0.14em",
+          textTransform: "uppercase", color: "#FD3D6B", marginBottom: "16px",
+        }}>
+          Réservez votre repas
+        </p>
+        <h1 style={{
+          fontSize: "clamp(36px, 5vw, 64px)",
+          fontWeight: 600, color: "#1A1A1A",
+          lineHeight: 1.1, letterSpacing: "-0.025em",
+          textTransform: "uppercase", margin: "0 0 16px",
+        }}>
+          Commander<br />
+          <span style={{ color: "#FD3D6B" }}>Vos Menus.</span>
+        </h1>
+        <p style={{
+          fontSize: "16px", color: "#6B6B6B",
+          lineHeight: 1.75, maxWidth: "520px", margin: 0,
+        }}>
+          Choisissez vos menus, sélectionnez votre variante et votre point de livraison.
+          Commandez avant 22h pour une livraison le lendemain avant 12h.
+        </p>
       </section>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
@@ -405,7 +420,7 @@ function CommanderContent() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
