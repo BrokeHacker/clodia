@@ -30,7 +30,7 @@ export default function MenuCard({ menu }: MenuCardProps) {
 
         <p className="text-xs text-[#007FFF] flex items-start gap-1.5">
           <span className="shrink-0 mt-0.5">🌿</span>
-          <span>{menu.platVege}</span>
+          <span>{menu.plat_vege}</span>
         </p>
 
         <p className="text-xs text-gray-400 flex items-start gap-1.5">
