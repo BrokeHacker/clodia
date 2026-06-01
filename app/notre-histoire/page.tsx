@@ -32,8 +32,8 @@ export default function NotreHistoirePage() {
           margin: "0 0 32px",
           maxWidth: "800px",
         }}>
-          Trois passionnés.<br />
-          <span style={{ color: "#C4704F" }}>Une évidence.</span>
+          Trois passionnés,<br />
+          <span style={{ color: "#C4704F" }}>une évidence</span>
         </h1>
         <p style={{
           fontSize: "18px", color: "#6B6B6B",
@@ -56,29 +56,36 @@ export default function NotreHistoirePage() {
           {/* Colonne gauche — texte */}
           <div className="flex-1">
             <div className="flex flex-col gap-5">
-              <p className="text-sm text-gray-600 leading-relaxed">
-                L&apos;aventure commence en 2020, quand Christophe fonde Evidence Traiteur avec
-                une conviction simple : une cuisine généreuse, sincère, qui ne fait aucun
-                compromis sur la qualité. Son frère Alexandre est le premier conquis — et il
-                pense aussitôt à François, un ami de longue date, pour faire grandir l&apos;idée.
-                L&apos;enthousiasme est là, mais le timing ne l&apos;est pas encore.
+              <p style={{ fontSize: 14, color: "#6B6B6B", lineHeight: 1.75 }}>
+                Après vingt-cinq ans à enseigner et transmettre, des années en restaurants étoilés,
+                Christophe fonde Evidence Traiteur avec une ambition assumée : rendre accessible une
+                cuisine généreuse, sincère, qui ne fait aucun compromis sur la qualité. Son frère
+                Alexandre, en grand amateur de gastronomie, est convaincu d&apos;une chose : ce niveau
+                d&apos;exigence, cette cuisine-là mérite une portée plus large.
               </p>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Tout bascule en 2023. François s&apos;installe à Limoges avec sa femme,
-                gynécologue au CHU. Au fil des dîners, elle lui raconte la même réalité :
-                entre deux gardes, impossible de trouver quelque chose de bon à manger.
-                Ce constat-là, François ne peut plus l&apos;ignorer.
+              <p style={{ fontSize: 14, color: "#6B6B6B", lineHeight: 1.75 }}>
+                Alors DRH d&apos;un studio de Jeux Vidéo, Alexandre partage sa vision avec son ami de
+                longue date François, passionné d&apos;aventures entrepreneuriales.
               </p>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Mi-2025, il franchit le pas. Il quitte son emploi et appelle Alexandre et
-                Christophe. En quelques minutes, c&apos;est décidé — tous les trois embarquent,
-                avec l&apos;envie de construire quelque chose de concret pour les soignants
-                de Limoges.
+              <p style={{ fontSize: 14, color: "#6B6B6B", lineHeight: 1.75 }}>
+                Tout bascule lorsque François s&apos;installe à Limoges avec sa femme, gynécologue au
+                CHU. Au fil des dîners, elle lui raconte la même réalité : entre deux gardes,
+                impossible de trouver quelque chose de bon et équilibré à manger.
               </p>
-              <p className="text-sm text-[#4D0F1F] font-medium leading-relaxed">
-                Clodia, c&apos;est le prénom de leur grand-mère. Un prénom qui porte la douceur
-                du fait-maison, la chaleur d&apos;une table familiale — exactement ce qu&apos;on
-                veut mettre dans chaque barquette.
+              <p style={{ fontSize: 14, color: "#6B6B6B", lineHeight: 1.75 }}>
+                C&apos;est le déclic, il quitte alors son emploi dans la finance et appelle Alexandre
+                et Christophe. En quelques minutes, c&apos;est décidé — tous les trois embarquent,
+                avec l&apos;envie de développer une offre de restauration sur mesure dédiée au
+                personnel soignant.
+              </p>
+
+              <div style={{ borderTop: "1px solid #E8E3D8", margin: "2rem 0" }} />
+
+              <p style={{ fontSize: 16, color: "#4D0F1F", fontWeight: 500, lineHeight: 1.75 }}>
+                Clodia, c&apos;est aussi et surtout le prénom de leur grand-mère. Une vie à les
+                régaler, puis à transmettre ses recettes et son savoir-faire pour résumer ce que la
+                cuisine doit apporter : un moment savoureux, sain et chaleureux. C&apos;est exactement
+                ce que l&apos;on veut mettre dans chaque barquette jour après jour.
               </p>
             </div>
           </div>
@@ -108,22 +115,12 @@ export default function NotreHistoirePage() {
         <div style={{ height: "1px", background: "#E8E3D8" }} />
       </div>
 
-      {/* ── CITATION FINALE ── */}
+      {/* ── CTA FINAL ── */}
       <section style={{
         maxWidth: "1100px", margin: "0 auto",
-        padding: "96px 64px",
+        padding: "64px 64px 96px",
         textAlign: "center",
       }}>
-        <p style={{
-          fontSize: "clamp(20px, 3vw, 36px)",
-          fontWeight: 500, color: "#1A1A1A",
-          lineHeight: 1.4, letterSpacing: "-0.01em",
-          maxWidth: "760px", margin: "0 auto 48px",
-          fontStyle: "italic",
-        }}>
-          &ldquo;Clodia, c&apos;est le prénom de leur grand-mère. Un prénom qui porte la douceur
-          du fait-maison, la chaleur d&apos;une table familiale.&rdquo;
-        </p>
         <div style={{ display: "flex", justifyContent: "center", gap: "16px", flexWrap: "wrap" }}>
           <Link href="/commander" style={{
             display: "inline-flex", alignItems: "center",
@@ -134,14 +131,7 @@ export default function NotreHistoirePage() {
           }}>
             Commander →
           </Link>
-          <Link href="/nos-engagements" style={{
-            display: "inline-flex", alignItems: "center",
-            gap: "8px", background: "transparent",
-            color: "#1A1A1A", fontSize: "14px",
-            fontWeight: 600, padding: "15px 32px",
-            borderRadius: "999px", textDecoration: "none",
-            border: "1px solid #E8E3D8",
-          }}>
+          <Link href="/nos-engagements" className="btn-outline-wine text-sm px-8 py-4 inline-block">
             Nos engagements
           </Link>
         </div>
