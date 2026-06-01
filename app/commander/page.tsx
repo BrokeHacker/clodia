@@ -3,33 +3,19 @@
 import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
-import { menusCurrentWeek, menusNextWeek, pointsLivraison } from "@/lib/data";
+import { Menu } from "@/lib/data";
+import { fetchMenusSemaineCourante, fetchMenusSemaineSuivante, fetchTarifs, Tarif, getTarifUnitaire, getTarifPrecommande, fetchPointsLivraison, PointLivraisonDB, fetchSlotsUnite, SlotUnite, getDisponible } from "@/lib/menus";
 
 type Variante = "plat" | "plat_vege";
 
 interface CartItem {
-  menuId: number;
+  menuId: string;
   variante: Variante;
   quantite: number;
 }
 
-const SEMAINES = [
-  { key: "courante", label: "Semaine du 26 mai", menus: menusCurrentWeek },
-  { key: "suivante", label: "Semaine du 2 juin", menus: menusNextWeek },
-] as const;
-
 function formatPrice(p: number) {
   return p.toFixed(2).replace(".", ",") + " €";
-}
-
-const hopitaux = [...new Set(pointsLivraison.map((p) => p.hopital))];
-
-function getBatiments(hopital: string) {
-  return [...new Set(pointsLivraison.filter((p) => p.hopital === hopital).map((p) => p.batiment))];
-}
-
-function getServices(hopital: string, batiment: string) {
-  return pointsLivraison.filter((p) => p.hopital === hopital && p.batiment === batiment);
 }
 
 function CommanderContent() {
@@ -37,10 +23,28 @@ function CommanderContent() {
 
   const [semaineKey, setSemaineKey] = useState<"courante" | "suivante">("courante");
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [menusCurrentWeek, setMenusCurrentWeek] = useState<Menu[]>([]);
+  const [menusNextWeek, setMenusNextWeek] = useState<Menu[]>([]);
+  const [tarifs, setTarifs] = useState<Tarif[]>([]);
+  const [points, setPoints] = useState<PointLivraisonDB[]>([]);
+  const [slots, setSlots] = useState<SlotUnite[]>([]);
 
   const [hopital, setHopital] = useState("");
   const [batiment, setBatiment] = useState("");
   const [service, setService] = useState("");
+
+  useEffect(() => {
+    fetchMenusSemaineCourante().then(setMenusCurrentWeek);
+    fetchMenusSemaineSuivante().then(setMenusNextWeek);
+    fetchTarifs().then(setTarifs);
+    fetchPointsLivraison().then(setPoints);
+  }, []);
+
+  useEffect(() => {
+    if (menusCurrentWeek.length === 0) return;
+    const dates = menusCurrentWeek.map(m => m.date_livraison);
+    fetchSlotsUnite(dates).then(setSlots);
+  }, [menusCurrentWeek]);
 
   useEffect(() => {
     const semaineParam = searchParams.get("semaine");
@@ -50,16 +54,31 @@ function CommanderContent() {
 
     const pointParam = searchParams.get("point");
     if (pointParam) {
-      const found = pointsLivraison.find((p) => p.id === Number(pointParam));
+      const found = points.find((p) => p.id === pointParam);
       if (found) {
         setHopital(found.hopital);
         setBatiment(found.batiment);
         setService(found.service);
       }
     }
-  }, [searchParams]);
+  }, [searchParams, points]);
 
-  const selectedPoint = pointsLivraison.find(
+  const hopitaux = [...new Set(points.map((p) => p.hopital))];
+
+  function getBatiments(h: string) {
+    return [...new Set(points.filter((p) => p.hopital === h).map((p) => p.batiment))];
+  }
+
+  function getServices(h: string, b: string) {
+    return points.filter((p) => p.hopital === h && p.batiment === b);
+  }
+
+  const SEMAINES = [
+    { key: "courante" as const, label: "Semaine en cours", menus: menusCurrentWeek },
+    { key: "suivante" as const, label: "Semaine suivante", menus: menusNextWeek },
+  ];
+
+  const selectedPoint = points.find(
     (p) => p.hopital === hopital && p.batiment === batiment && p.service === service
   );
 
@@ -76,12 +95,28 @@ function CommanderContent() {
 
   const currentMenus = SEMAINES.find((s) => s.key === semaineKey)!.menus;
 
-  function getCartItem(menuId: number) {
+  function getSlotDispo(date_livraison: string, variante: string): number | null {
+    if (semaineKey !== 'courante') return null;
+    const slotVariante = variante === 'plat_vege' ? 'vegetarien' : 'standard';
+    const slot = slots.find(s => s.date_livraison === date_livraison && s.variante === slotVariante);
+    if (!slot) return null;
+    return getDisponible(slot);
+  }
+
+  function getCartItem(menuId: string) {
     return cart.find((c) => c.menuId === menuId) ?? null;
   }
 
-  function updateCart(menuId: number, variante: Variante, delta: number) {
+  function updateCart(menuId: string, variante: Variante, delta: number) {
+    const menu = [...menusCurrentWeek, ...menusNextWeek].find(m => m.id === menuId);
     setCart((prev) => {
+      if (delta > 0 && menu) {
+        const dispo = getSlotDispo(menu.date_livraison, variante);
+        if (dispo !== null) {
+          const currentQty = prev.find(c => c.menuId === menuId)?.quantite ?? 0;
+          if (currentQty + delta > dispo) return prev;
+        }
+      }
       const existing = prev.find((c) => c.menuId === menuId);
       if (!existing) {
         if (delta <= 0) return prev;
@@ -95,16 +130,23 @@ function CommanderContent() {
     });
   }
 
-  function setVariante(menuId: number, variante: Variante) {
+  function setVariante(menuId: string, variante: Variante) {
     setCart((prev) =>
       prev.map((c) => (c.menuId === menuId ? { ...c, variante } : c))
     );
   }
 
+  const quantiteTotale = cart.reduce((a, c) => a + c.quantite, 0);
+
+  function getPrixUnitaire(semaine: string, qte: number): number {
+    if (semaine === 'suivante') return getTarifPrecommande(tarifs, qte);
+    return getTarifUnitaire(tarifs);
+  }
+
   const allMenus = [...menusCurrentWeek, ...menusNextWeek];
   const total = cart.reduce((acc, item) => {
     const menu = allMenus.find((m) => m.id === item.menuId);
-    return acc + (menu ? menu.prix * item.quantite : 0);
+    return acc + (menu ? getPrixUnitaire(semaineKey, quantiteTotale) * item.quantite : 0);
   }, 0);
 
   const cartWithMenus = cart
@@ -122,7 +164,7 @@ function CommanderContent() {
             (i) =>
               `• ${i.menu.jourSemaine} ${i.menu.date} — ${
                 i.variante === "plat" ? "Plat traditionnel" : "Végétarien"
-              } × ${i.quantite} = ${formatPrice(i.menu.prix * i.quantite)}`
+              } × ${i.quantite} = ${formatPrice(getPrixUnitaire(semaineKey, quantiteTotale) * i.quantite)}`
           )
           .join("\n") +
         `\n\nTotal : ${formatPrice(total)}`
@@ -220,51 +262,61 @@ function CommanderContent() {
 
                     <div className="p-4">
                       {/* Variante selector */}
-                      <div className="flex gap-2 mb-3">
-                        <button
-                          onClick={() => {
-                            if (inCart) {
-                              setVariante(menu.id, "plat");
-                            } else {
-                              updateCart(menu.id, "plat", 1);
-                            }
-                          }}
-                          className={`flex-1 text-xs font-medium py-2 rounded-xl border transition-colors ${
-                            !inCart || item?.variante === "plat"
-                              ? "border-[#4D0F1F] bg-[#4D0F1F] text-white"
-                              : "border-gray-200 text-gray-400 hover:border-gray-300"
-                          }`}
-                        >
-                          🍖 Plat
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (inCart) {
-                              setVariante(menu.id, "plat_vege");
-                            } else {
-                              updateCart(menu.id, "plat_vege", 1);
-                            }
-                          }}
-                          className={`flex-1 text-xs font-medium py-2 rounded-xl border transition-colors ${
-                            inCart && item?.variante === "plat_vege"
-                              ? "border-[#00CCCC] bg-[#00CCCC] text-white"
-                              : "border-gray-200 text-gray-400 hover:border-gray-300"
-                          }`}
-                        >
-                          🌿 Végé
-                        </button>
-                      </div>
+                      {(() => {
+                        const dispoPlat = getSlotDispo(menu.date_livraison, 'plat');
+                        const dispoVege = getSlotDispo(menu.date_livraison, 'plat_vege');
+                        const platComplet = dispoPlat !== null && dispoPlat === 0;
+                        const vegeComplet = dispoVege !== null && dispoVege === 0;
+                        return (
+                          <div className="flex gap-2 mb-3">
+                            <button
+                              disabled={platComplet}
+                              onClick={() => {
+                                if (platComplet) return;
+                                if (inCart) setVariante(menu.id, "plat");
+                                else updateCart(menu.id, "plat", 1);
+                              }}
+                              className={`flex-1 text-xs font-medium py-2 rounded-xl border transition-colors ${
+                                platComplet
+                                  ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                                  : !inCart || item?.variante === "plat"
+                                  ? "border-[#4D0F1F] bg-[#4D0F1F] text-white"
+                                  : "border-gray-200 text-gray-400 hover:border-gray-300"
+                              }`}
+                            >
+                              {dispoPlat !== null ? `🍖 Plat (${dispoPlat} dispo)` : "🍖 Plat"}
+                            </button>
+                            <button
+                              disabled={vegeComplet}
+                              onClick={() => {
+                                if (vegeComplet) return;
+                                if (inCart) setVariante(menu.id, "plat_vege");
+                                else updateCart(menu.id, "plat_vege", 1);
+                              }}
+                              className={`flex-1 text-xs font-medium py-2 rounded-xl border transition-colors ${
+                                vegeComplet
+                                  ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                                  : inCart && item?.variante === "plat_vege"
+                                  ? "border-[#00CCCC] bg-[#00CCCC] text-white"
+                                  : "border-gray-200 text-gray-400 hover:border-gray-300"
+                              }`}
+                            >
+                              {dispoVege !== null ? `🌿 Végé (${dispoVege} dispo)` : "🌿 Végé"}
+                            </button>
+                          </div>
+                        );
+                      })()}
 
                       <h3 className="font-semibold text-[#4D0F1F] text-sm mb-1">
                         {inCart && item?.variante === "plat_vege"
-                          ? menu.platVege
+                          ? menu.plat_vege
                           : menu.plat}
                       </h3>
                       <p className="text-xs text-gray-400 mb-4">+ {menu.dessert}</p>
 
                       <div className="flex items-center justify-between">
                         <span className="text-[#FF9933] font-semibold">
-                          {formatPrice(menu.prix)}
+                          {formatPrice(getPrixUnitaire(semaineKey, quantiteTotale))}
                         </span>
 
                         {!inCart ? (
@@ -335,7 +387,7 @@ function CommanderContent() {
                               </p>
                             </div>
                             <span className="text-xs font-semibold text-[#4D0F1F] shrink-0">
-                              {formatPrice(item.menu.prix * item.quantite)}
+                              {formatPrice(getPrixUnitaire(semaineKey, quantiteTotale) * item.quantite)}
                             </span>
                           </div>
                         ))}
@@ -394,7 +446,7 @@ function CommanderContent() {
                     </div>
                     {selectedPoint && (
                       <p className="text-xs text-[#00CCCC] mt-2 leading-relaxed">
-                        {selectedPoint.description}
+                        {selectedPoint.service_desc}
                       </p>
                     )}
                   </div>

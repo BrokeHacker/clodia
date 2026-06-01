@@ -1,16 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-
-const PRECOMMANDE = [
-  { jours: 1, label: "1 jour",  prix: 13.40 },
-  { jours: 2, label: "2 jours", prix: 13.40 },
-  { jours: 3, label: "3 jours", prix: 12.90, best: true },
-  { jours: 4, label: "4 jours", prix: 12.50 },
-  { jours: 5, label: "5 jours", prix: 12.20 },
-];
+import { fetchTarifs, Tarif, getTarifUnitaire } from "@/lib/menus";
 
 const GROUPEE = [
   { label: "5 – 10 repas",  prix: 12.90 },
@@ -46,9 +39,35 @@ function ImageHover({
 
 export default function FormulesClient() {
   const [selected, setSelected] = useState(2);
+  const [tarifs, setTarifs] = useState<Tarif[]>([]);
 
-  const current = PRECOMMANDE[selected];
+  useEffect(() => {
+    fetchTarifs().then(setTarifs);
+  }, []);
+
+  const precommandePaliers = tarifs
+    .filter(t => t.type === 'pre-commande')
+    .sort((a, b) => a.repas_de - b.repas_de)
+    .map(t => ({
+      jours: t.repas_de,
+      label: t.repas_a === 99
+        ? `${t.repas_de} jours et +`
+        : t.repas_a === t.repas_de
+        ? `${t.repas_de} jour${t.repas_de > 1 ? 's' : ''}`
+        : `${t.repas_de} jours`,
+      prix: t.prix_unitaire,
+      best: t.repas_de === 3,
+    }));
+
+  const prixUnite = getTarifUnitaire(tarifs);
+  const current = precommandePaliers[selected] ?? precommandePaliers[0] ?? { jours: 1, prix: 0, label: '' };
   const totalSemaine = current.prix * current.jours;
+
+  if (precommandePaliers.length === 0) return (
+    <div style={{ minHeight: "400px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <p style={{ color: "#9B9B9B", fontSize: "14px" }}>Chargement des tarifs...</p>
+    </div>
+  );
 
   return (
     <div style={{ background: "#FAFAF8", minHeight: "100vh" }}>
@@ -112,6 +131,7 @@ export default function FormulesClient() {
                 src="/images/plats-clodia.jpg"
                 alt="Plats Clodia"
                 fill
+                sizes="(max-width: 768px) 100vw, 50vw"
                 style={{ objectFit: "cover", objectPosition: "center top" }}
               />
               <div style={{
@@ -142,6 +162,7 @@ export default function FormulesClient() {
                 src="/images/plats-clodia.jpg"
                 alt="Plats Clodia détail"
                 fill
+                sizes="(max-width: 768px) 100vw, 50vw"
                 style={{ objectFit: "cover", objectPosition: "center 65%" }}
               />
               <div style={{
@@ -252,7 +273,7 @@ export default function FormulesClient() {
                 `}</style>
 
                 <div style={{ display: "flex", gap: "8px" }}>
-                  {PRECOMMANDE.map((opt, i) => {
+                  {precommandePaliers.map((opt, i) => {
                     const isSelected = selected === i;
                     const isBest = opt.best;
                     return (
@@ -381,7 +402,7 @@ export default function FormulesClient() {
                   <p style={{ fontSize: "12px", color: "#4A6741", fontWeight: 500, margin: 0 }}>
                     Vous économisez{" "}
                     <strong>
-                      {fmt((13.90 - current.prix) * current.jours)}
+                      {fmt((prixUnite - current.prix) * current.jours)}
                     </strong>{" "}
                     vs commande à la carte
                   </p>
@@ -390,7 +411,7 @@ export default function FormulesClient() {
 
               {/* CTA */}
               <div style={{ padding: "20px 28px" }}>
-                <Link href="/commander" style={{
+                <Link href="/commander?semaine=suivante" style={{
                   display: "block", textAlign: "center",
                   background: "#4A6741", color: "#fff",
                   fontSize: "14px", fontWeight: 600,
@@ -488,7 +509,7 @@ export default function FormulesClient() {
                   fontSize: "18px", fontWeight: 300,
                   color: "#1A1A1A", letterSpacing: "-0.02em",
                 }}>
-                  13,90 €
+                  {fmt(prixUnite)}
                   <span style={{ fontSize: "11px", fontWeight: 400, color: "#9B9B9B", marginLeft: "3px" }}>
                     /repas
                   </span>

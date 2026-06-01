@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  menusCurrentWeek,
   faqItems,
   etapes,
 } from "@/lib/data";
+import { fetchMenusCarrousel } from "@/lib/menus";
 import MenuCarousel from "@/components/MenuCarousel";
 import FAQAccordion from "@/components/FAQAccordion";
 import PointLivraisonSelector from "@/components/PointLivraisonSelector";
@@ -16,7 +16,12 @@ const marqueeItems = [
   "Approche nutritive adaptée au personnel soignant et hospitalier",
 ];
 
-export default function Home() {
+export default async function Home() {
+  const menusCarrousel = await fetchMenusCarrousel();
+  const premierMenu = menusCarrousel[0];
+  const surtitreMenus = premierMenu
+    ? `Semaine du ${new Date(premierMenu.date_livraison).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`
+    : 'Menus de la semaine';
   const doubled = [...marqueeItems, ...marqueeItems];
 
   return (
@@ -27,6 +32,7 @@ export default function Home() {
           src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1920&q=95&auto=format&fit=crop"
           alt="Repas gastronomiques Clodia"
           fill
+          sizes="100vw"
           className="object-cover object-center"
           priority
         />
@@ -138,7 +144,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
               <span className="text-xs font-semibold uppercase tracking-widest text-[#FF9933] block mb-3">
-                Semaine du 26 mai
+                {surtitreMenus}
               </span>
               <h2 className="text-4xl font-semibold text-[#4D0F1F]">
                 Les menus de la semaine
@@ -152,7 +158,7 @@ export default function Home() {
             </Link>
           </div>
 
-          <MenuCarousel menus={menusCurrentWeek} />
+          <MenuCarousel menus={menusCarrousel} />
         </div>
       </section>
 
@@ -193,6 +199,7 @@ export default function Home() {
                 src="/images/plats-clodia.jpg"
                 alt="Les plats Clodia"
                 fill
+                sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover object-center"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
@@ -395,6 +402,7 @@ export default function Home() {
                   src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=1000&fit=crop"
                   alt="Christophe, Alexandre et François — fondateurs de Clodia"
                   fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />

@@ -96,6 +96,7 @@ export default function NosEngagementsPage() {
             src="/images/plats-clodia.jpg"
             alt="Produits frais Clodia"
             fill
+            sizes="(max-width: 768px) 100vw, 50vw"
             style={{ objectFit: "cover", objectPosition: "center 20%" }}
           />
           <div style={{
@@ -127,6 +128,7 @@ export default function NosEngagementsPage() {
             src="/images/plats-clodia.jpg"
             alt="Chef Clodia"
             fill
+            sizes="(max-width: 768px) 100vw, 50vw"
             style={{ objectFit: "cover", objectPosition: "center 50%" }}
           />
           <div style={{

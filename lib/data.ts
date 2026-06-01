@@ -1,41 +1,27 @@
 export interface Menu {
-  id: number;
-  date: string;
-  date_livraison?: string;
-  jourSemaine: string;
-  plat: string;
-  platVege: string;
-  dessert: string;
-  prix: number;
-  photo: string;
-  semaine: "courante" | "suivante";
+  id: string
+  date_livraison: string
+  semaine: number
+  annee: number
+  plat: string
+  plat_vege: string
+  dessert: string
+  publie: boolean
+  photo: string
+  jourSemaine: string
+  date: string
+  prix: number
 }
 
-export interface PointLivraison {
-  id: number;
-  hopital: string;
-  batiment: string;
-  service: string;
-  description: string;
-  emoji: string;
-}
-
-export interface PalierTarif {
-  label: string;
-  prix: number;
-  highlight?: boolean;
-}
-
-export interface Formule {
-  id: number;
-  nom: string;
-  tagline: string;
-  description: string;
-  couleur: string;
-  couleurAccent: string;
-  highlight: boolean;
-  paliers: PalierTarif[];
-  avantages: string[];
+export function enrichMenu(m: Omit<Menu, 'jourSemaine' | 'date' | 'prix'>): Menu {
+  const d = new Date(m.date_livraison)
+  const jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+  return {
+    ...m,
+    jourSemaine: jours[d.getDay()],
+    date: d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }),
+    prix: 0, // le prix réel est chargé dynamiquement depuis Supabase
+  }
 }
 
 export interface FAQItem {
@@ -44,231 +30,11 @@ export interface FAQItem {
   reponse: string;
 }
 
-export interface Engagement {
-  id: number;
-  titre: string;
-  description: string;
-  icone: string;
-  couleur: string;
-}
-
 export interface Etape {
   titre: string;
   description: string;
   icone: string;
 }
-
-export const menusCurrentWeek: Menu[] = [
-  {
-    id: 1,
-    date: "26 mai",
-    date_livraison: "2026-05-25",
-    jourSemaine: "Lundi",
-    plat: "Filet de bœuf Rossini, sauce périgourdine & légumes confits",
-    platVege: "Risotto aux cèpes et parmesan 24 mois d'affinage",
-    dessert: "Mille-feuille vanille bourbon maison",
-    prix: 17.5,
-    photo:
-      "/images/Plat 01.jpeg",
-    semaine: "courante",
-  },
-  {
-    id: 2,
-    date: "27 mai",
-    date_livraison: "2026-05-26",
-    jourSemaine: "Mardi",
-    plat: "Suprême de volaille fermière, jus aux herbes fraîches",
-    platVege: "Quiche aux légumes printaniers du marché",
-    dessert: "Tarte Tatin aux pommes caramélisées",
-    prix: 16.5,
-    photo:
-      "/images/Plat 02.jpeg",
-    semaine: "courante",
-  },
-  {
-    id: 3,
-    date: "28 mai",
-    date_livraison: "2026-05-27",
-    jourSemaine: "Mercredi",
-    plat: "Pavé de saumon label rouge, beurre blanc aux agrumes",
-    platVege: "Gratin dauphinois aux champignons et crème fraîche",
-    dessert: "Panna cotta fruits rouges, coulis framboise",
-    prix: 17.0,
-    photo:
-      "/images/Plat 03.jpeg",
-    semaine: "courante",
-  },
-  {
-    id: 4,
-    date: "29 mai",
-    date_livraison: "2026-05-28",
-    jourSemaine: "Jeudi",
-    plat: "Magret de canard du Périgord, sauce cerise et poivre",
-    platVege: "Tartine de légumes rôtis, chèvre frais et feta",
-    dessert: "Crème brûlée à la lavande de Provence",
-    prix: 18.0,
-    photo:
-      "/images/Plat 04.jpeg",
-    semaine: "courante",
-  },
-  {
-    id: 5,
-    date: "30 mai",
-    date_livraison: "2026-05-29",
-    jourSemaine: "Vendredi",
-    plat: "Côte de veau fermière, purée maison et jus corsé",
-    platVege: "Curry de légumes de saison au lait de coco",
-    dessert: "Charlotte aux framboises et coulis de mangue",
-    prix: 17.5,
-    photo:
-      "/images/Plat 05.jpeg",
-    semaine: "courante",
-  },
-];
-
-export const menusNextWeek: Menu[] = [
-  {
-    id: 6,
-    date: "2 juin",
-    jourSemaine: "Lundi",
-    plat: "Tartare de bœuf façon chef, frites maison dorées",
-    platVege: "Velouté de courge butternut, crème et noix de cajou",
-    dessert: "Éclair au chocolat noir Valrhona",
-    prix: 17.0,
-    photo:
-      "/images/Plat 01.jpeg",
-    semaine: "suivante",
-  },
-  {
-    id: 7,
-    date: "3 juin",
-    jourSemaine: "Mardi",
-    plat: "Pintade rôtie au four, sauce au vin jaune du Jura",
-    platVege: "Ravioles épinards-ricotta, beurre noisette et sauge",
-    dessert: "Île flottante et caramel beurre salé breton",
-    prix: 16.5,
-    photo:
-      "/images/Plat 02.jpeg",
-    semaine: "suivante",
-  },
-  {
-    id: 8,
-    date: "4 juin",
-    jourSemaine: "Mercredi",
-    plat: "Lieu noir sauvage, sauce vierge et légumes croquants",
-    platVege: "Pizza à la burrata di bufala et légumes grillés",
-    dessert: "Tarte au citron meringuée façon grand-mère",
-    prix: 17.0,
-    photo:
-      "/images/Plat 03.jpeg",
-    semaine: "suivante",
-  },
-  {
-    id: 9,
-    date: "5 juin",
-    jourSemaine: "Jeudi",
-    plat: "Joue de bœuf braisée 7h, carottes fondantes au thym",
-    platVege: "Gnocchis à la romaine gratinés, sauce gorgonzola",
-    dessert: "Soufflé chaud au Grand Marnier, anglaise vanille",
-    prix: 18.5,
-    photo:
-      "/images/Plat 04.jpeg",
-    semaine: "suivante",
-  },
-  {
-    id: 10,
-    date: "6 juin",
-    jourSemaine: "Vendredi",
-    plat: "Carré d'agneau de lait, flageolets à la sarriette",
-    platVege: "Bowl thaï aux légumes croquants et tempeh mariné",
-    dessert: "Baba au rhum authentique et chantilly mascarpone",
-    prix: 18.0,
-    photo:
-      "/images/Plat 05.jpeg",
-    semaine: "suivante",
-  },
-];
-
-export const pointsLivraison: PointLivraison[] = [
-  {
-    id: 1,
-    hopital: "CHU Limoges",
-    batiment: "Hôpital Dupuytren",
-    service: "Cardiologie",
-    description: "Frigo soignants au niveau 2, couloir B, en face de la salle de pause.",
-    emoji: "🏥",
-  },
-  {
-    id: 2,
-    hopital: "CHU Limoges",
-    batiment: "Hôpital Dupuytren",
-    service: "Urgences",
-    description: "Frigo dédié Clodia dans la salle de repos soignants, accès badge.",
-    emoji: "🚑",
-  },
-  {
-    id: 3,
-    hopital: "CHU Limoges",
-    batiment: "Hôpital de la Mère et de l'Enfant",
-    service: "Maternité",
-    description: "Frigo soignants au niveau 3, salle de pause principale.",
-    emoji: "👶",
-  },
-  {
-    id: 4,
-    hopital: "CHU Limoges",
-    batiment: "Hôpital de la Mère et de l'Enfant",
-    service: "Pédiatrie",
-    description: "Frigo Clodia dans le couloir soignants, niveau 2 aile ouest.",
-    emoji: "🧒",
-  },
-];
-
-export const formules: Formule[] = [
-  {
-    id: 1,
-    nom: "Pré-commande",
-    tagline: "Notre recommandation — commandez avant mercredi minuit",
-    description:
-      "Réservez vos repas pour la semaine suivante et bénéficiez de tarifs préférentiels. Disponibilité garantie, zéro gaspillage.",
-    couleur: "#E8FFF8",
-    couleurAccent: "#00CCCC",
-    highlight: true,
-    paliers: [
-      { label: "1 plat", prix: 0 },
-      { label: "2 plats", prix: 0 },
-      { label: "3 plats", prix: 0 },
-      { label: "4 plats", prix: 0 },
-      { label: "5 plats", prix: 0 },
-      { label: "10 plats et +", prix: 0, highlight: true },
-    ],
-    avantages: [
-      "Disponibilité garantie sur tous les menus",
-      "Menu connu dès le jeudi",
-      "Zéro gaspillage — on cuisine exactement ce qu'il faut",
-      "Commande avant mercredi minuit",
-    ],
-  },
-  {
-    id: 2,
-    nom: "Semaine en cours",
-    tagline: "Flexibilité totale, commande possible la veille",
-    description:
-      "Commandez au fil de la semaine selon vos gardes et vos envies. Tarif unique, sous réserve des disponibilités restantes.",
-    couleur: "#F5F0E8",
-    couleurAccent: "#C4704F",
-    highlight: false,
-    paliers: [
-      { label: "Tarif unique", prix: 13.9 },
-    ],
-    avantages: [
-      "Flexibilité totale selon vos gardes",
-      "Commande possible jusqu'à la veille à minuit",
-      "Tarif unique sans surprise",
-      "Sous réserve des disponibilités restantes",
-    ],
-  },
-];
 
 export const faqItems: FAQItem[] = [
   {
@@ -345,48 +111,5 @@ export const etapes: Etape[] = [
     description:
       "Un passage au micro-ondes et votre repas est prêt à déguster.",
     icone: "ti-microwave",
-  },
-];
-
-export const engagements: Engagement[] = [
-  {
-    id: 1,
-    titre: "Produits frais & locaux",
-    description:
-      "Nous travaillons en direct avec des producteurs du Limousin et du Périgord. Fruits, légumes, viandes et produits laitiers : tout est sélectionné pour sa fraîcheur et sa qualité.",
-    icone: "🌱",
-    couleur: "#E8FFF8",
-  },
-  {
-    id: 2,
-    titre: "Chef récompensé Gault & Millau",
-    description:
-      "Nos menus sont créés et supervisés par un chef distingué au Guide Gault & Millau. Une exigence gastronomique quotidienne, même en milieu hospitalier.",
-    icone: "👨‍🍳",
-    couleur: "#FFF9D6",
-  },
-  {
-    id: 3,
-    titre: "Livraison 100% électrique",
-    description:
-      "Toutes nos livraisons sont effectuées en véhicule électrique. Parce qu'un repas gastronomique peut aussi être responsable, nous nous engageons à réduire notre empreinte carbone.",
-    icone: "⚡",
-    couleur: "#E8F4FF",
-  },
-  {
-    id: 4,
-    titre: "Emballages éco-responsables",
-    description:
-      "Nos emballages sont 100% compostables et fabriqués à partir de matériaux naturels. Le maintien en température est assuré sans plastique, conformément à nos valeurs.",
-    icone: "♻️",
-    couleur: "#FFEBD6",
-  },
-  {
-    id: 5,
-    titre: "Équipe locale & engagée",
-    description:
-      "Toute notre équipe est basée à Limoges. En choisissant Clodia, vous soutenez un projet local qui crée des emplois et valorise les talents culinaires de notre région.",
-    icone: "🤝",
-    couleur: "#FDD5D9",
   },
 ];

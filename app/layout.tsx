@@ -17,7 +17,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr">
+    <html lang="fr" data-scroll-behavior="smooth">
       <head>
         <link
           href="https://api.fontshare.com/v2/css?f[]=chillax@200,300,400,500,600,700&display=swap"

@@ -1,30 +1,32 @@
 "use client";
 
-import { useState } from "react";
-import { pointsLivraison } from "@/lib/data";
+import { useState, useEffect } from "react";
+import { fetchPointsLivraison, PointLivraisonDB } from "@/lib/menus";
 
 export default function PointLivraisonSelector() {
-  const hopitaux = [...new Set(pointsLivraison.map((p) => p.hopital))];
-
+  const [points, setPoints] = useState<PointLivraisonDB[]>([]);
   const [hopital, setHopital] = useState("CHU Limoges");
   const [batiment, setBatiment] = useState("");
   const [service, setService] = useState("");
 
+  useEffect(() => {
+    fetchPointsLivraison().then(setPoints);
+  }, []);
+
+  const hopitaux = [...new Set(points.map((p) => p.hopital))];
+
   const batiments = [
     ...new Set(
-      pointsLivraison
-        .filter((p) => p.hopital === hopital)
-        .map((p) => p.batiment)
+      points.filter((p) => p.hopital === hopital).map((p) => p.batiment)
     ),
   ];
 
-  const services = pointsLivraison
-    .filter((p) => p.hopital === hopital && p.batiment === batiment)
-    .map((p) => ({ service: p.service, id: p.id }));
+  const services = points.filter(
+    (p) => p.hopital === hopital && p.batiment === batiment
+  );
 
-  const selectedPoint = pointsLivraison.find(
-    (p) =>
-      p.hopital === hopital && p.batiment === batiment && p.service === service
+  const selectedPoint = points.find(
+    (p) => p.hopital === hopital && p.batiment === batiment && p.service === service
   );
 
   function handleHopitalChange(val: string) {
@@ -87,7 +89,7 @@ export default function PointLivraisonSelector() {
               Votre point de livraison
             </p>
             <p className="text-sm text-[#4D0F1F] leading-relaxed">
-              {selectedPoint.description}
+              {selectedPoint.service_desc}
             </p>
           </div>
         )}
