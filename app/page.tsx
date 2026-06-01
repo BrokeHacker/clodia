@@ -1,3 +1,4 @@
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -10,7 +11,7 @@ import FAQAccordion from "@/components/FAQAccordion";
 import PointLivraisonSelector from "@/components/PointLivraisonSelector";
 
 const marqueeItems = [
-  "Option végétarienne",
+  "Déclinaison végétarienne",
   "1 menu du jour — plat + dessert",
   "Livraison avant 12h dans le frigo de votre service",
   "Approche nutritive adaptée au personnel soignant et hospitalier",
@@ -18,10 +19,6 @@ const marqueeItems = [
 
 export default async function Home() {
   const menusCarrousel = await fetchMenusCarrousel();
-  const premierMenu = menusCarrousel[0];
-  const surtitreMenus = premierMenu
-    ? `Semaine du ${new Date(premierMenu.date_livraison).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`
-    : 'Menus de la semaine';
   const doubled = [...marqueeItems, ...marqueeItems];
 
   return (
@@ -64,6 +61,14 @@ export default async function Home() {
                 display: "inline-block",
               }} />
               Service sur mesure dédié au personnel soignant &amp; hospitalier
+              <span style={{
+                width: "6px",
+                height: "6px",
+                borderRadius: "50%",
+                backgroundColor: "#C4704F",
+                flexShrink: 0,
+                display: "inline-block",
+              }} />
             </span>
           </div>
 
@@ -115,23 +120,50 @@ export default async function Home() {
       <section className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-semibold text-[#4A6741]">
-              Comment ça marche ?
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, lineHeight: 1.2, color: "#1A1A1A" }}>
+              Simple à commander,<br />
+              <span style={{ color: "#4A6741" }}>simple à savourer</span>
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-10 items-start">
-            {etapes.map((e) => (
-              <div key={e.titre} className="flex flex-col text-center">
-                <i className={`ti ${e.icone}`} style={{ fontSize: 48, color: "#C4704F" }} />
-                <h3 className="text-xl font-semibold text-[#C4704F] mt-5 mb-3 min-h-[56px] flex items-center justify-center">{e.titre}</h3>
-                <p className="text-gray-400 text-sm leading-relaxed">{e.description}</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0" }}>
+
+            {/* Rangée 1 — cercles + traits intégrés */}
+            {etapes.map((e, i) => (
+              <div key={e.titre + "-icon"} style={{ display: "flex", alignItems: "center" }}>
+                <div style={{ flex: 1, height: 1, background: "#C4704F", opacity: i === 0 ? 0 : 0.3 }} />
+                <div style={{
+                  width: 48, height: 48, borderRadius: "50%",
+                  background: "#C4704F", display: "flex",
+                  alignItems: "center", justifyContent: "center",
+                  flexShrink: 0, zIndex: 1,
+                }}>
+                  <i className={`ti ${e.icone}`} style={{ fontSize: 22, color: "#fff" }} />
+                </div>
+                <div style={{ flex: 1, height: 1, background: "#C4704F", opacity: i === etapes.length - 1 ? 0 : 0.3 }} />
               </div>
             ))}
+
+            {/* Rangée 2 — textes */}
+            {etapes.map((e, i) => (
+              <div key={e.titre + "-text"} style={{ paddingTop: "1.5rem", paddingRight: i < etapes.length - 1 ? 16 : 0, textAlign: "center" }}>
+                <p style={{
+                  fontSize: 12, fontWeight: 500, color: "#1A1A1A",
+                  textTransform: "uppercase", letterSpacing: "0.05em",
+                  marginBottom: 6, lineHeight: 1.3,
+                }}>
+                  {e.titre}
+                </p>
+                <p style={{ fontSize: 12, color: "#6B6B6B", lineHeight: 1.6 }}>
+                  {e.description}
+                </p>
+              </div>
+            ))}
+
           </div>
 
           <div className="text-center mt-12">
-            <Link href="/comment-ca-marche" className="text-sm text-[#007FFF] hover:underline">
+            <Link href="/comment-ca-marche" className="btn-outline-wine text-sm px-7 py-3 inline-block">
               En savoir plus →
             </Link>
           </div>
@@ -143,11 +175,9 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-widest text-[#FF9933] block mb-3">
-                {surtitreMenus}
-              </span>
-              <h2 className="text-4xl font-semibold text-[#4D0F1F]">
-                Les menus de la semaine
+              <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, lineHeight: 1.2, color: "#1A1A1A" }}>
+                Cinq menus par semaine,<br />
+                <span style={{ color: "#C4704F" }}>cinq bonnes raisons de bien manger</span>
               </h2>
             </div>
             <Link
@@ -166,11 +196,9 @@ export default async function Home() {
       <section id="frigidaire" className="py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <span className="text-xs font-semibold uppercase tracking-widest text-[#00CCCC] block mb-3">
-              Proche de vous
-            </span>
-            <h2 className="text-4xl font-semibold text-[#4D0F1F]">
-              Je trouve mon frigidaire
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, lineHeight: 1.2, color: "#1A1A1A" }}>
+              Votre repas vous attend<br />
+              <span style={{ color: "#00CCCC" }}>dans votre frigo avant midi</span>
             </h2>
             <p className="text-gray-400 mt-4 max-w-md mx-auto text-sm">
               Sélectionnez votre établissement pour trouver votre point de livraison.
@@ -182,13 +210,13 @@ export default async function Home() {
       </section>
 
       {/* ── 6. NOTRE PROMESSE ── */}
-      <section className="py-24 bg-[#FAFAF8]">
+      <section className="py-24 bg-[#F5F0E8]/70">
         <div className="max-w-6xl mx-auto px-6">
 
           <div className="text-center mb-14">
             <h2 className="text-4xl md:text-5xl font-semibold text-[#1A1A1A] leading-tight">
-              Chaque jour, un vrai repas.<br />
-              <span className="text-[#4A6741]">Pas un compromis.</span>
+              Chaque jour un vrai repas,<br />
+              <span className="text-[#4A6741]">pas un compromis</span>
             </h2>
           </div>
 
@@ -235,9 +263,9 @@ export default async function Home() {
                   color: "#1A1A1A",
                   marginBottom: "12px",
                 }}>
-                  Un chef.<br />
-                  Des produits frais.<br />
-                  <span style={{ color: "#4A6741" }}>Chaque matin.</span>
+                  Un chef<br />
+                  Des produits frais<br />
+                  <span style={{ color: "#4A6741" }}>Chaque matin</span>
                 </p>
                 <p style={{
                   fontSize: "14px",
@@ -245,9 +273,8 @@ export default async function Home() {
                   lineHeight: 1.7,
                   maxWidth: "420px",
                 }}>
-                  Rien de surgelé, rien d&apos;industriel. Notre chef cuisine
-                  à partir de zéro — avec ce que les producteurs
-                  du Limousin ont livré la veille.
+                  Chaque jour, notre chef cuisine à partir de zéro avec des produits frais
+                  majoritairement locaux. Rien d&apos;industriel, rien de préparé à l&apos;avance.
                 </p>
               </div>
 
@@ -277,8 +304,8 @@ export default async function Home() {
                   color: "#1A1A1A",
                   marginBottom: "12px",
                 }}>
-                  Sans engagement.<br />
-                  <span style={{ color: "#C4704F" }}>Clodia s&apos;adapte<br />à votre rythme.</span>
+                  Sans engagement<br />
+                  <span style={{ color: "#C4704F" }}>Clodia s&apos;adapte<br />à votre rythme</span>
                 </p>
                 <p style={{
                   fontSize: "14px",
@@ -288,49 +315,33 @@ export default async function Home() {
                 }}>
                   Vous commandez la semaine qui vous convient.
                   Vos gardes, vos repos, vos envies —
-                  pas l&apos;inverse.
+                  votre choix.
                 </p>
-              </div>
-
-              {/* CTA inline */}
-              <div>
-                <Link
-                  href="/commander"
-                  className="inline-flex items-center gap-2 text-sm font-semibold transition-colors"
-                  style={{ color: "#4A6741" }}
-                >
-                  Je découvre les menus
-                  <span style={{ fontSize: "18px", lineHeight: 1 }}>→</span>
-                </Link>
               </div>
 
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-3 gap-5">
-            {/* Card 1 */}
-            <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "#F5F0E8" }}>
-              <p className="text-3xl font-semibold mb-1" style={{ color: "#1A1A1A" }}>5</p>
-              <p className="text-xs uppercase tracking-widest leading-relaxed" style={{ color: "#6B6B6B" }}>
-                Menus différents<br />chaque semaine
-              </p>
-            </div>
-
-            {/* Card 2 */}
-            <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "#F5F0E8" }}>
-              <p className="text-3xl font-semibold mb-1" style={{ color: "#1A1A1A" }}>12h</p>
-              <p className="text-xs uppercase tracking-widest leading-relaxed" style={{ color: "#6B6B6B" }}>
-                Livraison dans le frigo<br />de votre service
-              </p>
-            </div>
-
-            {/* Card 3 */}
-            <div className="rounded-2xl p-6 text-center" style={{ backgroundColor: "#F5F0E8" }}>
-              <p className="text-3xl font-semibold mb-1" style={{ color: "#1A1A1A" }}>0</p>
-              <p className="text-xs uppercase tracking-widest leading-relaxed" style={{ color: "#6B6B6B" }}>
-                Engagement<br />ni abonnement
-              </p>
-            </div>
+          <div className="mt-5 flex items-center">
+            {[
+              { valeur: "5", label: "Menus différents\nchaque semaine" },
+              { valeur: "12h", label: "Livraison dans le frigo\nde votre service" },
+              { valeur: "0", label: "Engagement\nni abonnement" },
+            ].map((item, i) => (
+              <React.Fragment key={item.valeur}>
+                {i > 0 && (
+                  <div style={{ width: 1, height: 60, background: "#4D0F1F", opacity: 0.2, flexShrink: 0 }} />
+                )}
+                <div style={{ flex: 1, textAlign: "center", padding: "1.5rem 1rem" }}>
+                  <p className="text-3xl font-semibold mb-1" style={{ color: "#1A1A1A" }}>{item.valeur}</p>
+                  <p className="text-xs uppercase tracking-widest leading-relaxed" style={{ color: "#6B6B6B" }}>
+                    {item.label.split('\n').map((line, j) => (
+                      <React.Fragment key={j}>{line}{j === 0 && <br />}</React.Fragment>
+                    ))}
+                  </p>
+                </div>
+              </React.Fragment>
+            ))}
           </div>
 
           <div className="mt-10 text-center">
@@ -345,93 +356,20 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ── 7. NOTRE HISTOIRE ── */}
-      <section className="py-24 bg-[#F5F0E8]/70">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex flex-col lg:flex-row gap-16 items-start">
-
-            {/* Colonne gauche — texte */}
-            <div className="flex-1">
-              <span className="text-xs font-semibold uppercase tracking-widest text-[#C4704F] block mb-4">
-                Notre histoire
-              </span>
-              <h2
-                style={{ fontSize: "clamp(28px, 4vw, 42px)" }}
-                className="font-semibold text-[#1A1A1A] leading-tight mb-8"
-              >
-                Trois passionnés.<br />
-                <span className="text-[#C4704F]">Une évidence.</span>
-              </h2>
-
-              <div className="flex flex-col gap-5">
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  L&apos;aventure commence en 2020, quand Christophe fonde Evidence Traiteur avec
-                  une conviction simple : une cuisine généreuse, sincère, qui ne fait aucun
-                  compromis sur la qualité. Son frère Alexandre est le premier conquis — et il
-                  pense aussitôt à François, un ami de longue date, pour faire grandir l&apos;idée.
-                  L&apos;enthousiasme est là, mais le timing ne l&apos;est pas encore.
-                </p>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  Tout bascule en 2023. François s&apos;installe à Limoges avec sa femme,
-                  gynécologue au CHU. Au fil des dîners, elle lui raconte la même réalité :
-                  entre deux gardes, impossible de trouver quelque chose de bon à manger.
-                  Ce constat-là, François ne peut plus l&apos;ignorer.
-                </p>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  Mi-2025, il franchit le pas. Il quitte son emploi et appelle Alexandre et
-                  Christophe. En quelques minutes, c&apos;est décidé — tous les trois embarquent,
-                  avec l&apos;envie de construire quelque chose de concret pour les soignants
-                  de Limoges.
-                </p>
-                <p className="text-sm text-[#4D0F1F] font-medium leading-relaxed">
-                  Clodia, c&apos;est le prénom de leur grand-mère. Un prénom qui porte la douceur
-                  du fait-maison, la chaleur d&apos;une table familiale — exactement ce qu&apos;on
-                  veut mettre dans chaque barquette.
-                </p>
-              </div>
-
-              <Link href="/notre-histoire" className="text-sm text-[#007FFF] hover:underline mt-6 inline-block">
-                En savoir plus sur notre projet →
-              </Link>
-            </div>
-
-            {/* Colonne droite — photo */}
-            <div className="lg:w-[420px] shrink-0">
-              <div className="relative aspect-[4/5] rounded-2xl overflow-hidden w-full">
-                <Image
-                  src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=1000&fit=crop"
-                  alt="Christophe, Alexandre et François — fondateurs de Clodia"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                <p className="absolute bottom-0 left-0 right-0 text-white text-xs italic p-6">
-                  Christophe, Alexandre &amp; François — fondateurs de Clodia
-                </p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ── 8. FAQ ── */}
-      <section className="py-24 bg-[#FFF9D6]">
+      {/* ── 7. FAQ ── */}
+      <section className="py-24 bg-white">
         <div className="max-w-3xl mx-auto px-6">
           <div className="text-center mb-12">
-            <span className="text-xs font-semibold uppercase tracking-widest text-[#FF9933] block mb-3">
-              Questions fréquentes
-            </span>
-            <h2 className="text-4xl font-semibold text-[#4D0F1F]">
-              Vous avez des questions ?
+            <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, lineHeight: 1.2, color: "#1A1A1A" }}>
+              Une question ?<br />
+              <span style={{ color: "#FF9933" }}>On a la réponse.</span>
             </h2>
           </div>
 
           <FAQAccordion items={faqItems.slice(0, 5)} />
 
           <div className="text-center mt-8">
-            <Link href="/faq" className="text-sm text-[#007FFF] hover:underline">
+            <Link href="/faq" className="btn-outline-wine text-sm px-7 py-3 inline-block">
               Voir toutes les questions →
             </Link>
           </div>

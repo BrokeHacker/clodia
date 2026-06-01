@@ -6,8 +6,9 @@ import { usePathname } from "next/navigation";
 
 const navLinks = [
   { href: "/comment-ca-marche", label: "Comment ça marche" },
-  { href: "/nos-engagements", label: "Nos engagements" },
   { href: "/formules", label: "Formules" },
+  { href: "/nos-engagements", label: "Nos engagements" },
+  { href: "/notre-histoire", label: "Notre histoire" },
 ];
 
 export default function Header() {

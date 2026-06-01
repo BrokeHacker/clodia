@@ -197,9 +197,6 @@ export default function MenuCarousel({ menus }: { menus: Menu[] }) {
                 </div>
 
                 <div className="absolute bottom-0 left-0 right-0 p-5 pointer-events-none">
-                  <p style={{ color: "#ffffff", fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: "6px", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
-                    Plat du jour
-                  </p>
                   <h3 className="text-white font-semibold text-base leading-tight mb-2.5 line-clamp-2">
                     {menu.plat}
                   </h3>

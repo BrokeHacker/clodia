@@ -19,13 +19,13 @@ export default function Footer() {
             </p>
             <ul className="flex flex-col gap-3 text-sm">
               <li>
-                <Link href="/notre-histoire" className="text-white/70 hover:text-white transition-colors">
-                  Notre histoire
+                <Link href="/comment-ca-marche" className="text-white/70 hover:text-white transition-colors">
+                  Comment ça marche
                 </Link>
               </li>
               <li>
-                <Link href="/comment-ca-marche" className="text-white/70 hover:text-white transition-colors">
-                  Comment ça marche
+                <Link href="/formules" className="text-white/70 hover:text-white transition-colors">
+                  Formules
                 </Link>
               </li>
               <li>
@@ -34,8 +34,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/formules" className="text-white/70 hover:text-white transition-colors">
-                  Formules
+                <Link href="/notre-histoire" className="text-white/70 hover:text-white transition-colors">
+                  Notre histoire
                 </Link>
               </li>
               <li>
