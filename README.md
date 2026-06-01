@@ -90,3 +90,4 @@ Le bouton "Procéder au paiement" dans `/commander` affiche actuellement une ale
 ## Déploiement Vercel
 
 Le projet est connecté à Vercel via GitHub. Chaque push sur `main` déclenche un déploiement automatique.
+
