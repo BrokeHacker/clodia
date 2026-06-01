@@ -17,13 +17,6 @@ export default function NosEngagementsPage() {
         maxWidth: "1100px", margin: "0 auto",
         padding: "88px 64px 72px",
       }}>
-        <p style={{
-          fontSize: "11px", fontWeight: 600,
-          letterSpacing: "0.16em", textTransform: "uppercase",
-          color: "#4A6741", marginBottom: "24px",
-        }}>
-          Ce qui nous définit
-        </p>
         <h1 style={{
           fontSize: "clamp(36px, 5vw, 64px)",
           fontWeight: 600, color: "#1A1A1A",

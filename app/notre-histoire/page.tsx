@@ -10,20 +10,13 @@ export const metadata: Metadata = {
 
 export default function NotreHistoirePage() {
   return (
-    <div style={{ background: "#FAFAF8", minHeight: "100vh" }}>
+    <div style={{ background: "#FAFAF8", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
       {/* ── HERO ÉDITORIAL ── */}
       <section style={{
         maxWidth: "1100px", margin: "0 auto",
         padding: "88px 64px 72px",
       }}>
-        <p style={{
-          fontSize: "11px", fontWeight: 600,
-          letterSpacing: "0.16em", textTransform: "uppercase",
-          color: "#C4704F", marginBottom: "24px",
-        }}>
-          Qui sommes-nous
-        </p>
         <h1 style={{
           fontSize: "clamp(36px, 5vw, 64px)",
           fontWeight: 600, color: "#1A1A1A",
@@ -79,14 +72,6 @@ export default function NotreHistoirePage() {
                 personnel soignant.
               </p>
 
-              <div style={{ borderTop: "1px solid #E8E3D8", margin: "2rem 0" }} />
-
-              <p style={{ fontSize: 16, color: "#4D0F1F", fontWeight: 500, lineHeight: 1.75 }}>
-                Clodia, c&apos;est aussi et surtout le prénom de leur grand-mère. Une vie à les
-                régaler, puis à transmettre ses recettes et son savoir-faire pour résumer ce que la
-                cuisine doit apporter : un moment savoureux, sain et chaleureux. C&apos;est exactement
-                ce que l&apos;on veut mettre dans chaque barquette jour après jour.
-              </p>
             </div>
           </div>
 
@@ -107,35 +92,61 @@ export default function NotreHistoirePage() {
             </div>
           </div>
 
+        </div>{/* fin du flex row */}
+
+        {/* Paragraphe Clodia — pleine largeur */}
+        <div style={{
+          borderTop: "1px solid #E8E3D8",
+          borderBottom: "1px solid #E8E3D8",
+          marginTop: "64px",
+          padding: "48px 0",
+          textAlign: "center",
+        }}>
+          <p style={{
+            fontSize: "18px",
+            color: "#4D0F1F",
+            fontWeight: 500,
+            lineHeight: 1.8,
+            maxWidth: "720px",
+            margin: "0 auto",
+          }}>
+            Clodia, c&apos;est aussi et surtout le prénom de leur grand-mère. Une vie à les
+            régaler, puis à transmettre ses recettes et son savoir-faire pour résumer ce que la
+            cuisine doit apporter : un moment savoureux, sain et chaleureux. C&apos;est exactement
+            ce que l&apos;on veut mettre dans chaque barquette jour après jour.
+          </p>
         </div>
       </section>
-
-      {/* ── SÉPARATEUR ── */}
-      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 64px" }}>
-        <div style={{ height: "1px", background: "#E8E3D8" }} />
-      </div>
 
       {/* ── CTA FINAL ── */}
-      <section style={{
-        maxWidth: "1100px", margin: "0 auto",
-        padding: "64px 64px 96px",
-        textAlign: "center",
+      <div style={{
+        width: "100%",
+        padding: "0 0 80px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        gap: "16px",
       }}>
-        <div style={{ display: "flex", justifyContent: "center", gap: "16px", flexWrap: "wrap" }}>
-          <Link href="/commander" style={{
-            display: "inline-flex", alignItems: "center",
-            gap: "8px", background: "#4A6741",
-            color: "#fff", fontSize: "14px",
-            fontWeight: 600, padding: "15px 32px",
-            borderRadius: "999px", textDecoration: "none",
-          }}>
-            Commander →
-          </Link>
-          <Link href="/nos-engagements" className="btn-outline-wine text-sm px-8 py-4 inline-block">
-            Nos engagements
-          </Link>
-        </div>
-      </section>
+        <Link href="/commander" style={{
+          display: "inline-flex", alignItems: "center",
+          gap: "8px", background: "#4A6741",
+          color: "#fff", fontSize: "14px",
+          fontWeight: 600, padding: "15px 32px",
+          borderRadius: "999px", textDecoration: "none",
+        }}>
+          Commander →
+        </Link>
+        <Link href="/nos-engagements" style={{
+          display: "inline-flex", alignItems: "center",
+          gap: "8px", background: "transparent",
+          color: "#1A1A1A", fontSize: "14px",
+          fontWeight: 600, padding: "15px 32px",
+          borderRadius: "999px", textDecoration: "none",
+          border: "1px solid #E8E3D8",
+        }}>
+          Nos engagements
+        </Link>
+      </div>
 
     </div>
   );

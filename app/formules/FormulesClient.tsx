@@ -77,12 +77,6 @@ export default function FormulesClient() {
         padding: "72px 48px 56px",
         maxWidth: "1100px", margin: "0 auto",
       }}>
-        <p style={{
-          fontSize: "11px", fontWeight: 600, letterSpacing: "0.14em",
-          textTransform: "uppercase", color: "#4A6741", marginBottom: "16px",
-        }}>
-          Nos formules
-        </p>
         <h1 style={{
           fontSize: "clamp(36px, 5vw, 64px)",
           fontWeight: 600, color: "#1A1A1A",
