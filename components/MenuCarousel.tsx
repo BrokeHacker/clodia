@@ -169,6 +169,7 @@ export default function MenuCarousel({ menus }: { menus: Menu[] }) {
                     src={menu.photo}
                     alt={menu.plat}
                     fill
+                    sizes="340px"
                     className="object-cover pointer-events-none"
                     draggable={false}
                   />
