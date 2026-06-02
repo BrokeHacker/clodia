@@ -400,14 +400,14 @@ export default function FormulesClient() {
 
               {/* Bloc CTA */}
               <div style={{ padding: "20px 28px" }}>
-                <Link href="/commander" style={{
+                <Link href="/commander?semaine=courante" style={{
                   display: "block", textAlign: "center",
                   background: "#1A1A1A", color: "#fff",
                   fontSize: "14px", fontWeight: 600,
                   padding: "15px", borderRadius: "999px",
                   textDecoration: "none", letterSpacing: "0.01em",
                 }}>
-                  Commander à la carte →
+                  Commander pour la semaine en cours →
                 </Link>
                 <p style={{
                   fontSize: "11px", color: "#9B9B9B",

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Menu } from "@/lib/data";
 import { fetchMenusSemaineCourante, fetchMenusSemaineSuivante, fetchTarifs, Tarif, getTarifUnitaire, getTarifPrecommande, fetchPointsLivraison, PointLivraisonDB, fetchSlotsUnite, SlotUnite, getDisponible } from "@/lib/menus";
@@ -21,7 +22,7 @@ function formatPrice(p: number) {
 function CommanderContent() {
   const searchParams = useSearchParams();
 
-  const [semaineKey, setSemaineKey] = useState<"courante" | "suivante">("courante");
+  const [semaineKey, setSemaineKey] = useState<"courante" | "suivante" | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [menusCurrentWeek, setMenusCurrentWeek] = useState<Menu[]>([]);
   const [menusNextWeek, setMenusNextWeek] = useState<Menu[]>([]);
@@ -93,7 +94,7 @@ function CommanderContent() {
     setService("");
   }
 
-  const currentMenus = SEMAINES.find((s) => s.key === semaineKey)!.menus;
+  const currentMenus = semaineKey ? SEMAINES.find((s) => s.key === semaineKey)?.menus ?? [] : [];
 
   function getSlotDispo(date_livraison: string, variante: string): number | null {
     if (semaineKey !== 'courante') return null;
@@ -103,7 +104,8 @@ function CommanderContent() {
     return getDisponible(slot);
   }
 
-  function getCartItem(menuId: string) {
+  function getCartItem(menuId: string, variante?: Variante) {
+    if (variante) return cart.find((c) => c.menuId === menuId && c.variante === variante) ?? null;
     return cart.find((c) => c.menuId === menuId) ?? null;
   }
 
@@ -113,32 +115,26 @@ function CommanderContent() {
       if (delta > 0 && menu) {
         const dispo = getSlotDispo(menu.date_livraison, variante);
         if (dispo !== null) {
-          const currentQty = prev.find(c => c.menuId === menuId)?.quantite ?? 0;
+          const currentQty = prev.find(c => c.menuId === menuId && c.variante === variante)?.quantite ?? 0;
           if (currentQty + delta > dispo) return prev;
         }
       }
-      const existing = prev.find((c) => c.menuId === menuId);
+      const existing = prev.find((c) => c.menuId === menuId && c.variante === variante);
       if (!existing) {
         if (delta <= 0) return prev;
         return [...prev, { menuId, variante, quantite: delta }];
       }
       const newQty = existing.quantite + delta;
-      if (newQty <= 0) return prev.filter((c) => c.menuId !== menuId);
+      if (newQty <= 0) return prev.filter((c) => !(c.menuId === menuId && c.variante === variante));
       return prev.map((c) =>
-        c.menuId === menuId ? { ...c, variante, quantite: newQty } : c
+        c.menuId === menuId && c.variante === variante ? { ...c, quantite: newQty } : c
       );
     });
   }
 
-  function setVariante(menuId: string, variante: Variante) {
-    setCart((prev) =>
-      prev.map((c) => (c.menuId === menuId ? { ...c, variante } : c))
-    );
-  }
-
   const quantiteTotale = cart.reduce((a, c) => a + c.quantite, 0);
 
-  function getPrixUnitaire(semaine: string, qte: number): number {
+  function getPrixUnitaire(semaine: string | null, qte: number): number {
     if (semaine === 'suivante') return getTarifPrecommande(tarifs, qte);
     return getTarifUnitaire(tarifs);
   }
@@ -173,61 +169,147 @@ function CommanderContent() {
 
   return (
     <div style={{ background: "#FAFAF8", minHeight: "100vh" }}>
+      <style>{`
+        .semaine-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        .semaine-btn:active {
+          transform: translateY(0px);
+        }
+      `}</style>
       {/* Header de page */}
       <section style={{
         maxWidth: "1100px", margin: "0 auto",
         padding: "72px 48px 56px",
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "64px",
+        alignItems: "center",
       }}>
-        <p style={{
-          fontSize: "11px", fontWeight: 600, letterSpacing: "0.14em",
-          textTransform: "uppercase", color: "#FD3D6B", marginBottom: "16px",
-        }}>
-          Réservez votre repas
-        </p>
+        {/* Colonne gauche — titre */}
         <h1 style={{
           fontSize: "clamp(36px, 5vw, 64px)",
           fontWeight: 600, color: "#1A1A1A",
           lineHeight: 1.1, letterSpacing: "-0.025em",
-          textTransform: "uppercase", margin: "0 0 16px",
+          textTransform: "uppercase", margin: 0,
         }}>
           Commander<br />
-          <span style={{ color: "#FD3D6B" }}>Vos Menus.</span>
+          <span style={{ color: "#FD3D6B" }}>Vos Menus</span>
         </h1>
-        <p style={{
-          fontSize: "16px", color: "#6B6B6B",
-          lineHeight: 1.75, maxWidth: "520px", margin: 0,
-        }}>
-          Choisissez vos menus, sélectionnez votre variante et votre point de livraison.
-          Commandez avant 22h pour une livraison le lendemain avant 12h.
-        </p>
+
+        {/* Colonne droite — texte + bouton */}
+        <div>
+          <p style={{
+            fontSize: "15px", color: "#6B6B6B",
+            lineHeight: 1.75, margin: "0 0 20px",
+          }}>
+            Première visite ? Avant de commander, découvrez nos formules pour comprendre
+            la différence entre la pré-commande pour la semaine suivante et la commande
+            pour la semaine en cours — tarifs, disponibilités et avantages.
+          </p>
+          <Link href="/formules" style={{
+            display: "inline-flex", alignItems: "center", gap: "8px",
+            background: "transparent", color: "#1A1A1A",
+            fontSize: "14px", fontWeight: 600,
+            padding: "12px 24px", borderRadius: "999px",
+            textDecoration: "none", border: "1px solid #E8E3D8",
+          }}>
+            Découvrir les formules →
+          </Link>
+        </div>
       </section>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Colonne principale */}
           <div className="flex-1">
-            {/* Onglets semaines */}
-            <div className="flex gap-2 mb-5">
-              {SEMAINES.map((s) => (
-                <button
-                  key={s.key}
-                  onClick={() => setSemaineKey(s.key)}
-                  className={`px-5 py-2.5 rounded-full text-sm font-medium transition-colors ${
-                    semaineKey === s.key
-                      ? "bg-[#4D0F1F] text-white"
-                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              ))}
+            {/* Sélecteur de mode — 2 grands boutons côte à côte */}
+            <div className="grid grid-cols-2 gap-4 mb-8">
+
+              {/* Bouton Pré-commande */}
+              <button
+                onClick={() => setSemaineKey("suivante")}
+                className="semaine-btn text-left rounded-2xl p-6 border-2 transition-all"
+                style={{
+                  borderColor: semaineKey === "suivante" ? "#00CCCC" : "#E8E3D8",
+                  background: semaineKey === "suivante" ? "#E8FFF8" : "#fff",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <p style={{
+                  fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "#00CCCC", marginBottom: "8px",
+                }}>
+                  Avant mercredi minuit
+                </p>
+                <p style={{
+                  fontSize: "18px", fontWeight: 600, color: "#1A1A1A",
+                  marginBottom: "16px", lineHeight: 1.2,
+                }}>
+                  Pré-commander pour<br />la semaine suivante
+                </p>
+                <div className="flex flex-col gap-2">
+                  <span className="flex items-center gap-2 text-sm text-gray-600">
+                    <i className="ti ti-check" style={{ color: "#00CCCC", fontSize: 16 }} />
+                    Disponibilité garantie
+                  </span>
+                  <span className="flex items-center gap-2 text-sm text-gray-600">
+                    <i className="ti ti-tag" style={{ color: "#00CCCC", fontSize: 16 }} />
+                    Tarifs préférentiels
+                  </span>
+                </div>
+              </button>
+
+              {/* Bouton Semaine en cours */}
+              <button
+                onClick={() => setSemaineKey("courante")}
+                className="semaine-btn text-left rounded-2xl p-6 border-2 transition-all"
+                style={{
+                  borderColor: semaineKey === "courante" ? "#C4704F" : "#E8E3D8",
+                  background: semaineKey === "courante" ? "#F5F0E8" : "#fff",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <p style={{
+                  fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
+                  textTransform: "uppercase", color: "#C4704F", marginBottom: "8px",
+                }}>
+                  Avant minuit la veille
+                </p>
+                <p style={{
+                  fontSize: "18px", fontWeight: 600, color: "#1A1A1A",
+                  marginBottom: "16px", lineHeight: 1.2,
+                }}>
+                  Commander pour<br />la semaine en cours
+                </p>
+                <div className="flex flex-col gap-2">
+                  <span className="flex items-center gap-2 text-sm text-gray-600">
+                    <i className="ti ti-alert-triangle" style={{ color: "#FF9933", fontSize: 16 }} />
+                    Selon disponibilités
+                  </span>
+                  <span className="flex items-center gap-2 text-sm text-gray-600">
+                    <i className="ti ti-coin" style={{ color: "#C4704F", fontSize: 16 }} />
+                    Tarif unique {formatPrice(getTarifUnitaire(tarifs))}
+                  </span>
+                </div>
+              </button>
+
             </div>
 
-            {/* Grille menus */}
+            {/* Menus — affichés seulement si une semaine est sélectionnée */}
+            {semaineKey && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {currentMenus.map((menu) => {
-                const item = getCartItem(menu.id);
-                const inCart = item !== null;
+                const itemPlat = getCartItem(menu.id, "plat");
+                const itemVege = getCartItem(menu.id, "plat_vege");
+                const inCart = itemPlat !== null || itemVege !== null;
+                const dispoPlat = getSlotDispo(menu.date_livraison, 'plat');
+                const dispoVege = getSlotDispo(menu.date_livraison, 'plat_vege');
+                const platComplet = dispoPlat !== null && dispoPlat === 0;
+                const vegeComplet = dispoVege !== null && dispoVege === 0;
 
                 return (
                   <div
@@ -261,57 +343,43 @@ function CommanderContent() {
                     </div>
 
                     <div className="p-4">
-                      {/* Variante selector */}
-                      {(() => {
-                        const dispoPlat = getSlotDispo(menu.date_livraison, 'plat');
-                        const dispoVege = getSlotDispo(menu.date_livraison, 'plat_vege');
-                        const platComplet = dispoPlat !== null && dispoPlat === 0;
-                        const vegeComplet = dispoVege !== null && dispoVege === 0;
-                        return (
-                          <div className="flex gap-2 mb-3">
-                            <button
-                              disabled={platComplet}
-                              onClick={() => {
-                                if (platComplet) return;
-                                if (inCart) setVariante(menu.id, "plat");
-                                else updateCart(menu.id, "plat", 1);
-                              }}
-                              className={`flex-1 text-xs font-medium py-2 rounded-xl border transition-colors ${
-                                platComplet
-                                  ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
-                                  : !inCart || item?.variante === "plat"
-                                  ? "border-[#4D0F1F] bg-[#4D0F1F] text-white"
-                                  : "border-gray-200 text-gray-400 hover:border-gray-300"
-                              }`}
-                            >
-                              {dispoPlat !== null ? `🍖 Plat (${dispoPlat} dispo)` : "🍖 Plat"}
-                            </button>
-                            <button
-                              disabled={vegeComplet}
-                              onClick={() => {
-                                if (vegeComplet) return;
-                                if (inCart) setVariante(menu.id, "plat_vege");
-                                else updateCart(menu.id, "plat_vege", 1);
-                              }}
-                              className={`flex-1 text-xs font-medium py-2 rounded-xl border transition-colors ${
-                                vegeComplet
-                                  ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
-                                  : inCart && item?.variante === "plat_vege"
-                                  ? "border-[#00CCCC] bg-[#00CCCC] text-white"
-                                  : "border-gray-200 text-gray-400 hover:border-gray-300"
-                              }`}
-                            >
-                              {dispoVege !== null ? `🌿 Végé (${dispoVege} dispo)` : "🌿 Végé"}
-                            </button>
-                          </div>
-                        );
-                      })()}
+                      {/* Boutons variante */}
+                      <div className="flex gap-2 mb-3">
+                        <button
+                          disabled={platComplet}
+                          onClick={() => {
+                            if (platComplet) return;
+                            if (!itemPlat) updateCart(menu.id, "plat", 1);
+                          }}
+                          className={`flex-1 text-xs font-medium py-2 rounded-xl border transition-colors ${
+                            platComplet
+                              ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                              : itemPlat !== null
+                              ? "border-[#4D0F1F] bg-[#4D0F1F] text-white"
+                              : "border-gray-200 text-gray-400 hover:border-gray-300"
+                          }`}
+                        >
+                          {dispoPlat !== null ? `🍖 Plat (${dispoPlat} dispo)` : "🍖 Plat"}
+                        </button>
+                        <button
+                          disabled={vegeComplet}
+                          onClick={() => {
+                            if (vegeComplet) return;
+                            if (!itemVege) updateCart(menu.id, "plat_vege", 1);
+                          }}
+                          className={`flex-1 text-xs font-medium py-2 rounded-xl border transition-colors ${
+                            vegeComplet
+                              ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                              : itemVege !== null
+                              ? "border-[#00CCCC] bg-[#00CCCC] text-white"
+                              : "border-gray-200 text-gray-400 hover:border-gray-300"
+                          }`}
+                        >
+                          {dispoVege !== null ? `🌿 Végé (${dispoVege} dispo)` : "🌿 Végé"}
+                        </button>
+                      </div>
 
-                      <h3 className="font-semibold text-[#4D0F1F] text-sm mb-1">
-                        {inCart && item?.variante === "plat_vege"
-                          ? menu.plat_vege
-                          : menu.plat}
-                      </h3>
+                      <h3 className="font-semibold text-[#4D0F1F] text-sm mb-1">{menu.plat}</h3>
                       <p className="text-xs text-gray-400 mb-4">+ {menu.dessert}</p>
 
                       <div className="flex items-center justify-between">
@@ -327,22 +395,47 @@ function CommanderContent() {
                             + Ajouter
                           </button>
                         ) : (
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => updateCart(menu.id, item.variante, -1)}
-                              className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors"
-                            >
-                              −
-                            </button>
-                            <span className="font-semibold text-[#4D0F1F] w-4 text-center">
-                              {item.quantite}
-                            </span>
-                            <button
-                              onClick={() => updateCart(menu.id, item.variante, 1)}
-                              className="w-8 h-8 rounded-full bg-[#4D0F1F] flex items-center justify-center text-white hover:bg-[#3a0b17] transition-colors"
-                            >
-                              +
-                            </button>
+                          <div className="flex flex-col gap-1.5">
+                            {itemPlat && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-400 w-8">Plat</span>
+                                <button
+                                  onClick={() => updateCart(menu.id, "plat", -1)}
+                                  className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-xs"
+                                >
+                                  −
+                                </button>
+                                <span className="font-semibold text-[#4D0F1F] w-4 text-center text-sm">
+                                  {itemPlat.quantite}
+                                </span>
+                                <button
+                                  onClick={() => updateCart(menu.id, "plat", 1)}
+                                  className="w-7 h-7 rounded-full bg-[#4D0F1F] flex items-center justify-center text-white hover:bg-[#3a0b17] transition-colors text-xs"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            )}
+                            {itemVege && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-400 w-8">Végé</span>
+                                <button
+                                  onClick={() => updateCart(menu.id, "plat_vege", -1)}
+                                  className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-xs"
+                                >
+                                  −
+                                </button>
+                                <span className="font-semibold text-[#4D0F1F] w-4 text-center text-sm">
+                                  {itemVege.quantite}
+                                </span>
+                                <button
+                                  onClick={() => updateCart(menu.id, "plat_vege", 1)}
+                                  className="w-7 h-7 rounded-full bg-[#00CCCC] flex items-center justify-center text-white hover:bg-[#00aaaa] transition-colors text-xs"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -351,6 +444,7 @@ function CommanderContent() {
                 );
               })}
             </div>
+            )}
           </div>
 
           {/* Récapitulatif */}
@@ -374,23 +468,143 @@ function CommanderContent() {
                     </p>
                   ) : (
                     <>
-                      <div className="flex flex-col gap-3 mb-5">
-                        {cartWithMenus.map((item) => (
-                          <div key={item.menuId} className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium text-[#4D0F1F] leading-snug">
-                                {item.menu.jourSemaine}{" "}
-                                <span className="text-gray-400">{item.menu.date}</span>
-                              </p>
-                              <p className="text-xs text-gray-400 mt-0.5">
-                                {item.variante === "plat" ? "Plat" : "Végé"} × {item.quantite}
-                              </p>
-                            </div>
-                            <span className="text-xs font-semibold text-[#4D0F1F] shrink-0">
-                              {formatPrice(getPrixUnitaire(semaineKey, quantiteTotale) * item.quantite)}
-                            </span>
-                          </div>
-                        ))}
+                      <div className="flex flex-col mb-5">
+                        {(() => {
+                          const itemsPrecommande = cartWithMenus.filter(item =>
+                            menusNextWeek.some(m => m.id === item.menuId)
+                          )
+                          const itemsCourante = cartWithMenus.filter(item =>
+                            menusCurrentWeek.some(m => m.id === item.menuId)
+                          )
+                          const prixUnite = getTarifUnitaire(tarifs)
+                          const qtePrecommande = itemsPrecommande.reduce((a, c) => a + c.quantite, 0)
+
+                          return (
+                            <>
+                              {/* Section pré-commande */}
+                              {itemsPrecommande.length > 0 && (
+                                <div className="mb-4">
+                                  <p className="text-xs font-semibold uppercase tracking-widest text-[#00CCCC] mb-3">
+                                    Pré-commande
+                                  </p>
+                                  <div className="flex flex-col gap-3">
+                                    {itemsPrecommande.map((item) => {
+                                      const prixPlat = getTarifPrecommande(tarifs, qtePrecommande)
+                                      return (
+                                        <div key={item.menuId} className="flex items-start justify-between gap-2">
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-xs font-medium text-[#4D0F1F] leading-snug">
+                                              {item.menu.jourSemaine}{" "}
+                                              <span className="text-gray-400">{item.menu.date}</span>
+                                            </p>
+                                            <p className="text-xs text-gray-400 mt-0.5">
+                                              {item.variante === "plat" ? "Plat standard" : "Plat végétarien"}
+                                            </p>
+                                          </div>
+                                          <div className="flex items-center gap-1.5 shrink-0">
+                                            <button
+                                              onClick={() => updateCart(item.menuId, item.variante, -1)}
+                                              className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-xs"
+                                            >
+                                              {item.quantite === 1 ? "×" : "−"}
+                                            </button>
+                                            <span className="text-xs font-semibold text-[#4D0F1F] w-4 text-center">
+                                              {item.quantite}
+                                            </span>
+                                            <button
+                                              onClick={() => {
+                                                const dispo = getSlotDispo(item.menu.date_livraison, item.variante)
+                                                if (dispo !== null && item.quantite >= dispo) return
+                                                updateCart(item.menuId, item.variante, 1)
+                                              }}
+                                              className="w-6 h-6 rounded-full bg-[#4D0F1F] flex items-center justify-center text-white hover:bg-[#3a0b17] transition-colors text-xs"
+                                            >
+                                              +
+                                            </button>
+                                            <span className="text-xs font-semibold text-[#4D0F1F] ml-1">
+                                              {formatPrice(prixPlat * item.quantite)}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                  <div className="mt-3 pt-3 border-t border-[#00CCCC]/20 flex flex-col gap-1">
+                                    <div className="flex justify-between text-xs text-gray-500">
+                                      <span>Prix unitaire</span>
+                                      <span>{formatPrice(getTarifPrecommande(tarifs, qtePrecommande))}</span>
+                                    </div>
+                                    {(prixUnite - getTarifPrecommande(tarifs, qtePrecommande)) * qtePrecommande > 0 && (
+                                      <div className="flex justify-between text-xs text-[#00CCCC] font-medium">
+                                        <span>Économie réalisée</span>
+                                        <span>- {formatPrice((prixUnite - getTarifPrecommande(tarifs, qtePrecommande)) * qtePrecommande)}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Séparateur si les deux sections sont présentes */}
+                              {itemsPrecommande.length > 0 && itemsCourante.length > 0 && (
+                                <div className="border-t border-gray-100 my-3" />
+                              )}
+
+                              {/* Section semaine en cours */}
+                              {itemsCourante.length > 0 && (
+                                <div className="mb-4">
+                                  <p className="text-xs font-semibold uppercase tracking-widest text-[#C4704F] mb-3">
+                                    Semaine en cours
+                                  </p>
+                                  <div className="flex flex-col gap-3">
+                                    {itemsCourante.map((item) => (
+                                      <div key={item.menuId} className="flex items-start justify-between gap-2">
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-medium text-[#4D0F1F] leading-snug">
+                                            {item.menu.jourSemaine}{" "}
+                                            <span className="text-gray-400">{item.menu.date}</span>
+                                          </p>
+                                          <p className="text-xs text-gray-400 mt-0.5">
+                                            {item.variante === "plat" ? "Plat standard" : "Plat végétarien"}
+                                          </p>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 shrink-0">
+                                          <button
+                                            onClick={() => updateCart(item.menuId, item.variante, -1)}
+                                            className="w-6 h-6 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-xs"
+                                          >
+                                            {item.quantite === 1 ? "×" : "−"}
+                                          </button>
+                                          <span className="text-xs font-semibold text-[#4D0F1F] w-4 text-center">
+                                            {item.quantite}
+                                          </span>
+                                          <button
+                                            onClick={() => {
+                                              const dispo = getSlotDispo(item.menu.date_livraison, item.variante)
+                                              if (dispo !== null && item.quantite >= dispo) return
+                                              updateCart(item.menuId, item.variante, 1)
+                                            }}
+                                            className="w-6 h-6 rounded-full bg-[#4D0F1F] flex items-center justify-center text-white hover:bg-[#3a0b17] transition-colors text-xs"
+                                          >
+                                            +
+                                          </button>
+                                          <span className="text-xs font-semibold text-[#4D0F1F] ml-1">
+                                            {formatPrice(prixUnite * item.quantite)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <div className="mt-3 pt-3 border-t border-[#C4704F]/20">
+                                    <div className="flex justify-between text-xs text-gray-500">
+                                      <span>Prix unitaire</span>
+                                      <span>{formatPrice(prixUnite)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )
+                        })()}
                       </div>
 
                       <div className="border-t border-gray-100 pt-4 mb-5">

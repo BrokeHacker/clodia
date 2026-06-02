@@ -64,7 +64,9 @@ export async function fetchTarifs(): Promise<Tarif[]> {
 export function getTarifUnitaire(tarifs: Tarif[]): number {
   const t = tarifs.find(t => t.type === 'unite')
   if (!t) {
-    console.warn('getTarifUnitaire : aucun tarif "unite" trouvé dans Supabase')
+    if (tarifs.length > 0) {
+      console.warn('getTarifUnitaire : aucun tarif "unite" trouvé dans Supabase')
+    }
     return 0
   }
   return t.prix_unitaire
