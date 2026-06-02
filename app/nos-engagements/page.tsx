@@ -26,7 +26,7 @@ export default function NosEngagementsPage() {
           maxWidth: "800px",
         }}>
           Nos<br />
-          <span style={{ color: "#4A6741" }}>Engagements.</span>
+          <span style={{ color: "#4A6741" }}>engagements</span>
         </h1>
         <p style={{
           fontSize: "18px", color: "#6B6B6B",

@@ -49,7 +49,7 @@ export default function CommentCaMarchePage() {
       </div>
 
       {/* Étape 1 */}
-      <section className="py-24 bg-white">
+      <section className="py-12 bg-white">
         <div className="max-w-5xl mx-auto px-6">
           <p
             className="font-semibold leading-none mb-4"
@@ -57,70 +57,73 @@ export default function CommentCaMarchePage() {
           >
             01
           </p>
-          <h2 className="text-3xl font-semibold text-[#4D0F1F] mb-8">
-            Choisissez votre menu
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, lineHeight: 1.2, color: "#1A1A1A", marginBottom: "2rem" }}>
+            Choisissez<br />
+            <span style={{ color: "#C4704F" }}>votre menu</span>
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-6">
 
-            {/* Bloc mis en avant */}
-            <div className="bg-[#E8FFF8] rounded-2xl p-6 flex flex-col ring-2 ring-[#00CCCC]">
+            {/* Bloc pré-commande */}
+            <div className="bg-[#E8FFF8] rounded-2xl p-6 ring-2 ring-[#00CCCC]">
               <span className="text-xs font-semibold uppercase tracking-widest text-[#00CCCC] block mb-3">
                 Notre recommandation
               </span>
-              <h3 className="text-xl font-semibold text-[#4D0F1F] mb-3">
+              <h3 className="text-xl font-semibold text-[#4D0F1F] mb-6">
                 La pré-commande
               </h3>
-              <p className="text-gray-500 text-sm leading-relaxed mb-5">
-                Commandez avant mercredi minuit pour la semaine suivante. Vous planifiez vos
-                repas à l&apos;avance, bénéficiez de tarifs préférentiels, et contribuez à une
-                démarche zéro gaspillage. Chaque commande anticipée nous permet de cuisiner
-                exactement ce dont vous avez besoin.
-              </p>
-              <ul className="flex flex-col gap-3 mb-5">
-                {avantagesPrecommande.map(({ icone, texte }) => (
-                  <li key={icone} className="flex items-start gap-3 text-sm text-gray-600">
-                    <i
-                      className={`ti ${icone} shrink-0 mt-0.5`}
-                      style={{ fontSize: 18, color: "#00CCCC" }}
-                    />
-                    {texte}
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-auto">
-                <CTASemaineButtons semaine="suivante" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  Commandez avant mercredi minuit pour la semaine suivante. Vous planifiez vos
+                  repas à l&apos;avance, bénéficiez de tarifs préférentiels, et contribuez à une
+                  démarche zéro gaspillage. Chaque commande anticipée nous permet de cuisiner
+                  exactement ce dont vous avez besoin.
+                </p>
+                <ul className="flex flex-col gap-3">
+                  {avantagesPrecommande.map(({ icone, texte }) => (
+                    <li key={icone} className="flex items-start gap-3 text-sm text-gray-600">
+                      <i className={`ti ${icone} shrink-0 mt-0.5`} style={{ fontSize: 18, color: "#00CCCC" }} />
+                      {texte}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="border-t border-[#00CCCC]/20 pt-5">
+                <div style={{ width: "fit-content", margin: "0 auto" }}>
+                  <CTASemaineButtons semaine="suivante" />
+                </div>
               </div>
             </div>
 
-            {/* Bloc secondaire */}
-            <div className="bg-[#F5F0E8] rounded-2xl p-6 flex flex-col">
-              <div className="text-xs font-semibold uppercase tracking-widest mb-3 invisible">
-                NOTRE RECOMMANDATION
-              </div>
-              <h3 className="text-xl font-semibold text-[#4D0F1F] mb-3">
+            {/* Bloc semaine en cours */}
+            <div className="bg-[#F5F0E8] rounded-2xl p-6">
+              <h3 className="text-xl font-semibold text-[#4D0F1F] mb-6">
                 La commande en cours de semaine
               </h3>
-              <p className="text-gray-500 text-sm leading-relaxed mb-3">
-                Vous préférez rester flexible ? Commandez jusqu&apos;à la veille à minuit selon
-                vos gardes et vos envies. Les menus disponibles sont affichés en temps réel.
-              </p>
-              <ul className="flex flex-col gap-2 mt-4 mb-5">
-                <li className="flex items-center gap-2 text-sm text-[#4D0F1F]">
-                  <i className="ti ti-arrows-shuffle text-[#C4704F]" />
-                  Flexibilité totale
-                </li>
-                <li className="flex items-center gap-2 text-sm text-[#4D0F1F]">
-                  <i className="ti ti-clock text-[#C4704F]" />
-                  Commande possible la veille jusqu&apos;à minuit
-                </li>
-                <li className="flex items-center gap-2 text-sm text-[#4D0F1F]">
-                  <i className="ti ti-alert-triangle text-[#FF9933]" />
-                  Disponibilités non garanties
-                </li>
-              </ul>
-              <div className="mt-auto">
-                <CTASemaineButtons semaine="courante" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  Vous préférez rester flexible ? Commandez jusqu&apos;à la veille à minuit selon
+                  vos gardes et vos envies. Les menus disponibles sont affichés en temps réel.
+                </p>
+                <ul className="flex flex-col gap-2">
+                  <li className="flex items-center gap-2 text-sm text-[#4D0F1F]">
+                    <i className="ti ti-arrows-shuffle text-[#C4704F]" />
+                    Flexibilité totale
+                  </li>
+                  <li className="flex items-center gap-2 text-sm text-[#4D0F1F]">
+                    <i className="ti ti-clock text-[#C4704F]" />
+                    Commande possible la veille jusqu&apos;à minuit
+                  </li>
+                  <li className="flex items-center gap-2 text-sm text-[#4D0F1F]">
+                    <i className="ti ti-alert-triangle text-[#FF9933]" />
+                    Disponibilités non garanties
+                  </li>
+                </ul>
+              </div>
+              <div className="border-t border-[#C4704F]/20 pt-5">
+                <div style={{ width: "fit-content", margin: "0 auto" }}>
+                  <CTASemaineButtons semaine="courante" />
+                </div>
               </div>
             </div>
 
@@ -129,7 +132,7 @@ export default function CommentCaMarchePage() {
       </section>
 
       {/* Étape 2 */}
-      <section className="py-24 bg-[#F5F0E8]/70">
+      <section className="py-12 bg-[#F5F0E8]/70">
         <div className="max-w-5xl mx-auto px-6">
           <p
             className="font-semibold leading-none mb-4"
@@ -137,8 +140,9 @@ export default function CommentCaMarchePage() {
           >
             02
           </p>
-          <h2 className="text-3xl font-semibold text-[#4D0F1F] mb-8">
-            Choisissez votre frigidaire
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, lineHeight: 1.2, color: "#1A1A1A", marginBottom: "2rem" }}>
+            Choisissez<br />
+            <span style={{ color: "#C4704F" }}>votre frigidaire</span>
           </h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -227,7 +231,7 @@ export default function CommentCaMarchePage() {
       </section>
 
       {/* Étape 3 */}
-      <section className="py-24 bg-white">
+      <section className="py-12 bg-white">
         <div className="max-w-5xl mx-auto px-6">
           <p
             className="font-semibold leading-none mb-4"
@@ -235,12 +239,10 @@ export default function CommentCaMarchePage() {
           >
             03
           </p>
-          <h2 className="text-3xl font-semibold text-[#4D0F1F] mb-1">
-            La livraison
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, lineHeight: 1.2, color: "#1A1A1A", marginBottom: "0.5rem" }}>
+            La livraison.<br />
+            <span style={{ color: "#C4704F" }}>On s&apos;occupe de tout</span>
           </h2>
-          <p className="text-gray-500 italic mb-8">
-            Vous ne faites rien, on s&apos;occupe de tout.
-          </p>
 
           <div className="flex flex-col lg:flex-row gap-10 items-start">
 
@@ -251,6 +253,18 @@ export default function CommentCaMarchePage() {
               </h3>
               <ul className="flex flex-col gap-4">
                 <li className="flex items-start gap-3 text-sm text-gray-600">
+                  <i className="ti ti-clock shrink-0 mt-0.5" style={{ fontSize: 18, color: "#00CCCC" }} />
+                  Dépôt dans votre frigidaire avant 12h, sans aucune intervention de votre part
+                </li>
+                <li className="flex items-start gap-3 text-sm text-gray-600">
+                  <i className="ti ti-snowflake shrink-0 mt-0.5" style={{ fontSize: 18, color: "#007FFF" }} />
+                  Chaîne du froid respectée — caisses de transport réfrigérées
+                </li>
+                <li className="flex items-start gap-3 text-sm text-gray-600">
+                  <i className="ti ti-tag shrink-0 mt-0.5" style={{ fontSize: 18, color: "#C4704F" }} />
+                  Chaque plat est étiqueté à votre nom
+                </li>
+                <li className="flex items-start gap-3 text-sm text-gray-600">
                   <span
                     className="shrink-0 flex items-center justify-center rounded-full mt-0.5"
                     style={{ background: "#4D0F1F", width: 22, height: 22 }}
@@ -258,18 +272,6 @@ export default function CommentCaMarchePage() {
                     <i className="ti ti-bolt" style={{ fontSize: 13, color: "#EAFF33" }} />
                   </span>
                   Livraison en véhicule 100% électrique
-                </li>
-                <li className="flex items-start gap-3 text-sm text-gray-600">
-                  <i className="ti ti-snowflake shrink-0 mt-0.5" style={{ fontSize: 18, color: "#007FFF" }} />
-                  Chaîne du froid respectée — caisses de transport réfrigérées
-                </li>
-                <li className="flex items-start gap-3 text-sm text-gray-600">
-                  <i className="ti ti-clock shrink-0 mt-0.5" style={{ fontSize: 18, color: "#00CCCC" }} />
-                  Dépôt dans votre frigidaire avant 12h, sans aucune intervention de votre part
-                </li>
-                <li className="flex items-start gap-3 text-sm text-gray-600">
-                  <i className="ti ti-tag shrink-0 mt-0.5" style={{ fontSize: 18, color: "#C4704F" }} />
-                  Chaque plat est étiqueté à votre nom
                 </li>
                 <li className="flex items-start gap-3 text-sm text-gray-600">
                   <i className="ti ti-bell shrink-0 mt-0.5" style={{ fontSize: 18, color: "#FD3D6B" }} />
@@ -312,7 +314,7 @@ export default function CommentCaMarchePage() {
       </section>
 
       {/* Étape 4 */}
-      <section className="py-24 bg-[#F5F0E8]/70">
+      <section className="py-12 bg-[#F5F0E8]/70">
         <div className="max-w-5xl mx-auto px-6">
           <p
             className="font-semibold leading-none mb-4"
@@ -320,12 +322,10 @@ export default function CommentCaMarchePage() {
           >
             04
           </p>
-          <h2 className="text-3xl font-semibold text-[#4D0F1F] mb-1">
-            La dégustation
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, lineHeight: 1.2, color: "#1A1A1A", marginBottom: "0.5rem" }}>
+            La dégustation.<br />
+            <span style={{ color: "#C4704F" }}>Prêt en 2 minutes</span>
           </h2>
-          <p className="text-gray-500 italic mb-8">
-            Prêt en 2 minutes, savouré à votre rythme.
-          </p>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
