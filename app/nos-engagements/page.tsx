@@ -73,11 +73,10 @@ export default function NosEngagementsPage() {
             fontSize: "16px", color: "#6B6B6B",
             lineHeight: 1.8, maxWidth: "400px",
           }}>
-            Nous travaillons en direct avec des producteurs
-            du Limousin et du Périgord. Fruits, légumes,
-            viandes, produits laitiers — tout est sélectionné
-            pour sa fraîcheur et sa qualité. Rien de surgelé,
-            jamais.
+            Nos menus sont élaborés à partir de produits frais,
+            majoritairement locaux, sélectionnés avec soin.
+            Fruits, légumes, viandes et produits laitiers de saison —
+            une exigence quotidienne sur la qualité et la fraîcheur.
           </p>
         </div>
         <div style={{
@@ -145,32 +144,18 @@ export default function NosEngagementsPage() {
             textTransform: "uppercase",
             marginTop: "-16px", marginBottom: "24px",
           }}>
-            Un Chef.<br />Chaque Jour.
+            5 Menus<br />1 Équilibre
           </h2>
           <p style={{
             fontSize: "16px", color: "#6B6B6B",
             lineHeight: 1.8, maxWidth: "400px",
-            marginBottom: "24px",
           }}>
-            Notre chef a été formé dans les meilleures
-            maisons françaises et récompensé par le Guide
-            Gault &amp; Millau. Chaque semaine, cinq menus
-            distincts — avec une alternative végétarienne
-            élaborée — cuisinés à partir de zéro.
+            Chaque semaine, notre chef compose 5 menus distincts
+            pensés pour couvrir l&apos;ensemble des apports nutritionnels.
+            Protéines et légumes variés d&apos;un jour à l&apos;autre —
+            une approche nutritive conçue spécifiquement
+            pour le rythme des soignants.
           </p>
-          <div style={{
-            display: "inline-flex", alignItems: "center",
-            gap: "8px", background: "#EAF3DE",
-            borderRadius: "999px", padding: "6px 16px",
-          }}>
-            <span style={{
-              fontSize: "11px", fontWeight: 700,
-              color: "#4A6741", letterSpacing: "0.08em",
-              textTransform: "uppercase",
-            }}>
-              Récompensé Gault &amp; Millau
-            </span>
-          </div>
         </div>
       </section>
 
@@ -179,19 +164,17 @@ export default function NosEngagementsPage() {
         <div style={{ height: "1px", background: "#E8E3D8" }} />
       </div>
 
-      {/* ── ENGAGEMENTS 3 + 4 — CÔTE À CÔTE ÉDITORIAL ── */}
+      {/* ── ENGAGEMENT 3 — ÉCO-RESPONSABLE ── */}
       <section style={{
         maxWidth: "1100px", margin: "0 auto",
         padding: "88px 64px",
         display: "grid",
         gridTemplateColumns: "1fr 1fr",
-        gap: "64px",
+        gap: "96px", alignItems: "center",
       }}>
-
-        {/* Livraison électrique */}
         <div>
           <p style={{
-            fontSize: "clamp(56px, 6vw, 80px)",
+            fontSize: "clamp(56px, 8vw, 100px)",
             fontWeight: 200, color: "#E8E3D8",
             letterSpacing: "-0.04em", lineHeight: 1,
             marginBottom: "0px",
@@ -199,53 +182,41 @@ export default function NosEngagementsPage() {
             03
           </p>
           <h2 style={{
-            fontSize: "clamp(22px, 2.5vw, 32px)",
+            fontSize: "clamp(28px, 3.5vw, 44px)",
             fontWeight: 600, color: "#1A1A1A",
             letterSpacing: "-0.02em", lineHeight: 1.1,
             textTransform: "uppercase",
-            marginTop: "-12px", marginBottom: "20px",
+            marginTop: "-16px", marginBottom: "24px",
           }}>
-            Livraison<br />100% Électrique
+            Un engagement<br />éco-responsable
           </h2>
           <p style={{
-            fontSize: "15px", color: "#6B6B6B",
-            lineHeight: 1.8,
+            fontSize: "16px", color: "#6B6B6B",
+            lineHeight: 1.8, maxWidth: "400px",
           }}>
-            Toutes nos livraisons sont effectuées en
-            véhicule électrique. Un repas gastronomique
-            peut aussi être responsable.
+            De la livraison à l&apos;emballage, chaque détail est pensé
+            pour réduire notre impact. Nos trajets sont effectués en
+            véhicule 100% électrique, et nos barquettes sont fabriquées
+            en carton recyclé.
           </p>
         </div>
-
-        {/* Emballages */}
-        <div style={{ paddingTop: "32px" }}>
-          <p style={{
-            fontSize: "clamp(56px, 6vw, 80px)",
-            fontWeight: 200, color: "#E8E3D8",
-            letterSpacing: "-0.04em", lineHeight: 1,
-            marginBottom: "0px",
-          }}>
-            04
-          </p>
-          <h2 style={{
-            fontSize: "clamp(22px, 2.5vw, 32px)",
-            fontWeight: 600, color: "#1A1A1A",
-            letterSpacing: "-0.02em", lineHeight: 1.1,
-            textTransform: "uppercase",
-            marginTop: "-12px", marginBottom: "20px",
-          }}>
-            Emballages<br />Éco-Responsables
-          </h2>
-          <p style={{
-            fontSize: "15px", color: "#6B6B6B",
-            lineHeight: 1.8,
-          }}>
-            Nos emballages sont 100% compostables,
-            fabriqués à partir de matériaux naturels.
-            Sans plastique, conformément à nos valeurs.
-          </p>
+        <div style={{
+          position: "relative",
+          borderRadius: "20px", overflow: "hidden",
+          aspectRatio: "4/3",
+        }}>
+          <Image
+            src="https://images.unsplash.com/photo-1605522561233-768ad7a8fabf?w=800&h=600&fit=crop"
+            alt="Barquettes éco-responsables Clodia"
+            fill
+            sizes="(max-width: 768px) 100vw, 50vw"
+            style={{ objectFit: "cover", objectPosition: "center" }}
+          />
+          <div style={{
+            position: "absolute", inset: 0,
+            background: "rgba(74,103,65,0.15)",
+          }} />
         </div>
-
       </section>
 
       {/* ── SÉPARATEUR ── */}
@@ -256,40 +227,58 @@ export default function NosEngagementsPage() {
       {/* ── CITATION FINALE ── */}
       <section style={{
         maxWidth: "1100px", margin: "0 auto",
-        padding: "96px 64px",
-        textAlign: "center",
+        padding: "64px 64px",
+        minHeight: "280px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
       }}>
         <p style={{
-          fontSize: "clamp(24px, 3.5vw, 48px)",
-          fontWeight: 500, color: "#1A1A1A",
-          lineHeight: 1.3, letterSpacing: "-0.02em",
-          maxWidth: "760px", margin: "0 auto 48px",
+          fontSize: "clamp(18px, 2vw, 24px)",
+          color: "#4D0F1F",
+          fontWeight: 500,
+          lineHeight: 1.8,
+          maxWidth: "720px",
+          margin: "0 auto",
+          textAlign: "center",
         }}>
-          &ldquo;Chaque repas Clodia est un acte de soin
-          en retour — pour vous, pour la planète,
-          pour les producteurs locaux.&rdquo;
+          Clodia, c&apos;est la conviction que bien manger au travail change tout — pour vous, pour votre énergie, pour votre quotidien.
         </p>
-        <div style={{ display: "flex", justifyContent: "center", gap: "16px", flexWrap: "wrap" }}>
-          <Link href="/commander" style={{
-            display: "inline-flex", alignItems: "center",
-            gap: "8px", background: "#4A6741",
-            color: "#fff", fontSize: "14px",
-            fontWeight: 600, padding: "15px 32px",
-            borderRadius: "999px", textDecoration: "none",
-          }}>
-            Je découvre les menus →
-          </Link>
-          <Link href="/formules" style={{
-            display: "inline-flex", alignItems: "center",
-            gap: "8px", background: "transparent",
-            color: "#1A1A1A", fontSize: "14px",
-            fontWeight: 600, padding: "15px 32px",
-            borderRadius: "999px", textDecoration: "none",
-            border: "1px solid #E8E3D8",
-          }}>
-            Voir les formules
-          </Link>
-        </div>
+      </section>
+
+      {/* ── SÉPARATEUR ── */}
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 64px" }}>
+        <div style={{ height: "1px", background: "#E8E3D8" }} />
+      </div>
+
+      {/* ── BOUTONS CTA ── */}
+      <section style={{
+        maxWidth: "1100px", margin: "0 auto",
+        padding: "48px 64px 96px",
+        display: "flex", justifyContent: "center",
+        alignItems: "center", gap: "16px",
+        flexWrap: "wrap",
+      }}>
+        <Link href="/commander" style={{
+          display: "inline-flex", alignItems: "center",
+          gap: "8px", background: "#4A6741",
+          color: "#fff", fontSize: "14px",
+          fontWeight: 600, padding: "15px 32px",
+          borderRadius: "999px", textDecoration: "none",
+        }}>
+          Je découvre les menus →
+        </Link>
+        <Link href="/formules" style={{
+          display: "inline-flex", alignItems: "center",
+          gap: "8px", background: "transparent",
+          color: "#1A1A1A", fontSize: "14px",
+          fontWeight: 600, padding: "15px 32px",
+          borderRadius: "999px", textDecoration: "none",
+          border: "1px solid #E8E3D8",
+        }}>
+          Voir les formules
+        </Link>
       </section>
 
     </div>

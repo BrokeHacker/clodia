@@ -137,7 +137,10 @@ export default function FormulesClient() {
                 }}>
                   Pré-Commande
                 </p>
-                <p style={{ fontSize: "13px", color: "#9B9B9B", marginTop: "4px" }}>
+                <p style={{
+                  fontSize: "13px", color: "#1A1A1A", marginTop: "4px",
+                  textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600,
+                }}>
                   Réservez vos repas pour la semaine suivante
                 </p>
               </div>
@@ -354,7 +357,10 @@ export default function FormulesClient() {
                 }}>
                   À La Carte
                 </p>
-                <p style={{ fontSize: "13px", color: "#9B9B9B", marginTop: "4px" }}>
+                <p style={{
+                  fontSize: "13px", color: "#1A1A1A", marginTop: "4px",
+                  textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600,
+                }}>
                   Réservez vos plats pour la semaine en cours
                 </p>
               </div>
