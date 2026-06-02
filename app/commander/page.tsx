@@ -38,9 +38,18 @@ function CommanderContent() {
   const [points, setPoints] = useState<PointLivraisonDB[]>([]);
   const [slots, setSlots] = useState<SlotUnite[]>([]);
 
-  const [hopital, setHopital] = useState("");
-  const [batiment, setBatiment] = useState("");
-  const [service, setService] = useState("");
+  const [hopital, setHopital] = useState(() => {
+    if (typeof window === 'undefined') return "";
+    try { return sessionStorage.getItem('clodia-hopital') ?? ""; } catch { return ""; }
+  });
+  const [batiment, setBatiment] = useState(() => {
+    if (typeof window === 'undefined') return "";
+    try { return sessionStorage.getItem('clodia-batiment') ?? ""; } catch { return ""; }
+  });
+  const [service, setService] = useState(() => {
+    if (typeof window === 'undefined') return "";
+    try { return sessionStorage.getItem('clodia-service') ?? ""; } catch { return ""; }
+  });
 
   useEffect(() => {
     try {
@@ -49,6 +58,14 @@ function CommanderContent() {
       // sessionStorage indisponible
     }
   }, [cart]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('clodia-hopital', hopital);
+      sessionStorage.setItem('clodia-batiment', batiment);
+      sessionStorage.setItem('clodia-service', service);
+    } catch {}
+  }, [hopital, batiment, service]);
 
   useEffect(() => {
     fetchMenusSemaineCourante().then(setMenusCurrentWeek);
@@ -98,6 +115,16 @@ function CommanderContent() {
   const selectedPoint = points.find(
     (p) => p.hopital === hopital && p.batiment === batiment && p.service === service
   );
+
+  useEffect(() => {
+    try {
+      if (selectedPoint) {
+        sessionStorage.setItem('clodia-point', JSON.stringify(selectedPoint));
+      } else {
+        sessionStorage.removeItem('clodia-point');
+      }
+    } catch {}
+  }, [selectedPoint]);
 
   function handleHopitalChange(val: string) {
     setHopital(val);
@@ -682,15 +709,19 @@ function CommanderContent() {
                   </div>
 
                   <button
-                    onClick={handlePay}
-                    disabled={cart.length === 0}
+                    onClick={() => window.location.href = '/checkout'}
+                    disabled={cart.length === 0 || !selectedPoint}
                     className={`w-full py-4 rounded-full text-sm font-semibold transition-colors ${
-                      cart.length > 0
-                        ? "bg-[#FD3D6B] text-white hover:bg-[#e8345e]"
+                      cart.length > 0 && selectedPoint
+                        ? "bg-[#FD3D6B] text-white hover:bg-[#e8345e] cursor-pointer"
                         : "bg-gray-100 text-gray-300 cursor-not-allowed"
                     }`}
                   >
-                    {cart.length > 0 ? "Procéder au paiement →" : "Sélectionnez un repas"}
+                    {cart.length === 0
+                      ? "Sélectionnez un repas"
+                      : !selectedPoint
+                      ? "Sélectionnez un point de livraison"
+                      : "Procéder au paiement →"}
                   </button>
 
                   <p className="text-xs text-gray-400 text-center mt-3">
