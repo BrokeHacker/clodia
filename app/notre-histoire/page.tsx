@@ -138,14 +138,14 @@ export default function NotreHistoirePage() {
         alignItems: "center", gap: "16px",
         flexWrap: "wrap",
       }}>
-        <Link href="/commander" style={{
+        <Link href="/formules" style={{
           display: "inline-flex", alignItems: "center",
           gap: "8px", background: "#4A6741",
           color: "#fff", fontSize: "14px",
           fontWeight: 600, padding: "15px 32px",
           borderRadius: "999px", textDecoration: "none",
         }}>
-          Commander →
+          Je découvre les formules →
         </Link>
         <Link href="/nos-engagements" style={{
           display: "inline-flex", alignItems: "center",

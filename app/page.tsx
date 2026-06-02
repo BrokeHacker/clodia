@@ -94,7 +94,7 @@ export default async function Home() {
           </ul>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Link href="/commander" className="btn-punch text-sm px-7 py-3.5 inline-block">
+            <Link href="/formules" className="btn-punch text-sm px-7 py-3.5 inline-block">
               Je découvre →
             </Link>
           </div>
@@ -346,10 +346,10 @@ export default async function Home() {
 
           <div className="mt-10 text-center">
             <Link
-              href="/commander"
+              href="/formules"
               className="inline-flex items-center gap-2 bg-[#4A6741] text-white text-sm font-semibold px-8 py-4 rounded-full hover:bg-[#3d5836] transition-colors"
             >
-              Je découvre les menus →
+              Je découvre les formules →
             </Link>
           </div>
 

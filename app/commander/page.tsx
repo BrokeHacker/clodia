@@ -23,7 +23,15 @@ function CommanderContent() {
   const searchParams = useSearchParams();
 
   const [semaineKey, setSemaineKey] = useState<"courante" | "suivante" | null>(null);
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const saved = sessionStorage.getItem('clodia-cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [menusCurrentWeek, setMenusCurrentWeek] = useState<Menu[]>([]);
   const [menusNextWeek, setMenusNextWeek] = useState<Menu[]>([]);
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
@@ -33,6 +41,14 @@ function CommanderContent() {
   const [hopital, setHopital] = useState("");
   const [batiment, setBatiment] = useState("");
   const [service, setService] = useState("");
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('clodia-cart', JSON.stringify(cart));
+    } catch {
+      // sessionStorage indisponible
+    }
+  }, [cart]);
 
   useEffect(() => {
     fetchMenusSemaineCourante().then(setMenusCurrentWeek);

@@ -23,7 +23,7 @@ export default function CTASemaineButtons({ semaine }: Props) {
           href="/commander?semaine=suivante"
           className="bg-[#FD3D6B] hover:bg-[#e8345e] text-white text-sm font-semibold px-7 py-4 rounded-full w-full block text-center transition-colors"
         >
-          Je commande pour la semaine du {formatDate(lundiSuivant)}
+          Je pré-commande pour la semaine du {formatDate(lundiSuivant)}
         </Link>
         <p className="text-xs text-[#00CCCC] text-center mt-2">
           Tarifs préférentiels · Disponibilité garantie · 0 gaspillage

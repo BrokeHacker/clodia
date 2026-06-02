@@ -8,8 +8,8 @@ export default function Footer() {
           <div className="md:col-span-2">
             <p className="text-3xl font-semibold mb-4">Clodia</p>
             <p className="text-white/60 text-sm leading-relaxed max-w-xs">
-              Des repas sur mesure livrés chaque midi aux soignants du CHU
-              et des cliniques de Limoges. Parce que vous méritez de bien manger.
+              Des repas sur mesure livrés chaque midi au personnel soignant
+              des hôpitaux de France. Parce que vous méritez de bien manger.
             </p>
           </div>
 
@@ -67,7 +67,6 @@ export default function Footer() {
 
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/40">
           <p>© 2025 Clodia. Tous droits réservés.</p>
-          <p>Conçu avec soin pour les soignants de Limoges</p>
         </div>
       </div>
     </footer>
