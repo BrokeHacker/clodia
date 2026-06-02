@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 export default function BottomBanner() {
   const pathname = usePathname();
 
-  if (pathname === "/commander") return null;
+  if (pathname === "/commander" || pathname === "/checkout") return null;
 
   return (
     <div
