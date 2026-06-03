@@ -68,8 +68,8 @@ export default function NotreHistoirePage() {
             impossible de trouver quelque chose de bon et équilibré à manger.
           </p>
           <p style={{ fontSize: "16px", color: "#6B6B6B", lineHeight: 1.8 }}>
-            C&apos;est le déclic, il quitte alors son emploi dans la finance et appelle Alexandre
-            et Christophe. En quelques minutes, c&apos;est décidé — tous les trois embarquent,
+            C&apos;est le déclic, il appelle Alexandre et Christophe et en quelques minutes,
+            c&apos;est décidé — il quitte son emploi dans la finance et tous les trois embarquent,
             avec l&apos;envie de développer une offre de restauration sur mesure dédiée au
             personnel soignant.
           </p>
@@ -117,6 +117,7 @@ export default function NotreHistoirePage() {
           lineHeight: 1.8,
           maxWidth: "720px",
           margin: "0 auto",
+          textAlign: "center",
         }}>
           Clodia, c&apos;est aussi et surtout le prénom de leur grand-mère. Une vie à les
           régaler, puis à transmettre ses recettes et son savoir-faire pour résumer ce que la

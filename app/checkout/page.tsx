@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from '@/lib/supabase';
-import { PointLivraisonDB, getTarifUnitaire, getTarifPrecommande, fetchTarifs, Tarif, fetchMenusSemaineCourante, fetchMenusSemaineSuivante } from "@/lib/menus";
+import { PointLivraisonDB, getTarifUnitaire, getTarifPrecommande, fetchTarifs, Tarif, fetchMenusSemaineCourante, fetchMenusSemaineSuivante, getDisponible } from "@/lib/menus";
 import { Menu } from "@/lib/data";
 
 interface CartItem {
@@ -34,6 +34,8 @@ export default function CheckoutPage() {
   const [telephoneVerifie, setTelephoneVerifie] = useState(false);
   const [rechercheEnCours, setRechercheEnCours] = useState(false);
   const [clientTrouve, setClientTrouve] = useState(false);
+  const [commandeEnCours, setCommandeEnCours] = useState(false);
+  const [erreurSlots, setErreurSlots] = useState<{date: string, variante: string, dispo: number, demande: number}[]>([]);
 
   useEffect(() => {
     try {
@@ -116,6 +118,147 @@ export default function CheckoutPage() {
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  }
+
+  async function handlePaiement() {
+    setCommandeEnCours(true)
+    setErreurSlots([])
+
+    try {
+      // ── ÉTAPE 1 : Vérifier les slots pour la semaine en cours ──
+      if (itemsCourante.length > 0) {
+        const dates = [...new Set(itemsCourante.map(i => i.menu.date_livraison))]
+        const { data: slotsData, error: slotsError } = await supabase
+          .from('slots_unite')
+          .select('*')
+          .in('date_livraison', dates)
+
+        if (slotsError) throw new Error('Erreur vérification disponibilités')
+
+        const conflits: {date: string, variante: string, dispo: number, demande: number}[] = []
+
+        for (const item of itemsCourante) {
+          const varianteSlot = item.variante === 'plat_vege' ? 'vegetarien' : 'standard'
+          const slot = slotsData?.find(s =>
+            s.date_livraison === item.menu.date_livraison && s.variante === varianteSlot
+          )
+          if (slot) {
+            const dispo = getDisponible(slot)
+            if (item.quantite > dispo) {
+              conflits.push({
+                date: `${item.menu.jourSemaine} ${item.menu.date}`,
+                variante: item.variante === 'plat_vege' ? 'végétarien' : 'standard',
+                dispo,
+                demande: item.quantite,
+              })
+            }
+          }
+        }
+
+        if (conflits.length > 0) {
+          setErreurSlots(conflits)
+          setCommandeEnCours(false)
+          return
+        }
+      }
+
+      // ── ÉTAPE 2 : Upsert client ──
+      const telNormalise = normaliserTelephone(telephone)
+
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .upsert({
+          telephone: telNormalise,
+          prenom,
+          nom,
+          email,
+          point_livraison: point?.id ?? null,
+        }, { onConflict: 'telephone' })
+        .select('id')
+        .single()
+
+      if (clientError || !clientData) throw new Error('Erreur création client')
+      const clientId = clientData.id
+
+      // ── ÉTAPE 3 : Créer les lignes commandes ──
+      const lignesCommandes = cartWithMenus.map(item => {
+        const isPrecommande = menusNextWeek.some(m => m.id === item.menuId)
+        const prixUnit = isPrecommande
+          ? getTarifPrecommande(tarifs, qtePrecommande)
+          : prixUnite
+        return {
+          client_id: clientId,
+          menu_id: item.menuId,
+          type: isPrecommande ? 'pre-commande' : 'unite',
+          variante: item.variante === 'plat_vege' ? 'vegetarien' : 'standard',
+          quantite: item.quantite,
+          prix_unitaire: prixUnit,
+          statut: 'en_attente',
+          point_livraison: point?.id ?? null,
+        }
+      })
+
+      const { error: commandeError } = await supabase
+        .from('commandes')
+        .insert(lignesCommandes)
+
+      if (commandeError) {
+        console.error('Détail erreur commandes:', JSON.stringify(commandeError))
+        throw new Error('Erreur création commandes')
+      }
+
+      // ── ÉTAPE 4 : Mettre à jour slots_unite pour la semaine en cours ──
+      for (const item of itemsCourante) {
+        const varianteSlot = item.variante === 'plat_vege' ? 'vegetarien' : 'standard'
+        const { data: slotActuel } = await supabase
+          .from('slots_unite')
+          .select('id, reserves')
+          .eq('date_livraison', item.menu.date_livraison)
+          .eq('variante', varianteSlot)
+          .single()
+
+        if (slotActuel) {
+          await supabase
+            .from('slots_unite')
+            .update({ reserves: (slotActuel.reserves ?? 0) + item.quantite })
+            .eq('id', slotActuel.id)
+        }
+      }
+
+      // ── ÉTAPE 5 : Stripe ──
+      const { data: commandesCreees } = await supabase
+        .from('commandes')
+        .select('id')
+        .eq('client_id', clientId)
+        .eq('statut', 'en_attente')
+        .order('created_at', { ascending: false })
+        .limit(lignesCommandes.length)
+
+      const commandeIds = commandesCreees?.map(c => c.id) ?? []
+
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commandeIds,
+          email,
+          total,
+          prenom,
+          nom,
+        }),
+      })
+
+      const { url, error } = await response.json()
+      if (error || !url) throw new Error('Erreur création session Stripe')
+
+      window.location.href = url
+
+    } catch (err) {
+      console.error(err)
+      alert('Une erreur est survenue. Veuillez réessayer.')
+    } finally {
+      setCommandeEnCours(false)
+    }
   }
 
   const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#FD3D6B] bg-white";
@@ -380,17 +523,49 @@ export default function CheckoutPage() {
               <p style={{ fontSize: "11px", color: "#9B9B9B", marginTop: "4px" }}>Livraison incluse</p>
             </div>
 
-            {/* Bouton paiement — inactif pour l'instant */}
+            {/* Erreurs de disponibilité */}
+            {erreurSlots.length > 0 && (
+              <div style={{
+                background: "#FDD5D9", borderRadius: "12px",
+                padding: "16px", marginBottom: "16px",
+              }}>
+                <p style={{ fontSize: "13px", fontWeight: 600, color: "#4D0F1F", marginBottom: "8px" }}>
+                  Certains plats ne sont plus disponibles en quantité suffisante :
+                </p>
+                {erreurSlots.map((e, i) => (
+                  <p key={i} style={{ fontSize: "12px", color: "#4D0F1F", marginBottom: "4px" }}>
+                    • {e.date} — {e.variante} : {e.dispo} disponible{e.dispo > 1 ? 's' : ''} (vous en avez {e.demande})
+                  </p>
+                ))}
+                <p style={{ fontSize: "12px", color: "#6B6B6B", marginTop: "8px" }}>
+                  Veuillez ajuster les quantités dans votre panier.
+                </p>
+                <a href="/commander?semaine=courante" style={{
+                  display: "inline-block", marginTop: "10px",
+                  fontSize: "13px", fontWeight: 600, color: "#4D0F1F",
+                  textDecoration: "underline",
+                }}>
+                  ← Retour au panier
+                </a>
+              </div>
+            )}
+
+            {/* Bouton paiement */}
             <button
-              disabled
+              onClick={handlePaiement}
+              disabled={commandeEnCours}
               style={{
-                width: "100%", background: "#E8E3D8", color: "#9B9B9B",
+                width: "100%",
+                background: commandeEnCours ? "#E8E3D8" : "#FD3D6B",
+                color: commandeEnCours ? "#9B9B9B" : "#fff",
                 fontSize: "14px", fontWeight: 600,
                 padding: "18px", borderRadius: "999px",
-                border: "none", cursor: "not-allowed",
+                border: "none",
+                cursor: commandeEnCours ? "not-allowed" : "pointer",
+                transition: "background 0.2s ease",
               }}
             >
-              Procéder au paiement — bientôt disponible
+              {commandeEnCours ? "Enregistrement en cours..." : "Procéder au paiement →"}
             </button>
 
             <p style={{ fontSize: "11px", color: "#9B9B9B", textAlign: "center" }}>

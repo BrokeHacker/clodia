@@ -13,7 +13,7 @@ import PointLivraisonSelector from "@/components/PointLivraisonSelector";
 const marqueeItems = [
   "Déclinaison végétarienne",
   "1 menu du jour — plat + dessert",
-  "Livraison avant 12h dans le frigo de votre service",
+  "Livraison avant 12h dans le frigidaire de votre service",
   "Approche nutritive adaptée au personnel soignant et hospitalier",
 ];
 
@@ -83,7 +83,7 @@ export default async function Home() {
           <ul className="flex flex-col gap-3 mb-10 max-w-xl">
             {[
               "Menu du jour élaboré par notre Chef à base de produits frais et de saison",
-              "Livraison avant 12h directement dans le frigo de votre service",
+              "Livraison avant 12h directement dans le frigidaire de votre service",
               "Sans engagement",
             ].map((item) => (
               <li key={item} className="flex items-center gap-3">
@@ -198,7 +198,7 @@ export default async function Home() {
           <div className="text-center mb-16">
             <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, lineHeight: 1.2, color: "#1A1A1A" }}>
               Votre repas vous attend<br />
-              <span style={{ color: "#00CCCC" }}>dans votre frigo avant midi</span>
+              <span style={{ color: "#00CCCC" }}>dans votre frigidaire avant midi</span>
             </h2>
             <p className="text-gray-400 mt-4 max-w-md mx-auto text-sm">
               Sélectionnez votre établissement pour trouver votre point de livraison.
@@ -236,7 +236,7 @@ export default async function Home() {
                   Notre cuisine
                 </p>
                 <p className="text-white text-2xl font-semibold leading-snug">
-                  Cuisiné ce matin.<br />Dans votre frigo avant midi.
+                  Cuisiné ce matin.<br />Dans votre frigidaire avant midi.
                 </p>
               </div>
             </div>
@@ -325,7 +325,7 @@ export default async function Home() {
           <div className="mt-5 flex items-center">
             {[
               { valeur: "5", label: "Menus différents\nchaque semaine" },
-              { valeur: "12h", label: "Livraison dans le frigo\nde votre service" },
+              { valeur: "12h", label: "Livraison dans le frigidaire\nde votre service" },
               { valeur: "0", label: "Engagement\nni abonnement" },
             ].map((item, i) => (
               <React.Fragment key={item.valeur}>

@@ -45,7 +45,7 @@ export default function WhatsAppPage() {
           maxWidth: "800px",
         }}>
           Commandez<br />
-          <span style={{ color: "#25D366" }}>sur WhatsApp.</span>
+          <span style={{ color: "#25D366" }}>sur WhatsApp</span>
         </h1>
         <p style={{
           fontSize: "18px", color: "#6B6B6B",

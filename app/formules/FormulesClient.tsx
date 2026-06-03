@@ -92,7 +92,7 @@ export default function FormulesClient() {
                 padding: "24px",
               }}>
                 <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "12px", fontStyle: "italic" }}>
-                  Cuisiné ce matin, dans votre frigo avant midi.
+                  Cuisiné ce matin, dans votre frigidaire avant midi.
                 </p>
               </div>
             </div>
