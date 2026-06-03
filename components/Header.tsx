@@ -19,10 +19,10 @@ export default function Header() {
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient()
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setEstConnecte(!!session)
+    supabase.auth.getSession().then((result: { data: { session: unknown } }) => {
+      setEstConnecte(!!result.data.session)
     })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: unknown, session: unknown) => {
       setEstConnecte(!!session)
     })
     return () => subscription.unsubscribe()
