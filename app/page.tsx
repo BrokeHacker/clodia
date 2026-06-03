@@ -82,7 +82,7 @@ export default async function Home() {
 
           <ul className="flex flex-col gap-3 mb-10 max-w-xl">
             {[
-              "Menu du jour élaboré par notre Chef à base de produits frais et de saison",
+              "Menu du jour élaboré par notre Chef à base de produits frais et de saison et de saison",
               "Livraison avant 12h directement dans le frigidaire de votre service",
               "Sans engagement",
             ].map((item) => (
