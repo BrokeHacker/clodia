@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 const navLinks = [
   { href: "/comment-ca-marche", label: "Comment ça marche" },
@@ -13,7 +14,19 @@ const navLinks = [
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+  const [estConnecte, setEstConnecte] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setEstConnecte(!!session)
+    })
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setEstConnecte(!!session)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100 shadow-sm">
@@ -43,27 +56,11 @@ export default function Header() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <button
-            disabled
-            title="Espace client — bientôt disponible"
-            className="p-2 text-gray-300 cursor-not-allowed rounded-full"
-            aria-label="Espace client"
-          >
-            <svg
-              width="20"
-              height="20"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
-              />
+          <Link href={estConnecte ? '/espace-client' : '/connexion'} className="p-2 text-gray-600 hover:text-[#4D0F1F] rounded-full hover:bg-gray-100 transition-colors" aria-label="Espace client" title={estConnecte ? 'Mon espace client' : 'Se connecter'}>
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
             </svg>
-          </button>
+          </Link>
           <Link
             href="/commander"
             className="btn-punch text-sm px-5 py-2.5 inline-block"

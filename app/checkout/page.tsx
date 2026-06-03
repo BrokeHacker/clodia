@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { supabase } from '@/lib/supabase';
+import { useSearchParams } from "next/navigation";
+import { supabase, createSupabaseBrowserClient } from '@/lib/supabase';
 import { PointLivraisonDB, getTarifUnitaire, getTarifPrecommande, fetchTarifs, Tarif, fetchMenusSemaineCourante, fetchMenusSemaineSuivante, getDisponible } from "@/lib/menus";
 import { Menu } from "@/lib/data";
 
@@ -18,7 +19,8 @@ function formatPrice(p: number) {
   return p.toFixed(2).replace(".", ",") + " €";
 }
 
-export default function CheckoutPage() {
+function CheckoutContent() {
+  const searchParams = useSearchParams();
   const [etape, setEtape] = useState<Etape>("auth");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [point, setPoint] = useState<PointLivraisonDB | null>(null);
@@ -36,17 +38,65 @@ export default function CheckoutPage() {
   const [clientTrouve, setClientTrouve] = useState(false);
   const [commandeEnCours, setCommandeEnCours] = useState(false);
   const [erreurSlots, setErreurSlots] = useState<{date: string, variante: string, dispo: number, demande: number}[]>([]);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const savedCart = sessionStorage.getItem('clodia-cart');
-      if (savedCart) setCart(JSON.parse(savedCart));
-      const savedPoint = sessionStorage.getItem('clodia-point');
-      if (savedPoint) setPoint(JSON.parse(savedPoint));
-    } catch {}
-    fetchTarifs().then(setTarifs);
-    fetchMenusSemaineCourante().then(setMenusCurrentWeek);
-    fetchMenusSemaineSuivante().then(setMenusNextWeek);
+    async function init() {
+      const supabaseBrowser = createSupabaseBrowserClient();
+      const { data: { session } } = await supabaseBrowser.auth.getSession();
+
+      if (session) {
+        const { data: clientData } = await supabaseBrowser
+          .from('clients')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .single();
+
+        if (clientData) {
+          setPrenom(clientData.prenom ?? '');
+          setNom(clientData.nom ?? '');
+          setEmail(clientData.email ?? '');
+          setTelephone(clientData.telephone ?? '');
+          setTelephoneVerifie(true);
+          setEtape('recap');
+        }
+      }
+
+      try {
+        const savedCart = sessionStorage.getItem('clodia-cart');
+        if (savedCart) setCart(JSON.parse(savedCart));
+        const savedPoint = sessionStorage.getItem('clodia-point');
+        if (savedPoint) setPoint(JSON.parse(savedPoint));
+      } catch {}
+      fetchTarifs().then(setTarifs);
+      fetchMenusSemaineCourante().then(setMenusCurrentWeek);
+      fetchMenusSemaineSuivante().then(setMenusNextWeek);
+
+      const authSuccess = searchParams.get('auth');
+      if (authSuccess === 'success') {
+        const supabaseBrowser = createSupabaseBrowserClient();
+        const { data: { session } } = await supabaseBrowser.auth.getSession();
+
+        if (session) {
+          const { data: clientData } = await supabaseBrowser
+            .from('clients')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single();
+
+          if (clientData) {
+            setPrenom(clientData.prenom ?? '');
+            setNom(clientData.nom ?? '');
+            setEmail(clientData.email ?? '');
+            setTelephone(clientData.telephone ?? '');
+            setTelephoneVerifie(true);
+            setEtape('recap');
+          }
+        }
+      }
+      setAuthLoading(false);
+    }
+    init();
   }, []);
 
   const allMenus = [...menusCurrentWeek, ...menusNextWeek];
@@ -264,6 +314,12 @@ export default function CheckoutPage() {
   const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#FD3D6B] bg-white";
   const errorClass = "text-xs text-red-500 mt-1";
 
+  if (authLoading) return (
+    <div style={{ background: "#FAFAF8", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <p style={{ color: "#9B9B9B", fontSize: "14px" }}>Chargement...</p>
+    </div>
+  )
+
   return (
     <div style={{ background: "#FAFAF8", minHeight: "100vh" }}>
       <section style={{ maxWidth: "680px", margin: "0 auto", padding: "64px 24px" }}>
@@ -282,39 +338,42 @@ export default function CheckoutPage() {
         {etape === "auth" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 
-            <div style={{
-              background: "#fff", border: "1px solid #E8E3D8",
-              borderRadius: "16px", padding: "24px",
-              opacity: 0.5, cursor: "not-allowed",
+            <Link href="/connexion?redirect=checkout" style={{
+              display: "block", background: "#fff",
+              border: "2px solid #E8E3D8", borderRadius: "16px",
+              padding: "24px", textDecoration: "none",
+              cursor: "pointer", transition: "all 0.2s ease",
             }}>
               <p style={{ fontSize: "15px", fontWeight: 600, color: "#1A1A1A", marginBottom: "4px" }}>
                 J&apos;ai déjà un compte
               </p>
               <p style={{ fontSize: "13px", color: "#9B9B9B" }}>
-                Connexion à l&apos;espace client — bientôt disponible
+                Connectez-vous pour accéder à vos informations sauvegardées
               </p>
-            </div>
+            </Link>
 
-            <div style={{
-              background: "#fff", border: "1px solid #E8E3D8",
-              borderRadius: "16px", padding: "24px",
-              opacity: 0.5, cursor: "not-allowed",
+            <Link href="/inscription?redirect=checkout" style={{
+              display: "block", background: "#fff",
+              border: "2px solid #E8E3D8", borderRadius: "16px",
+              padding: "24px", textDecoration: "none",
+              cursor: "pointer", transition: "all 0.2s ease",
             }}>
               <p style={{ fontSize: "15px", fontWeight: 600, color: "#1A1A1A", marginBottom: "4px" }}>
                 Créer un compte
               </p>
               <p style={{ fontSize: "13px", color: "#9B9B9B" }}>
-                Gérez vos commandes et accédez à vos factures — bientôt disponible
+                Sauvegardez vos informations pour vos prochaines commandes
               </p>
-            </div>
+            </Link>
 
             <button
               onClick={() => setEtape("infos")}
               style={{
-                background: "#fff", border: "2px solid #4D0F1F",
+                background: "#fff", border: "1px solid #E8E3D8",
                 borderRadius: "16px", padding: "24px",
                 textAlign: "left", cursor: "pointer",
                 transition: "all 0.2s ease",
+                width: "100%",
               }}
             >
               <p style={{ fontSize: "15px", fontWeight: 600, color: "#4D0F1F", marginBottom: "4px" }}>
@@ -578,4 +637,12 @@ export default function CheckoutPage() {
       </section>
     </div>
   );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutContent />
+    </Suspense>
+  )
 }
