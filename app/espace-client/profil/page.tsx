@@ -11,6 +11,13 @@ export default function ProfilPage() {
 
   const [loading, setLoading] = useState(true)
   const [client, setClient] = useState<any>(null)
+  const [editInfos, setEditInfos] = useState(false)
+  const [prenomEdit, setPrenomEdit] = useState("")
+  const [nomEdit, setNomEdit] = useState("")
+  const [telephoneEdit, setTelephoneEdit] = useState("")
+  const [savingInfos, setSavingInfos] = useState(false)
+  const [saveInfosSuccess, setSaveInfosSuccess] = useState(false)
+  const [errorsInfos, setErrorsInfos] = useState<Record<string, string>>({})
   const [points, setPoints] = useState<PointLivraisonDB[]>([])
   const [hopital, setHopital] = useState("")
   const [batiment, setBatiment] = useState("")
@@ -35,6 +42,9 @@ export default function ProfilPage() {
 
       if (clientData) {
         setClient(clientData)
+        setPrenomEdit(clientData.prenom ?? '')
+        setNomEdit(clientData.nom ?? '')
+        setTelephoneEdit(clientData.telephone ?? '')
         if (clientData.points_livraison) {
           setHopital(clientData.points_livraison.hopital ?? '')
           setBatiment(clientData.points_livraison.batiment ?? '')
@@ -59,6 +69,35 @@ export default function ProfilPage() {
     setService(val)
     const found = points.find(p => p.hopital === hopital && p.batiment === batiment && p.service === val)
     setPointSelectionne(found ?? null)
+  }
+
+  function normaliserTelephone(tel: string): string {
+    const cleaned = tel.replace(/\s/g, '').replace(/-/g, '')
+    if (cleaned.startsWith('0')) return '+33' + cleaned.slice(1)
+    if (cleaned.startsWith('+33')) return cleaned
+    return cleaned
+  }
+
+  async function saveInfos() {
+    const newErrors: Record<string, string> = {}
+    if (!prenomEdit.trim()) newErrors.prenom = "Prénom requis"
+    if (!nomEdit.trim()) newErrors.nom = "Nom requis"
+    const telNormalise = normaliserTelephone(telephoneEdit)
+    if (!/^\+33[1-9]\d{8}$/.test(telNormalise)) newErrors.telephone = "Numéro invalide"
+    setErrorsInfos(newErrors)
+    if (Object.keys(newErrors).length > 0) return
+
+    setSavingInfos(true)
+    await supabase
+      .from('clients')
+      .update({ prenom: prenomEdit, nom: nomEdit, telephone: telNormalise })
+      .eq('id', client.id)
+
+    setClient({ ...client, prenom: prenomEdit, nom: nomEdit, telephone: telNormalise })
+    setSavingInfos(false)
+    setSaveInfosSuccess(true)
+    setEditInfos(false)
+    setTimeout(() => setSaveInfosSuccess(false), 3000)
   }
 
   async function savePoint() {
@@ -103,32 +142,88 @@ export default function ProfilPage() {
           </div>
         )}
 
-        {/* Infos personnelles — lecture seule */}
+        {/* Infos personnelles — éditable */}
         <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "24px", marginBottom: "16px" }}>
-          <p style={{ fontSize: "12px", fontWeight: 700, color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "16px" }}>
-            Informations personnelles
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-            <div>
-              <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>Prénom</p>
-              <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{client?.prenom}</p>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <p style={{ fontSize: "12px", fontWeight: 700, color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Informations personnelles
+            </p>
+            {!editInfos && (
+              <button onClick={() => setEditInfos(true)} style={{ fontSize: "12px", color: "#007FFF", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
+                Modifier
+              </button>
+            )}
+          </div>
+
+          {saveInfosSuccess && (
+            <div style={{ background: "#E8FFF8", borderRadius: "10px", padding: "10px 14px", marginBottom: "16px" }}>
+              <p style={{ fontSize: "12px", color: "#00CCCC", fontWeight: 600 }}>✓ Informations mises à jour</p>
             </div>
+          )}
+
+          {!editInfos ? (
             <div>
-              <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>Nom</p>
-              <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{client?.nom}</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+                <div>
+                  <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>Prénom</p>
+                  <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{client?.prenom}</p>
+                </div>
+                <div>
+                  <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>Nom</p>
+                  <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{client?.nom}</p>
+                </div>
+              </div>
+              <div style={{ marginBottom: "16px" }}>
+                <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>Email</p>
+                <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{client?.email}</p>
+              </div>
+              <div>
+                <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>Téléphone</p>
+                <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{client?.telephone}</p>
+              </div>
             </div>
-          </div>
-          <div style={{ marginBottom: "16px" }}>
-            <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>Email</p>
-            <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{client?.email}</p>
-          </div>
-          <div>
-            <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>Téléphone</p>
-            <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{client?.telephone}</p>
-          </div>
-          <p style={{ fontSize: "11px", color: "#9B9B9B", marginTop: "16px", fontStyle: "italic" }}>
-            Pour modifier ces informations, contactez-nous à contact@clodia.fr
-          </p>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "6px" }}>Prénom</label>
+                  <input type="text" value={prenomEdit} onChange={e => setPrenomEdit(e.target.value)} className={inputClass} style={{ borderColor: errorsInfos.prenom ? "#ef4444" : undefined }} />
+                  {errorsInfos.prenom && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{errorsInfos.prenom}</p>}
+                </div>
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: 600, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "6px" }}>Nom</label>
+                  <input type="text" value={nomEdit} onChange={e => setNomEdit(e.target.value)} className={inputClass} style={{ borderColor: errorsInfos.nom ? "#ef4444" : undefined }} />
+                  {errorsInfos.nom && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{errorsInfos.nom}</p>}
+                </div>
+              </div>
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "6px" }}>Téléphone</label>
+                <input type="tel" value={telephoneEdit} onChange={e => setTelephoneEdit(e.target.value)} placeholder="06 12 34 56 78" className={inputClass} style={{ borderColor: errorsInfos.telephone ? "#ef4444" : undefined }} />
+                {errorsInfos.telephone && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{errorsInfos.telephone}</p>}
+              </div>
+              <div>
+                <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>Email</p>
+                <p style={{ fontSize: "14px", fontWeight: 500, color: "#6B6B6B" }}>{client?.email}</p>
+                <p style={{ fontSize: "11px", color: "#9B9B9B", marginTop: "2px", fontStyle: "italic" }}>L'email ne peut pas être modifié</p>
+              </div>
+              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
+                <button onClick={saveInfos} disabled={savingInfos} style={{
+                  flex: 1, background: "#4D0F1F", color: "#fff",
+                  fontSize: "13px", fontWeight: 600, padding: "12px",
+                  borderRadius: "999px", border: "none", cursor: "pointer",
+                }}>
+                  {savingInfos ? "Enregistrement..." : "Enregistrer"}
+                </button>
+                <button onClick={() => { setEditInfos(false); setErrorsInfos({}) }} style={{
+                  flex: 1, background: "#F5F0E8", color: "#1A1A1A",
+                  fontSize: "13px", fontWeight: 600, padding: "12px",
+                  borderRadius: "999px", border: "none", cursor: "pointer",
+                }}>
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Point de livraison */}
@@ -190,25 +285,6 @@ export default function ProfilPage() {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Suggérer un nouveau point */}
-        <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "24px", marginBottom: "16px" }}>
-          <p style={{ fontSize: "12px", fontWeight: 700, color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>
-            Votre frigidaire n'est pas dans la liste ?
-          </p>
-          <p style={{ fontSize: "13px", color: "#6B6B6B", marginBottom: "12px" }}>
-            Suggérez un nouveau point de livraison et nous ferons notre possible pour l'ouvrir.
-          </p>
-          <a href="mailto:contact@clodia.fr?subject=Suggestion nouveau point de livraison" style={{
-            display: "inline-flex", alignItems: "center", gap: "8px",
-            background: "transparent", color: "#4D0F1F",
-            fontSize: "13px", fontWeight: 600,
-            padding: "10px 20px", borderRadius: "999px",
-            textDecoration: "none", border: "1px solid #E8E3D8",
-          }}>
-            Suggérer un point →
-          </a>
         </div>
 
         {/* Suppression compte */}

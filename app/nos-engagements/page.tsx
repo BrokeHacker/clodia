@@ -85,7 +85,7 @@ export default function NosEngagementsPage() {
           aspectRatio: "4/3",
         }}>
           <Image
-            src="/images/plats-clodia.jpg"
+            src="/images/Produits 06.jpeg"
             alt="Produits frais Clodia"
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
@@ -117,7 +117,7 @@ export default function NosEngagementsPage() {
           aspectRatio: "4/3",
         }}>
           <Image
-            src="/images/plats-clodia.jpg"
+            src="/images/Produits 14.jpeg"
             alt="Chef Clodia"
             fill
             sizes="(max-width: 768px) 100vw, 50vw"

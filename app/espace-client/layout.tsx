@@ -6,9 +6,10 @@ import Link from "next/link"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 
 const navItems = [
-  { href: "/espace-client", label: "Tableau de bord", icon: "ti-home" },
-  { href: "/espace-client/commandes", label: "Mes commandes", icon: "ti-receipt" },
-  { href: "/espace-client/commander", label: "Commander", icon: "ti-shopping-cart" },
+  { href: "/espace-client", label: "Accueil", icon: "ti-home" },
+  { href: "/espace-client/commandes", label: "Commandes en cours", icon: "ti-clock" },
+  { href: "/espace-client/historique", label: "Historique", icon: "ti-history" },
+  { href: "/espace-client/programmation", label: "Programmation", icon: "ti-calendar" },
   { href: "/espace-client/profil", label: "Mon profil", icon: "ti-user" },
 ]
 
