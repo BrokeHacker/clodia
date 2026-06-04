@@ -15,7 +15,7 @@ export default function NosEngagementsPage() {
       {/* ── HERO ÉDITORIAL ── */}
       <section style={{
         maxWidth: "1100px", margin: "0 auto",
-        padding: "88px 64px 72px",
+        padding: "48px 24px 40px",
       }}>
         <h1 style={{
           fontSize: "clamp(36px, 5vw, 64px)",
@@ -39,18 +39,16 @@ export default function NosEngagementsPage() {
       </section>
 
       {/* ── SÉPARATEUR ── */}
-      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 64px" }}>
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 24px" }}>
         <div style={{ height: "1px", background: "#E8E3D8" }} />
       </div>
 
       {/* ── ENGAGEMENT 1 — PRODUITS FRAIS ── */}
       <section style={{
         maxWidth: "1100px", margin: "0 auto",
-        padding: "88px 64px",
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "96px", alignItems: "center",
-      }}>
+        padding: "48px 24px",
+        gap: "32px", alignItems: "center",
+      }} className="grid grid-cols-1 md:grid-cols-2">
         <div>
           <p style={{
             fontSize: "clamp(56px, 8vw, 100px)",
@@ -79,7 +77,7 @@ export default function NosEngagementsPage() {
             une exigence quotidienne sur la qualité et la fraîcheur.
           </p>
         </div>
-        <div style={{
+        <div className="order-last md:order-none" style={{
           position: "relative",
           borderRadius: "20px", overflow: "hidden",
           aspectRatio: "4/3",
@@ -99,19 +97,17 @@ export default function NosEngagementsPage() {
       </section>
 
       {/* ── SÉPARATEUR ── */}
-      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 64px" }}>
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 24px" }}>
         <div style={{ height: "1px", background: "#E8E3D8" }} />
       </div>
 
       {/* ── ENGAGEMENT 2 — CHEF ── */}
       <section style={{
         maxWidth: "1100px", margin: "0 auto",
-        padding: "88px 64px",
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "96px", alignItems: "center",
-      }}>
-        <div style={{
+        padding: "48px 24px",
+        gap: "32px", alignItems: "center",
+      }} className="grid grid-cols-1 md:grid-cols-2">
+        <div className="order-last md:order-first" style={{
           position: "relative",
           borderRadius: "20px", overflow: "hidden",
           aspectRatio: "4/3",
@@ -160,18 +156,16 @@ export default function NosEngagementsPage() {
       </section>
 
       {/* ── SÉPARATEUR ── */}
-      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 64px" }}>
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 24px" }}>
         <div style={{ height: "1px", background: "#E8E3D8" }} />
       </div>
 
       {/* ── ENGAGEMENT 3 — ÉCO-RESPONSABLE ── */}
       <section style={{
         maxWidth: "1100px", margin: "0 auto",
-        padding: "88px 64px",
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "96px", alignItems: "center",
-      }}>
+        padding: "48px 24px",
+        gap: "32px", alignItems: "center",
+      }} className="grid grid-cols-1 md:grid-cols-2">
         <div>
           <p style={{
             fontSize: "clamp(56px, 8vw, 100px)",
@@ -200,7 +194,7 @@ export default function NosEngagementsPage() {
             en carton recyclé.
           </p>
         </div>
-        <div style={{
+        <div className="order-last md:order-none" style={{
           position: "relative",
           borderRadius: "20px", overflow: "hidden",
           aspectRatio: "4/3",
@@ -220,14 +214,14 @@ export default function NosEngagementsPage() {
       </section>
 
       {/* ── SÉPARATEUR ── */}
-      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 64px" }}>
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 24px" }}>
         <div style={{ height: "1px", background: "#E8E3D8" }} />
       </div>
 
       {/* ── CITATION FINALE ── */}
       <section style={{
         maxWidth: "1100px", margin: "0 auto",
-        padding: "64px 64px",
+        padding: "48px 24px",
         minHeight: "280px",
         display: "flex",
         flexDirection: "column",
@@ -248,14 +242,14 @@ export default function NosEngagementsPage() {
       </section>
 
       {/* ── SÉPARATEUR ── */}
-      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 64px" }}>
+      <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 24px" }}>
         <div style={{ height: "1px", background: "#E8E3D8" }} />
       </div>
 
       {/* ── BOUTONS CTA ── */}
       <section style={{
         maxWidth: "1100px", margin: "0 auto",
-        padding: "48px 64px 96px",
+        padding: "32px 24px 64px",
         display: "flex", justifyContent: "center",
         alignItems: "center", gap: "16px",
         flexWrap: "wrap",

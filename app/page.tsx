@@ -117,16 +117,17 @@ export default async function Home() {
       </section>
 
       {/* ── 3. COMMENT ÇA MARCHE ── */}
-      <section className="py-24 bg-white">
+      <section className="pt-8 pb-12 md:py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
+          <div className="text-center mb-6 md:mb-16">
             <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, lineHeight: 1.2, color: "#1A1A1A" }}>
               Simple à commander,<br />
               <span style={{ color: "#4A6741" }}>simple à savourer</span>
             </h2>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0" }}>
+          {/* Desktop */}
+          <div className="hidden md:grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", gap: "0" }}>
 
             {/* Rangée 1 — cercles + traits intégrés */}
             {etapes.map((e, i) => (
@@ -162,7 +163,50 @@ export default async function Home() {
 
           </div>
 
-          <div className="text-center mt-12">
+          {/* Mobile */}
+          <div className="md:hidden px-6 py-6">
+            <div style={{ position: "relative" }}>
+              {etapes.map((etape, i) => (
+                <div key={i} style={{ display: "flex", gap: "16px", position: "relative", paddingBottom: i < etapes.length - 1 ? "32px" : "0" }}>
+
+                  {/* Colonne gauche — icône + trait */}
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                    <div style={{
+                      width: 48, height: 48, borderRadius: "50%",
+                      background: "#C4704F", display: "flex",
+                      alignItems: "center", justifyContent: "center",
+                      flexShrink: 0, zIndex: 1,
+                    }}>
+                      <i className={`ti ${etape.icone}`} style={{ fontSize: 22, color: "#fff" }} />
+                    </div>
+                    {i < etapes.length - 1 && (
+                      <div style={{
+                        width: 2, flex: 1, background: "#E8E3D8",
+                        marginTop: "4px",
+                      }} />
+                    )}
+                  </div>
+
+                  {/* Colonne droite — texte */}
+                  <div style={{ paddingTop: "10px" }}>
+                    <p style={{
+                      fontSize: "13px", fontWeight: 700,
+                      color: "#1A1A1A", textTransform: "uppercase",
+                      letterSpacing: "0.06em", marginBottom: "6px",
+                    }}>
+                      {etape.titre}
+                    </p>
+                    <p style={{ fontSize: "13px", color: "#6B6B6B", lineHeight: 1.6 }}>
+                      {etape.description}
+                    </p>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-center mt-4 md:mt-12 mb-2 md:mb-0">
             <Link href="/comment-ca-marche" className="btn-outline-wine text-sm px-7 py-3 inline-block">
               En savoir plus →
             </Link>
@@ -171,7 +215,7 @@ export default async function Home() {
       </section>
 
       {/* ── 4. NOS MENUS ── */}
-      <section className="py-24 bg-[#F5F0E8]/70">
+      <section className="py-8 md:py-24 bg-[#F5F0E8]/70">
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
@@ -193,7 +237,7 @@ export default async function Home() {
       </section>
 
       {/* ── 5. LIVRAISON ── */}
-      <section id="frigidaire" className="py-24 bg-white">
+      <section id="frigidaire" className="py-8 md:py-24 bg-white">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, lineHeight: 1.2, color: "#1A1A1A" }}>
@@ -210,7 +254,7 @@ export default async function Home() {
       </section>
 
       {/* ── 6. NOTRE PROMESSE ── */}
-      <section className="py-24 bg-[#F5F0E8]/70">
+      <section className="py-8 md:py-24 bg-[#F5F0E8]/70">
         <div className="max-w-6xl mx-auto px-6">
 
           <div className="text-center mb-14">
@@ -357,7 +401,7 @@ export default async function Home() {
       </section>
 
       {/* ── 7. FAQ ── */}
-      <section className="py-24 bg-white">
+      <section className="py-8 md:py-24 bg-white">
         <div className="max-w-3xl mx-auto px-6">
           <div className="text-center mb-12">
             <h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 600, lineHeight: 1.2, color: "#1A1A1A" }}>

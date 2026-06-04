@@ -45,11 +45,9 @@ export default function NotreHistoirePage() {
       {/* ── BLOC 2 — TEXTE + PHOTO ── */}
       <section style={{
         maxWidth: "1100px", margin: "0 auto",
-        padding: "48px 64px",
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "96px", alignItems: "start",
-      }}>
+        padding: "48px 24px",
+        gap: "48px", alignItems: "start",
+      }} className="grid grid-cols-1 md:grid-cols-2">
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
           <p style={{ fontSize: "16px", color: "#6B6B6B", lineHeight: 1.8 }}>
             Après vingt-cinq ans à enseigner et transmettre, des années en restaurants étoilés,
@@ -74,7 +72,7 @@ export default function NotreHistoirePage() {
             personnel soignant.
           </p>
         </div>
-        <div style={{
+        <div className="order-last md:order-none" style={{
           position: "relative",
           borderRadius: "20px", overflow: "hidden",
           aspectRatio: "4/5",

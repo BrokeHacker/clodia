@@ -49,11 +49,11 @@ export default function EspaceClientLayout({ children }: { children: React.React
   return (
     <div style={{ background: "#FAFAF8", minHeight: "100vh", display: "flex" }}>
 
-      {/* Sidebar gauche */}
-      <aside style={{
+      {/* Sidebar gauche — desktop uniquement */}
+      <aside className="hidden md:flex" style={{
         width: "260px", flexShrink: 0,
         background: "#fff", borderRight: "1px solid #E8E3D8",
-        display: "flex", flexDirection: "column",
+        flexDirection: "column",
         padding: "32px 16px",
         position: "sticky", top: 0, height: "100vh",
         overflowY: "auto",

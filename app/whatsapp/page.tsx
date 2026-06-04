@@ -61,12 +61,11 @@ export default function WhatsAppPage() {
       </div>
 
       {/* Étapes */}
-      <section style={{ background: "#F5F0E8", opacity: 0.7 }} className="py-16">
+      <section style={{ background: "#F5F0E8" }} className="py-8 md:py-20">
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 64px" }}>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "0" }}>
-
-            {/* Rangée 1 — cercles + traits */}
+          {/* Desktop — horizontal */}
+          <div className="hidden md:grid" style={{ gridTemplateColumns: "repeat(3, 1fr)", gap: "0" }}>
             {etapes.map((e, i) => (
               <div key={e.titre + "-icon"} style={{ display: "flex", alignItems: "center" }}>
                 <div style={{ flex: 1, height: 1, background: "#C4704F", opacity: i === 0 ? 0 : 0.3 }} />
@@ -81,8 +80,6 @@ export default function WhatsAppPage() {
                 <div style={{ flex: 1, height: 1, background: "#C4704F", opacity: i === etapes.length - 1 ? 0 : 0.3 }} />
               </div>
             ))}
-
-            {/* Rangée 2 — textes */}
             {etapes.map((e, i) => (
               <div key={e.titre + "-text"} style={{
                 paddingTop: "1.5rem",
@@ -101,8 +98,43 @@ export default function WhatsAppPage() {
                 </p>
               </div>
             ))}
-
           </div>
+
+          {/* Mobile — vertical */}
+          <div className="md:hidden">
+            <div style={{ position: "relative" }}>
+              {etapes.map((etape, i) => (
+                <div key={i} style={{ display: "flex", gap: "16px", position: "relative", paddingBottom: i < etapes.length - 1 ? "32px" : "0" }}>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
+                    <div style={{
+                      width: 48, height: 48, borderRadius: "50%",
+                      background: "#C4704F", display: "flex",
+                      alignItems: "center", justifyContent: "center",
+                      flexShrink: 0, zIndex: 1,
+                    }}>
+                      <span style={{ fontSize: 18, fontWeight: 700, color: "#fff" }}>{etape.numero}</span>
+                    </div>
+                    {i < etapes.length - 1 && (
+                      <div style={{ width: 2, flex: 1, background: "#E8E3D8", marginTop: "4px" }} />
+                    )}
+                  </div>
+                  <div style={{ paddingTop: "10px" }}>
+                    <p style={{
+                      fontSize: "13px", fontWeight: 700,
+                      color: "#1A1A1A", textTransform: "uppercase",
+                      letterSpacing: "0.06em", marginBottom: "6px",
+                    }}>
+                      {etape.titre}
+                    </p>
+                    <p style={{ fontSize: "13px", color: "#6B6B6B", lineHeight: 1.6 }}>
+                      {etape.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </section>
 

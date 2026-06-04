@@ -46,7 +46,7 @@ export default function FormulesClient() {
 
       {/* ── HERO ── */}
       <section style={{
-        padding: "72px 48px 56px",
+        padding: "48px 24px 32px",
         maxWidth: "1100px", margin: "0 auto",
       }}>
         <h1 style={{
@@ -61,15 +61,11 @@ export default function FormulesClient() {
       </section>
 
       {/* ── CONFIGURATEUR PRINCIPAL ── */}
-      <section style={{ padding: "0 48px 80px", maxWidth: "1100px", margin: "0 auto" }}>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 420px",
-          gap: "48px", alignItems: "start",
-        }}>
+      <section style={{ padding: "0 24px 48px", maxWidth: "1100px", margin: "0 auto" }}>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_420px] gap-8 items-start">
 
           {/* Gauche — image sticky */}
-          <div style={{ position: "sticky", top: "100px" }}>
+          <div style={{ position: "sticky", top: "100px" }} className="hidden md:block">
             <div style={{
               position: "relative",
               borderRadius: "20px",
@@ -426,12 +422,12 @@ export default function FormulesClient() {
       {/* ── WHATSAPP CTA ── */}
       <section style={{
         maxWidth: "1100px", margin: "0 auto",
-        padding: "0 48px 64px",
+        padding: "0 24px 48px",
       }}>
         <div style={{
           background: "#E8FFF8",
           borderRadius: "20px",
-          padding: "40px 48px",
+          padding: "28px 24px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -481,7 +477,7 @@ export default function FormulesClient() {
       {/* ── BANDE COMMUNE ── */}
       <section style={{
         background: "#fff", borderTop: "1px solid #E8E3D8",
-        padding: "28px 48px",
+        padding: "20px 24px",
       }}>
         <div style={{
           maxWidth: "1100px", margin: "0 auto",

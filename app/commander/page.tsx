@@ -250,14 +250,8 @@ function CommanderContent() {
         }
       `}</style>
       {/* Header de page */}
-      <section style={{
-        maxWidth: "1100px", margin: "0 auto",
-        padding: "72px 48px 56px",
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "64px",
-        alignItems: "center",
-      }}>
+      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "40px 24px 32px" }}
+        className="grid grid-cols-1 md:grid-cols-2 md:gap-16 items-center">
         {/* Colonne gauche — titre */}
         <h1 style={{
           fontSize: "clamp(36px, 5vw, 64px)",
@@ -291,7 +285,7 @@ function CommanderContent() {
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Colonne principale */}
           <div className="flex-1">
@@ -301,7 +295,7 @@ function CommanderContent() {
               {/* Bouton Pré-commande */}
               <button
                 onClick={() => setSemaineKey("suivante")}
-                className="semaine-btn text-left rounded-2xl p-6 border-2 transition-all"
+                className="semaine-btn text-left rounded-2xl p-4 md:p-6 border-2 transition-all"
                 style={{
                   borderColor: semaineKey === "suivante" ? "#00CCCC" : "#E8E3D8",
                   background: semaineKey === "suivante" ? "#E8FFF8" : "#fff",
@@ -336,7 +330,7 @@ function CommanderContent() {
               {/* Bouton Semaine en cours */}
               <button
                 onClick={() => setSemaineKey("courante")}
-                className="semaine-btn text-left rounded-2xl p-6 border-2 transition-all"
+                className="semaine-btn text-left rounded-2xl p-4 md:p-6 border-2 transition-all"
                 style={{
                   borderColor: semaineKey === "courante" ? "#C4704F" : "#E8E3D8",
                   background: semaineKey === "courante" ? "#F5F0E8" : "#fff",
@@ -519,7 +513,7 @@ function CommanderContent() {
           </div>
 
           {/* Récapitulatif */}
-          <div className="lg:w-80 shrink-0">
+          <div className="w-full lg:w-80 shrink-0">
             <div className="sticky top-24">
               <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden">
                 <div className="bg-[#4D0F1F] px-5 py-4">
