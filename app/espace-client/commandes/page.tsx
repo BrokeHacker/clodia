@@ -1,14 +1,329 @@
 "use client";
 
-export default function CommandesPage() {
+import { useEffect, useState } from "react"
+import { createSupabaseBrowserClient } from "@/lib/supabase"
+import Image from "next/image"
+import Link from "next/link"
+
+interface Commande {
+  id: string
+  variante: string
+  quantite: number
+  prix_unitaire: number
+  statut: string
+  menus: {
+    date_livraison: string
+    plat: string
+    plat_vege: string
+    dessert: string
+    photo: string
+  }
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr)
+  return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+}
+
+function formatPrice(p: number): string {
+  return p.toFixed(2).replace('.', ',') + ' €'
+}
+
+const statutConfig: Record<string, { label: string; color: string; bg: string }> = {
+  en_attente: { label: 'Réservé', color: '#FF9933', bg: '#FFF9D6' },
+  confirme:   { label: 'Confirmé', color: '#00CCCC', bg: '#E8FFF8' },
+  annule:     { label: 'Annulé', color: '#FD3D6B', bg: '#FDD5D9' },
+}
+
+function isAvantMercredi22h(): boolean {
+  const now = new Date()
+  const jourSemaine = now.getDay()
+  if (jourSemaine < 3) return true
+  if (jourSemaine === 3) return now.getHours() < 22
+  return false
+}
+
+function getLundiSuivant(): string {
+  const now = new Date()
+  const jourSemaine = now.getDay()
+  const diff = (8 - jourSemaine) % 7 || 7
+  const lundi = new Date(now)
+  lundi.setDate(now.getDate() + diff)
+  return lundi.toISOString().split('T')[0]
+}
+
+function getVendrediSuivant(): string {
+  const lundi = new Date(getLundiSuivant())
+  lundi.setDate(lundi.getDate() + 4)
+  return lundi.toISOString().split('T')[0]
+}
+
+export default function CommandesEnCoursPage() {
+  const supabase = createSupabaseBrowserClient()
+
+  const [client, setClient] = useState<any>(null)
+  const [commandesSemaineCourante, setCommandesSemaineCourante] = useState<Commande[]>([])
+  const [commandesSemaineSuivante, setCommandesSemaineSuivante] = useState<Commande[]>([])
+  const [loading, setLoading] = useState(true)
+  const [modifyingId, setModifyingId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  const peutModifier = isAvantMercredi22h()
+  const deadline = (() => {
+    const now = new Date()
+    const mercredi = new Date(now)
+    const diff = (3 - now.getDay() + 7) % 7
+    mercredi.setDate(now.getDate() + diff)
+    mercredi.setHours(22, 0, 0, 0)
+    return mercredi.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+  })()
+
+  useEffect(() => {
+    async function load() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .single()
+
+      if (!clientData) return
+      setClient(clientData)
+
+      const today = new Date().toISOString().split('T')[0]
+      const lundiCourant = new Date()
+      lundiCourant.setDate(lundiCourant.getDate() - ((lundiCourant.getDay() + 6) % 7))
+      const vendrediCourant = new Date(lundiCourant)
+      vendrediCourant.setDate(lundiCourant.getDate() + 4)
+      const vendrediCourantStr = vendrediCourant.toISOString().split('T')[0]
+
+      // Semaine en cours
+      const { data: cmdCourante } = await supabase
+        .from('commandes')
+        .select('*, menus(date_livraison, plat, plat_vege, dessert, photo)')
+        .eq('client_id', clientData.id)
+        .neq('statut', 'annule')
+        .gte('menus.date_livraison', today)
+        .lte('menus.date_livraison', vendrediCourantStr)
+        .order('menus(date_livraison)', { ascending: true })
+
+      setCommandesSemaineCourante((cmdCourante ?? []).filter((c: any) => c.menus))
+
+      // Semaine suivante
+      const { data: cmdSuivante } = await supabase
+        .from('commandes')
+        .select('*, menus(date_livraison, plat, plat_vege, dessert, photo)')
+        .eq('client_id', clientData.id)
+        .neq('statut', 'annule')
+        .gte('menus.date_livraison', getLundiSuivant())
+        .lte('menus.date_livraison', getVendrediSuivant())
+        .order('menus(date_livraison)', { ascending: true })
+
+      setCommandesSemaineSuivante((cmdSuivante ?? []).filter((c: any) => c.menus))
+
+      setLoading(false)
+    }
+    load()
+  }, [])
+
+  async function handleModifierVariante(cmd: Commande, nouvelleVariante: string) {
+    if (nouvelleVariante === cmd.variante) { setModifyingId(null); return }
+    setSaving(true)
+    await supabase
+      .from('commandes')
+      .update({ variante: nouvelleVariante })
+      .eq('id', cmd.id)
+
+    setCommandesSemaineSuivante(prev =>
+      prev.map(c => c.id === cmd.id ? { ...c, variante: nouvelleVariante } : c)
+    )
+    setSaving(false)
+    setModifyingId(null)
+  }
+
+  function CommandeRow({ cmd, modifiable }: { cmd: Commande; modifiable: boolean }) {
+    const statut = statutConfig[cmd.statut] ?? statutConfig.en_attente
+    const plat = cmd.variante === 'vegetarien' ? cmd.menus.plat_vege : cmd.menus.plat
+    const isModifying = modifyingId === cmd.id
+
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 0", borderBottom: "1px solid #F0EDE6" }}>
+
+        {/* Photo */}
+        <div style={{
+          width: 52, height: 52, borderRadius: "10px",
+          overflow: "hidden", flexShrink: 0, position: "relative",
+          background: "#F5F0E8",
+        }}>
+          {cmd.menus.photo ? (
+            <Image src={cmd.menus.photo} alt={plat} fill sizes="52px" style={{ objectFit: "cover" }} />
+          ) : (
+            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <i className="ti ti-soup" style={{ fontSize: 20, color: "#C4704F" }} />
+            </div>
+          )}
+        </div>
+
+        {/* Infos */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: "13px", fontWeight: 500, color: "#1A1A1A", marginBottom: "2px" }}>
+            {formatDate(cmd.menus.date_livraison)}
+          </p>
+
+          {isModifying ? (
+            <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
+              <button
+                onClick={() => handleModifierVariante(cmd, 'standard')}
+                disabled={saving}
+                style={{
+                  fontSize: "11px", fontWeight: 600, padding: "5px 12px",
+                  borderRadius: "999px", border: "none", cursor: "pointer",
+                  background: cmd.variante === 'standard' ? "#4D0F1F" : "#F5F0E8",
+                  color: cmd.variante === 'standard' ? "#fff" : "#1A1A1A",
+                }}
+              >
+                Plat standard
+              </button>
+              <button
+                onClick={() => handleModifierVariante(cmd, 'vegetarien')}
+                disabled={saving}
+                style={{
+                  fontSize: "11px", fontWeight: 600, padding: "5px 12px",
+                  borderRadius: "999px", border: "none", cursor: "pointer",
+                  background: cmd.variante === 'vegetarien' ? "#4D0F1F" : "#F5F0E8",
+                  color: cmd.variante === 'vegetarien' ? "#fff" : "#1A1A1A",
+                }}
+              >
+                Végétarien
+              </button>
+              <button
+                onClick={() => setModifyingId(null)}
+                style={{
+                  fontSize: "11px", padding: "5px 10px",
+                  borderRadius: "999px", border: "1px solid #E8E3D8",
+                  background: "transparent", color: "#9B9B9B", cursor: "pointer",
+                }}
+              >
+                Annuler
+              </button>
+            </div>
+          ) : (
+            <p style={{ fontSize: "12px", color: "#6B6B6B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {plat} · + {cmd.menus.dessert}
+            </p>
+          )}
+        </div>
+
+        {/* Prix + statut + modifier */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px", flexShrink: 0 }}>
+          <span style={{
+            fontSize: "11px", fontWeight: 600,
+            color: statut.color, background: statut.bg,
+            padding: "3px 10px", borderRadius: "999px",
+          }}>
+            {statut.label}
+          </span>
+          <p style={{ fontSize: "12px", color: "#9B9B9B" }}>{formatPrice(cmd.prix_unitaire)}</p>
+          {modifiable && !isModifying && (
+            <button
+              onClick={() => setModifyingId(cmd.id)}
+              style={{
+                fontSize: "11px", color: "#007FFF", fontWeight: 600,
+                background: "none", border: "none", cursor: "pointer", padding: 0,
+              }}
+            >
+              Modifier →
+            </button>
+          )}
+        </div>
+
+      </div>
+    )
+  }
+
+  if (loading) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "80px" }}>
+      <p style={{ color: "#9B9B9B" }}>Chargement...</p>
+    </div>
+  )
+
+  const aucuneCommande = commandesSemaineCourante.length === 0 && commandesSemaineSuivante.length === 0
+
   return (
-    <div style={{ padding: "40px 48px" }}>
-      <h1 style={{ fontSize: "28px", fontWeight: 600, color: "#1A1A1A", marginBottom: "8px" }}>
+    <div style={{ padding: "40px 48px", maxWidth: "800px" }}>
+
+      <h1 style={{ fontSize: "28px", fontWeight: 600, color: "#1A1A1A", letterSpacing: "-0.02em", marginBottom: "32px" }}>
         Commandes en cours
       </h1>
-      <p style={{ fontSize: "14px", color: "#9B9B9B" }}>
-        Chargement...
-      </p>
+
+      {aucuneCommande ? (
+        <div style={{
+          background: "#fff", border: "1px solid #E8E3D8",
+          borderRadius: "16px", padding: "40px", textAlign: "center",
+        }}>
+          <p style={{ fontSize: "15px", color: "#9B9B9B", marginBottom: "16px" }}>
+            Vous n'avez aucune commande en cours.
+          </p>
+          <Link href="/espace-client/programmation" style={{
+            display: "inline-flex", alignItems: "center", gap: "8px",
+            background: "#4D0F1F", color: "#fff",
+            fontSize: "14px", fontWeight: 600,
+            padding: "12px 24px", borderRadius: "999px",
+            textDecoration: "none",
+          }}>
+            Commander →
+          </Link>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+
+          {/* Semaine en cours */}
+          {commandesSemaineCourante.length > 0 && (
+            <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px 24px" }}>
+              <p style={{ fontSize: "12px", fontWeight: 700, color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>
+                Cette semaine
+              </p>
+              <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "12px", fontStyle: "italic" }}>
+                Les commandes de la semaine en cours ne peuvent plus être modifiées
+              </p>
+              <div>
+                {commandesSemaineCourante.map(cmd => (
+                  <CommandeRow key={cmd.id} cmd={cmd} modifiable={false} />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Semaine suivante */}
+          {commandesSemaineSuivante.length > 0 && (
+            <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px 24px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                <p style={{ fontSize: "12px", fontWeight: 700, color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Semaine prochaine
+                </p>
+                {peutModifier && (
+                  <span style={{ fontSize: "11px", color: "#00CCCC", fontWeight: 500 }}>
+                    Modifiable jusqu'au {deadline} à 22h
+                  </span>
+                )}
+              </div>
+              {!peutModifier && (
+                <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "12px", fontStyle: "italic" }}>
+                  La deadline de modification est dépassée
+                </p>
+              )}
+              <div>
+                {commandesSemaineSuivante.map(cmd => (
+                  <CommandeRow key={cmd.id} cmd={cmd} modifiable={peutModifier} />
+                ))}
+              </div>
+            </div>
+          )}
+
+        </div>
+      )}
     </div>
   )
 }

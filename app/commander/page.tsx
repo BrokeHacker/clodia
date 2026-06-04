@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Menu } from "@/lib/data";
 import { fetchMenusSemaineCourante, fetchMenusSemaineSuivante, fetchTarifs, Tarif, getTarifUnitaire, getTarifPrecommande, fetchPointsLivraison, PointLivraisonDB, fetchSlotsUnite, SlotUnite, getDisponible } from "@/lib/menus";
+import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 type Variante = "plat" | "plat_vege";
 
@@ -68,10 +69,37 @@ function CommanderContent() {
   }, [hopital, batiment, service]);
 
   useEffect(() => {
-    fetchMenusSemaineCourante().then(setMenusCurrentWeek);
-    fetchMenusSemaineSuivante().then(setMenusNextWeek);
-    fetchTarifs().then(setTarifs);
-    fetchPointsLivraison().then(setPoints);
+    async function init() {
+      fetchMenusSemaineCourante().then(setMenusCurrentWeek);
+      fetchMenusSemaineSuivante().then(setMenusNextWeek);
+      fetchTarifs().then(setTarifs);
+      await fetchPointsLivraison().then(setPoints);
+
+      const supabaseBrowser = createSupabaseBrowserClient()
+      const { data: { session } } = await supabaseBrowser.auth.getSession()
+
+      if (session) {
+        const { data: clientData } = await supabaseBrowser
+          .from('clients')
+          .select('*, points_livraison(*)')
+          .eq('user_id', session.user.id)
+          .single()
+
+        if (clientData?.points_livraison) {
+          const pl = clientData.points_livraison
+          if (!sessionStorage.getItem('clodia-hopital')) {
+            setHopital(pl.hopital ?? '')
+            setBatiment(pl.batiment ?? '')
+            setService(pl.service ?? '')
+            sessionStorage.setItem('clodia-hopital', pl.hopital ?? '')
+            sessionStorage.setItem('clodia-batiment', pl.batiment ?? '')
+            sessionStorage.setItem('clodia-service', pl.service ?? '')
+            sessionStorage.setItem('clodia-point', JSON.stringify(pl))
+          }
+        }
+      }
+    }
+    init()
   }, []);
 
   useEffect(() => {

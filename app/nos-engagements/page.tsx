@@ -206,7 +206,7 @@ export default function NosEngagementsPage() {
           aspectRatio: "4/3",
         }}>
           <Image
-            src="https://images.unsplash.com/photo-1605522561233-768ad7a8fabf?w=800&h=600&fit=crop"
+            src="/images/Barquettes.jpeg"
             alt="Barquettes éco-responsables Clodia"
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
