@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
+import { formatTelephone, displayTelephone } from "@/lib/utils"
 import { fetchPointsLivraison, PointLivraisonDB } from "@/lib/menus"
 import { useRouter } from "next/navigation"
 
@@ -179,7 +180,7 @@ export default function ProfilPage() {
               </div>
               <div>
                 <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>Téléphone</p>
-                <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{client?.telephone}</p>
+                <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{displayTelephone(client?.telephone ?? '')}</p>
               </div>
             </div>
           ) : (
@@ -198,7 +199,7 @@ export default function ProfilPage() {
               </div>
               <div>
                 <label style={{ fontSize: "12px", fontWeight: 600, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "6px" }}>Téléphone</label>
-                <input type="tel" value={telephoneEdit} onChange={e => setTelephoneEdit(e.target.value)} placeholder="06 12 34 56 78" className={inputClass} style={{ borderColor: errorsInfos.telephone ? "#ef4444" : undefined }} />
+                <input type="tel" value={telephoneEdit} onChange={e => setTelephoneEdit(formatTelephone(e.target.value))} placeholder="06 12 34 56 78" className={inputClass} style={{ borderColor: errorsInfos.telephone ? "#ef4444" : undefined }} />
                 {errorsInfos.telephone && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{errorsInfos.telephone}</p>}
               </div>
               <div>

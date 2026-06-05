@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
+import { getSemainesDisponibles } from "@/lib/menus"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -37,23 +38,11 @@ function formatPrice(p: number): string {
   return p.toFixed(2).replace('.', ',') + ' €'
 }
 
-function getDeadlineSemaineSuivante(): { jours: number; date: string } {
-  const now = new Date()
-  const jourSemaine = now.getDay()
-  const mercredi = new Date(now)
-  const diffMercredi = (3 - jourSemaine + 7) % 7
-  mercredi.setDate(now.getDate() + diffMercredi)
-  mercredi.setHours(22, 0, 0, 0)
-  const diff = mercredi.getTime() - now.getTime()
-  const jours = Math.ceil(diff / (1000 * 60 * 60 * 24))
-  const dateStr = mercredi.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-  return { jours, date: dateStr }
-}
-
-const statutConfig: Record<string, { label: string; color: string; bg: string }> = {
-  en_attente: { label: 'Réservé', color: '#FF9933', bg: '#FFF9D6' },
-  confirme:   { label: 'Confirmé', color: '#00CCCC', bg: '#E8FFF8' },
-  annule:     { label: 'Annulé', color: '#FD3D6B', bg: '#FDD5D9' },
+const joursOrdre = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi']
+const variantesLabels: Record<string, string> = {
+  standard: 'Plat standard',
+  vegetarien: 'Végétarien',
+  alternance: 'En alternance',
 }
 
 function StarRating({ commandeId, initialNote, clientId, onRated }: {
@@ -110,27 +99,19 @@ export default function EspaceClientPage() {
   const [client, setClient] = useState<any>(null)
   const [pointLivraison, setPointLivraison] = useState<any>(null)
   const [derniersPlatsCmdIds, setDerniersPlatsCmdIds] = useState<Commande[]>([])
-  const [commandesEnCours, setCommandesEnCours] = useState<Commande[]>([])
   const [ratings, setRatings] = useState<Rating[]>([])
   const [totalRepas, setTotalRepas] = useState(0)
   const [depensesMois, setDepensesMois] = useState(0)
+  const [nbCommandesEnCours, setNbCommandesEnCours] = useState(0)
+  const [programmation, setProgrammation] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
-  const deadline = getDeadlineSemaineSuivante()
-  const deadlineDepassee = deadline.jours <= 0
-
-  function grouperCommandes(commandes: Commande[]) {
-    const map = new Map<string, Commande & { quantiteTotale: number }>()
-    for (const cmd of commandes) {
-      const key = `${cmd.menus.date_livraison}-${cmd.variante}`
-      if (map.has(key)) {
-        map.get(key)!.quantiteTotale += cmd.quantite
-      } else {
-        map.set(key, { ...cmd, quantiteTotale: cmd.quantite })
-      }
-    }
-    return Array.from(map.values())
-  }
+  const { deadlinePrecommande } = getSemainesDisponibles()
+  const now = new Date()
+  const diff = deadlinePrecommande.getTime() - now.getTime()
+  const joursRestants = Math.ceil(diff / (1000 * 60 * 60 * 24))
+  const deadlineDepassee = diff <= 0
+  const deadlineLabel = deadlinePrecommande.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 
   useEffect(() => {
     async function load() {
@@ -163,17 +144,6 @@ export default function EspaceClientPage() {
 
       setDerniersPlatsCmdIds((derniersPlats ?? []).filter((c: any) => c.menus))
 
-      // Commandes en cours (date >= aujourd'hui)
-      const { data: enCours } = await supabase
-        .from('commandes')
-        .select('*, menus(date_livraison, plat, plat_vege, dessert, photo)')
-        .eq('client_id', clientData.id)
-        .neq('statut', 'annule')
-        .gte('menus.date_livraison', todayStr)
-        .order('menus(date_livraison)', { ascending: true })
-
-      setCommandesEnCours((enCours ?? []).filter((c: any) => c.menus))
-
       // Total repas
       const { count } = await supabase
         .from('commandes')
@@ -193,6 +163,25 @@ export default function EspaceClientPage() {
 
       const total = (cmdMois ?? []).reduce((acc: number, c: any) => acc + (c.prix_total ?? 0), 0)
       setDepensesMois(total)
+
+      // Commandes en cours (count)
+      const { count: nbEnCours } = await supabase
+        .from('commandes')
+        .select('id, menus(date_livraison)', { count: 'exact' })
+        .eq('client_id', clientData.id)
+        .neq('statut', 'annule')
+        .gte('menus.date_livraison', todayStr)
+
+      setNbCommandesEnCours(nbEnCours ?? 0)
+
+      // Programmation
+      const { data: progData } = await supabase
+        .from('programmations')
+        .select('*')
+        .eq('client_id', clientData.id)
+        .single()
+
+      setProgrammation(progData ?? null)
 
       // Ratings existants
       const { data: ratingsData } = await supabase
@@ -225,8 +214,15 @@ export default function EspaceClientPage() {
     </div>
   )
 
+  const joursLabel = programmation
+    ? (programmation.jours ?? [])
+        .sort((a: string, b: string) => joursOrdre.indexOf(a) - joursOrdre.indexOf(b))
+        .map((j: string) => j.charAt(0).toUpperCase() + j.slice(1))
+        .join(', ')
+    : ''
+
   return (
-    <div style={{ padding: "40px 48px", maxWidth: "900px" }}>
+    <div style={{ padding: "40px 48px", maxWidth: "900px", margin: "0 auto" }}>
 
       {/* Header */}
       <div style={{ marginBottom: "32px" }}>
@@ -242,7 +238,7 @@ export default function EspaceClientPage() {
       </div>
 
       {/* Alerte deadline */}
-      {!deadlineDepassee && deadline.jours <= 3 && (
+      {!deadlineDepassee && joursRestants <= 3 && (
         <div style={{
           background: "#FFF9D6", border: "1px solid #FF9933",
           borderRadius: "16px", padding: "16px 20px",
@@ -252,10 +248,10 @@ export default function EspaceClientPage() {
           <div>
             <p style={{ fontSize: "13px", fontWeight: 600, color: "#FF9933" }}>
               <i className="ti ti-clock" style={{ marginRight: 6 }} />
-              Deadline dans {deadline.jours} jour{deadline.jours > 1 ? 's' : ''} !
+              Deadline dans {joursRestants} jour{joursRestants > 1 ? 's' : ''} !
             </p>
             <p style={{ fontSize: "12px", color: "#6B6B6B", marginTop: "2px" }}>
-              Pré-commandez avant {deadline.date} à 22h pour la semaine suivante
+              Pré-commandez avant {deadlineLabel} à 23h59 pour la {getSemainesDisponibles().semaineSuivante.label}
             </p>
           </div>
           <Link href="/espace-client/programmation" style={{
@@ -269,15 +265,17 @@ export default function EspaceClientPage() {
         </div>
       )}
 
-      {/* ── SECTION 1 — KPI ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "40px" }}>
-        <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px" }}>
-          <p style={{ fontSize: "11px", color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
-            Repas commandés
-          </p>
-          <p style={{ fontSize: "32px", fontWeight: 600, color: "#1A1A1A", lineHeight: 1 }}>{totalRepas}</p>
-          <p style={{ fontSize: "12px", color: "#9B9B9B", marginTop: "4px" }}>depuis votre inscription</p>
-        </div>
+      {/* ── SECTION 1 — KPI 3 colonnes ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "40px" }}>
+        <Link href="/espace-client/commandes" style={{ textDecoration: "none" }}>
+          <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px", cursor: "pointer", height: "100%" }}>
+            <p style={{ fontSize: "11px", color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
+              Commandes en cours
+            </p>
+            <p style={{ fontSize: "32px", fontWeight: 600, color: "#1A1A1A", lineHeight: 1 }}>{nbCommandesEnCours}</p>
+            <p style={{ fontSize: "12px", color: "#00CCCC", marginTop: "4px" }}>Voir le détail →</p>
+          </div>
+        </Link>
         <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px" }}>
           <p style={{ fontSize: "11px", color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
             Dépenses ce mois
@@ -285,21 +283,32 @@ export default function EspaceClientPage() {
           <p style={{ fontSize: "32px", fontWeight: 600, color: "#1A1A1A", lineHeight: 1 }}>{formatPrice(depensesMois)}</p>
           <p style={{ fontSize: "12px", color: "#9B9B9B", marginTop: "4px" }}>commandes confirmées</p>
         </div>
+        <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px" }}>
+          <p style={{ fontSize: "11px", color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
+            Total repas
+          </p>
+          <p style={{ fontSize: "32px", fontWeight: 600, color: "#1A1A1A", lineHeight: 1 }}>{totalRepas}</p>
+          <p style={{ fontSize: "12px", color: "#9B9B9B", marginTop: "4px" }}>depuis votre inscription</p>
+        </div>
       </div>
 
       {/* ── SECTION 2 — 5 DERNIERS PLATS ── */}
       {derniersPlatsCmdIds.length > 0 && (
         <div style={{ marginBottom: "40px" }}>
-          <p style={{ fontSize: "13px", fontWeight: 700, color: "#1A1A1A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "16px" }}>
-            Mes derniers plats
-          </p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+            <p style={{ fontSize: "13px", fontWeight: 700, color: "#1A1A1A", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Mes derniers plats
+            </p>
+            <Link href="/espace-client/historique" style={{ fontSize: "12px", color: "#00CCCC", fontWeight: 600, textDecoration: "none" }}>
+              Afficher le détail →
+            </Link>
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px" }}>
             {derniersPlatsCmdIds.map(cmd => {
               const plat = cmd.variante === 'vegetarien' ? cmd.menus.plat_vege : cmd.menus.plat
               const rating = getRating(cmd.id)
               return (
                 <div key={cmd.id} style={{ position: "relative", borderRadius: "14px", overflow: "hidden", aspectRatio: "3/4" }}>
-                  {/* Photo */}
                   <Image
                     src={cmd.menus.photo || '/images/plats-clodia.jpg'}
                     alt={plat}
@@ -307,16 +316,11 @@ export default function EspaceClientPage() {
                     sizes="(max-width: 900px) 50vw, 20vw"
                     style={{ objectFit: "cover" }}
                   />
-                  {/* Overlay gradient */}
                   <div style={{
                     position: "absolute", inset: 0,
                     background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 50%)",
                   }} />
-                  {/* Infos + notation */}
-                  <div style={{
-                    position: "absolute", bottom: 0, left: 0, right: 0,
-                    padding: "12px",
-                  }}>
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px" }}>
                     <p style={{ fontSize: "9px", color: "rgba(255,255,255,0.7)", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                       {formatDate(cmd.menus.date_livraison)}
                     </p>
@@ -337,93 +341,60 @@ export default function EspaceClientPage() {
         </div>
       )}
 
-      {/* ── SECTION 3 — COMMANDES EN COURS ── */}
-      {commandesEnCours.length > 0 && (
-        <div>
-          <p style={{ fontSize: "13px", fontWeight: 700, color: "#1A1A1A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "16px" }}>
-            Commandes en cours
-          </p>
-          <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "24px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {grouperCommandes(commandesEnCours).map(cmd => {
-                const statut = statutConfig[cmd.statut] ?? statutConfig.en_attente
-                const plat = cmd.variante === 'vegetarien' ? cmd.menus.plat_vege : cmd.menus.plat
-                return (
-                  <div key={cmd.id} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div style={{
-                      width: 52, height: 52, borderRadius: "10px",
-                      overflow: "hidden", flexShrink: 0, position: "relative",
-                      background: "#F5F0E8",
-                    }}>
-                      {cmd.menus.photo ? (
-                        <Image
-                          src={cmd.menus.photo}
-                          alt={plat}
-                          fill
-                          sizes="52px"
-                          style={{ objectFit: "cover" }}
-                        />
-                      ) : (
-                        <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <i className="ti ti-soup" style={{ fontSize: 20, color: "#C4704F" }} />
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
-                        <p style={{ fontSize: "13px", fontWeight: 500, color: "#1A1A1A" }}>
-                          {formatDate(cmd.menus.date_livraison)}
-                        </p>
-                        {cmd.quantiteTotale > 1 && (
-                          <span style={{ fontSize: "11px", color: "#9B9B9B" }}>× {cmd.quantiteTotale}</span>
-                        )}
-                      </div>
-                      <p style={{ fontSize: "12px", color: "#6B6B6B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {plat}
-                      </p>
-                      <p style={{ fontSize: "11px", color: "#9B9B9B" }}>+ {cmd.menus.dessert}</p>
-                    </div>
-                    <span style={{
-                      fontSize: "11px", fontWeight: 600,
-                      color: statut.color, background: statut.bg,
-                      padding: "4px 10px", borderRadius: "999px", flexShrink: 0,
-                    }}>
-                      {statut.label}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CTA si aucune commande en cours et deadline non dépassée */}
-      {commandesEnCours.length === 0 && !deadlineDepassee && (
-        <div style={{
-          background: "#E8FFF8", border: "2px solid #00CCCC",
-          borderRadius: "16px", padding: "24px",
-          display: "flex", alignItems: "center",
-          justifyContent: "space-between", gap: "16px",
-        }}>
-          <div>
-            <p style={{ fontSize: "15px", fontWeight: 600, color: "#1A1A1A", marginBottom: "4px" }}>
-              Vous n'avez pas encore commandé la semaine prochaine
-            </p>
-            <p style={{ fontSize: "12px", color: "#6B6B6B" }}>
-              Deadline : {deadline.date} à 22h · Tarifs préférentiels
-            </p>
-          </div>
-          <Link href="/espace-client/programmation" style={{
-            background: "#00CCCC", color: "#fff",
-            fontSize: "13px", fontWeight: 600,
-            padding: "12px 20px", borderRadius: "999px",
-            textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
+      {/* ── SECTION 3 — MA PROGRAMMATION ── */}
+      <div>
+        <p style={{ fontSize: "13px", fontWeight: 700, color: "#1A1A1A", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "16px" }}>
+          Ma programmation
+        </p>
+        {programmation && programmation.actif ? (
+          <div style={{
+            background: "#E8FFF8", border: "1px solid #00CCCC",
+            borderRadius: "16px", padding: "20px 24px",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px",
           }}>
-            Pré-commander →
-          </Link>
-        </div>
-      )}
+            <div>
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "#00CCCC", marginBottom: "4px" }}>
+                ✓ Programmation active
+              </p>
+              <p style={{ fontSize: "12px", color: "#6B6B6B" }}>
+                {joursLabel} · {variantesLabels[programmation.variante] ?? programmation.variante}
+              </p>
+            </div>
+            <Link href="/espace-client/programmation" style={{
+              background: "#fff", color: "#00CCCC",
+              border: "1px solid #00CCCC",
+              fontSize: "12px", fontWeight: 600,
+              padding: "8px 16px", borderRadius: "999px",
+              textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
+            }}>
+              Modifier →
+            </Link>
+          </div>
+        ) : (
+          <div style={{
+            background: "#fff", border: "1px solid #E8E3D8",
+            borderRadius: "16px", padding: "24px",
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px",
+          }}>
+            <div>
+              <p style={{ fontSize: "14px", fontWeight: 600, color: "#1A1A1A", marginBottom: "4px" }}>
+                Automatisez vos commandes
+              </p>
+              <p style={{ fontSize: "12px", color: "#6B6B6B" }}>
+                Définissez votre rythme et recevez un rappel chaque semaine
+              </p>
+            </div>
+            <Link href="/espace-client/programmation" style={{
+              background: "#4D0F1F", color: "#fff",
+              fontSize: "12px", fontWeight: 600,
+              padding: "8px 16px", borderRadius: "999px",
+              textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0,
+            }}>
+              Configurer →
+            </Link>
+          </div>
+        )}
+      </div>
 
     </div>
   )

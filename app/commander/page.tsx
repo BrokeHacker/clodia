@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Menu } from "@/lib/data";
-import { fetchMenusSemaineCourante, fetchMenusSemaineSuivante, fetchTarifs, Tarif, getTarifUnitaire, getTarifPrecommande, fetchPointsLivraison, PointLivraisonDB, fetchSlotsUnite, SlotUnite, getDisponible } from "@/lib/menus";
+import { fetchMenusSemaineCourante, fetchMenusSemaineSuivante, fetchTarifs, Tarif, getTarifUnitaire, getTarifPrecommande, fetchPointsLivraison, PointLivraisonDB, fetchSlotsUnite, SlotUnite, getDisponible, getSemainesDisponibles } from "@/lib/menus";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 type Variante = "plat" | "plat_vege";
@@ -22,6 +22,7 @@ function formatPrice(p: number) {
 
 function CommanderContent() {
   const searchParams = useSearchParams();
+  const { semaineCourante, semaineSuivante, deadlinePrecommande } = getSemainesDisponibles();
 
   const [semaineKey, setSemaineKey] = useState<"courante" | "suivante" | null>(null);
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -307,13 +308,13 @@ function CommanderContent() {
                   fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
                   textTransform: "uppercase", color: "#00CCCC", marginBottom: "8px",
                 }}>
-                  Avant mercredi minuit
+                  Avant le {deadlinePrecommande.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à 23h59
                 </p>
                 <p style={{
                   fontSize: "18px", fontWeight: 600, color: "#1A1A1A",
                   marginBottom: "16px", lineHeight: 1.2,
                 }}>
-                  Pré-commander pour<br />la semaine suivante
+                  Pré-commander pour<br />la {semaineSuivante.label}
                 </p>
                 <div className="flex flex-col gap-2">
                   <span className="flex items-center gap-2 text-sm text-gray-600">
@@ -348,7 +349,7 @@ function CommanderContent() {
                   fontSize: "18px", fontWeight: 600, color: "#1A1A1A",
                   marginBottom: "16px", lineHeight: 1.2,
                 }}>
-                  Commander pour<br />la semaine en cours
+                  Commander pour<br />la {semaineCourante.label}
                 </p>
                 <div className="flex flex-col gap-2">
                   <span className="flex items-center gap-2 text-sm text-gray-600">
@@ -379,7 +380,7 @@ function CommanderContent() {
                 return (
                   <div
                     key={menu.id}
-                    className={`bg-white rounded-2xl overflow-hidden border transition-all ${
+                    className={`bg-white rounded-2xl overflow-hidden border transition-all flex flex-col ${
                       inCart
                         ? "border-[#FD3D6B] shadow-md"
                         : "border-gray-100 hover:border-gray-200"
@@ -444,14 +445,17 @@ function CommanderContent() {
                         </button>
                       </div>
 
-                      <h3 className="font-semibold text-[#4D0F1F] text-sm mb-1">{menu.plat}</h3>
-                      <p className="text-xs text-gray-400 mb-4">+ {menu.dessert}</p>
+                      {/* Descriptif — hauteur fixe 3 lignes */}
+                      <div style={{ height: "72px", overflow: "hidden", marginBottom: "12px" }}>
+                        <h3 className="font-semibold text-[#4D0F1F] text-sm mb-1 line-clamp-2">{menu.plat}</h3>
+                        <p className="text-xs text-gray-400">+ {menu.dessert}</p>
+                      </div>
 
+                      {/* Prix + bouton — toujours alignés */}
                       <div className="flex items-center justify-between">
                         <span className="text-[#FF9933] font-semibold">
                           {formatPrice(getPrixUnitaire(semaineKey, quantiteTotale))}
                         </span>
-
                         {!inCart ? (
                           <button
                             onClick={() => updateCart(menu.id, "plat", 1)}
@@ -464,48 +468,24 @@ function CommanderContent() {
                             {itemPlat && (
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-gray-400 w-8">Plat</span>
-                                <button
-                                  onClick={() => updateCart(menu.id, "plat", -1)}
-                                  className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-xs"
-                                >
-                                  −
-                                </button>
-                                <span className="font-semibold text-[#4D0F1F] w-4 text-center text-sm">
-                                  {itemPlat.quantite}
-                                </span>
-                                <button
-                                  onClick={() => updateCart(menu.id, "plat", 1)}
-                                  className="w-7 h-7 rounded-full bg-[#4D0F1F] flex items-center justify-center text-white hover:bg-[#3a0b17] transition-colors text-xs"
-                                >
-                                  +
-                                </button>
+                                <button onClick={() => updateCart(menu.id, "plat", -1)} className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-xs">−</button>
+                                <span className="font-semibold text-[#4D0F1F] w-4 text-center text-sm">{itemPlat.quantite}</span>
+                                <button onClick={() => updateCart(menu.id, "plat", 1)} className="w-7 h-7 rounded-full bg-[#4D0F1F] flex items-center justify-center text-white hover:bg-[#3a0b17] transition-colors text-xs">+</button>
                               </div>
                             )}
                             {itemVege && (
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-gray-400 w-8">Végé</span>
-                                <button
-                                  onClick={() => updateCart(menu.id, "plat_vege", -1)}
-                                  className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-xs"
-                                >
-                                  −
-                                </button>
-                                <span className="font-semibold text-[#4D0F1F] w-4 text-center text-sm">
-                                  {itemVege.quantite}
-                                </span>
-                                <button
-                                  onClick={() => updateCart(menu.id, "plat_vege", 1)}
-                                  className="w-7 h-7 rounded-full bg-[#00CCCC] flex items-center justify-center text-white hover:bg-[#00aaaa] transition-colors text-xs"
-                                >
-                                  +
-                                </button>
+                                <button onClick={() => updateCart(menu.id, "plat_vege", -1)} className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors text-xs">−</button>
+                                <span className="font-semibold text-[#4D0F1F] w-4 text-center text-sm">{itemVege.quantite}</span>
+                                <button onClick={() => updateCart(menu.id, "plat_vege", 1)} className="w-7 h-7 rounded-full bg-[#00CCCC] flex items-center justify-center text-white hover:bg-[#00aaaa] transition-colors text-xs">+</button>
                               </div>
                             )}
                           </div>
                         )}
                       </div>
                     </div>
-                  </div>
+                    </div>
                 );
               })}
             </div>

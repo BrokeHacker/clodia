@@ -1,6 +1,72 @@
 import { supabase } from './supabase'
 import { enrichMenu, Menu } from './data'
 
+export function getSemainesDisponibles(): {
+  semaineCourante: { lundi: string; vendredi: string; label: string }
+  semaineSuivante: { lundi: string; vendredi: string; label: string }
+  estApresJeudi: boolean
+  deadlinePrecommande: Date
+} {
+  const now = new Date()
+  const jourSemaine = now.getDay()
+
+  const estApresJeudi = jourSemaine === 4 || jourSemaine === 5 || jourSemaine === 6 || jourSemaine === 0
+
+  const lundiSemaineCourante = new Date(now)
+  const diffLundi = (jourSemaine === 0 ? -6 : 1 - jourSemaine)
+  lundiSemaineCourante.setDate(now.getDate() + diffLundi)
+  lundiSemaineCourante.setHours(0, 0, 0, 0)
+
+  function toLundi(offset: number) {
+    const d = new Date(lundiSemaineCourante)
+    d.setDate(lundiSemaineCourante.getDate() + offset * 7)
+    return d
+  }
+
+  function toStr(d: Date) {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  function toVendredi(lundi: Date) {
+    const v = new Date(lundi)
+    v.setDate(lundi.getDate() + 4)
+    v.setHours(23, 59, 59, 999)
+    return v
+  }
+
+  function toLabelSemaine(lundi: Date) {
+    return `semaine du ${lundi.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`
+  }
+
+  const offsetCourante = estApresJeudi ? 1 : 0
+  const offsetSuivante = estApresJeudi ? 2 : 1
+
+  const lundiCourante = toLundi(offsetCourante)
+  const lundiSuivante = toLundi(offsetSuivante)
+
+  const mercrediDeadline = toLundi(1)
+  mercrediDeadline.setDate(mercrediDeadline.getDate() + 2)
+  mercrediDeadline.setHours(23, 59, 0, 0)
+
+  return {
+    semaineCourante: {
+      lundi: toStr(lundiCourante),
+      vendredi: toStr(toVendredi(lundiCourante)),
+      label: toLabelSemaine(lundiCourante),
+    },
+    semaineSuivante: {
+      lundi: toStr(lundiSuivante),
+      vendredi: toStr(toVendredi(lundiSuivante)),
+      label: toLabelSemaine(lundiSuivante),
+    },
+    estApresJeudi,
+    deadlinePrecommande: mercrediDeadline,
+  }
+}
+
 export interface SlotUnite {
   id: string
   date_livraison: string
@@ -104,37 +170,26 @@ function getSemaineISO(date: Date): { semaine: number; annee: number } {
 }
 
 export async function fetchMenusSemaineCourante(): Promise<Menu[]> {
-  const aujourd = new Date()
-  const todayStr = [
-    aujourd.getFullYear(),
-    String(aujourd.getMonth() + 1).padStart(2, '0'),
-    String(aujourd.getDate()).padStart(2, '0'),
-  ].join('-')
-
-  const { semaine, annee } = getSemaineISO(aujourd)
+  const { semaineCourante } = getSemainesDisponibles()
   const { data, error } = await supabase
     .from('menus')
     .select('*')
-    .eq('semaine', semaine)
-    .eq('annee', annee)
     .eq('publie', true)
-    .gt('date_livraison', todayStr)
+    .gte('date_livraison', semaineCourante.lundi)
+    .lte('date_livraison', semaineCourante.vendredi)
     .order('date_livraison', { ascending: true })
   if (error) { console.error(error); return [] }
   return (data ?? []).map(enrichMenu)
 }
 
 export async function fetchMenusSemaineSuivante(): Promise<Menu[]> {
-  const aujourd = new Date()
-  const nextWeek = new Date(aujourd)
-  nextWeek.setDate(aujourd.getDate() + 7)
-  const { semaine, annee } = getSemaineISO(nextWeek)
+  const { semaineSuivante } = getSemainesDisponibles()
   const { data, error } = await supabase
     .from('menus')
     .select('*')
-    .eq('semaine', semaine)
-    .eq('annee', annee)
     .eq('publie', true)
+    .gte('date_livraison', semaineSuivante.lundi)
+    .lte('date_livraison', semaineSuivante.vendredi)
     .order('date_livraison', { ascending: true })
   if (error) { console.error(error); return [] }
   return (data ?? []).map(enrichMenu)

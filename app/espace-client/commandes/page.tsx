@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
+import { getSemainesDisponibles } from "@/lib/menus"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -29,54 +30,34 @@ function formatPrice(p: number): string {
   return p.toFixed(2).replace('.', ',') + ' €'
 }
 
+function getSemaineLabel(dateStr: string): string {
+  const d = new Date(dateStr)
+  const jourSemaine = d.getDay()
+  const lundi = new Date(d)
+  lundi.setDate(d.getDate() - (jourSemaine === 0 ? 6 : jourSemaine - 1))
+  const vendredi = new Date(lundi)
+  vendredi.setDate(lundi.getDate() + 4)
+  return `Semaine du ${lundi.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} au ${vendredi.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`
+}
+
 const statutConfig: Record<string, { label: string; color: string; bg: string }> = {
   en_attente: { label: 'Réservé', color: '#FF9933', bg: '#FFF9D6' },
   confirme:   { label: 'Confirmé', color: '#00CCCC', bg: '#E8FFF8' },
   annule:     { label: 'Annulé', color: '#FD3D6B', bg: '#FDD5D9' },
 }
 
-function isAvantMercredi22h(): boolean {
-  const now = new Date()
-  const jourSemaine = now.getDay()
-  if (jourSemaine < 3) return true
-  if (jourSemaine === 3) return now.getHours() < 22
-  return false
-}
-
-function getLundiSuivant(): string {
-  const now = new Date()
-  const jourSemaine = now.getDay()
-  const diff = (8 - jourSemaine) % 7 || 7
-  const lundi = new Date(now)
-  lundi.setDate(now.getDate() + diff)
-  return lundi.toISOString().split('T')[0]
-}
-
-function getVendrediSuivant(): string {
-  const lundi = new Date(getLundiSuivant())
-  lundi.setDate(lundi.getDate() + 4)
-  return lundi.toISOString().split('T')[0]
-}
-
 export default function CommandesEnCoursPage() {
   const supabase = createSupabaseBrowserClient()
 
   const [client, setClient] = useState<any>(null)
-  const [commandesSemaineCourante, setCommandesSemaineCourante] = useState<Commande[]>([])
-  const [commandesSemaineSuivante, setCommandesSemaineSuivante] = useState<Commande[]>([])
+  const [commandes, setCommandes] = useState<Commande[]>([])
   const [loading, setLoading] = useState(true)
   const [modifyingId, setModifyingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const peutModifier = isAvantMercredi22h()
-  const deadline = (() => {
-    const now = new Date()
-    const mercredi = new Date(now)
-    const diff = (3 - now.getDay() + 7) % 7
-    mercredi.setDate(now.getDate() + diff)
-    mercredi.setHours(22, 0, 0, 0)
-    return mercredi.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
-  })()
+  const { deadlinePrecommande, semaineSuivante } = getSemainesDisponibles()
+  const peutModifier = new Date() < deadlinePrecommande
+  const deadlineLabel = deadlinePrecommande.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 
   useEffect(() => {
     async function load() {
@@ -93,36 +74,16 @@ export default function CommandesEnCoursPage() {
       setClient(clientData)
 
       const today = new Date().toISOString().split('T')[0]
-      const lundiCourant = new Date()
-      lundiCourant.setDate(lundiCourant.getDate() - ((lundiCourant.getDay() + 6) % 7))
-      const vendrediCourant = new Date(lundiCourant)
-      vendrediCourant.setDate(lundiCourant.getDate() + 4)
-      const vendrediCourantStr = vendrediCourant.toISOString().split('T')[0]
 
-      // Semaine en cours
-      const { data: cmdCourante } = await supabase
+      const { data } = await supabase
         .from('commandes')
         .select('*, menus(date_livraison, plat, plat_vege, dessert, photo)')
         .eq('client_id', clientData.id)
         .neq('statut', 'annule')
         .gte('menus.date_livraison', today)
-        .lte('menus.date_livraison', vendrediCourantStr)
         .order('menus(date_livraison)', { ascending: true })
 
-      setCommandesSemaineCourante((cmdCourante ?? []).filter((c: any) => c.menus))
-
-      // Semaine suivante
-      const { data: cmdSuivante } = await supabase
-        .from('commandes')
-        .select('*, menus(date_livraison, plat, plat_vege, dessert, photo)')
-        .eq('client_id', clientData.id)
-        .neq('statut', 'annule')
-        .gte('menus.date_livraison', getLundiSuivant())
-        .lte('menus.date_livraison', getVendrediSuivant())
-        .order('menus(date_livraison)', { ascending: true })
-
-      setCommandesSemaineSuivante((cmdSuivante ?? []).filter((c: any) => c.menus))
-
+      setCommandes((data ?? []).filter((c: any) => c.menus))
       setLoading(false)
     }
     load()
@@ -136,7 +97,7 @@ export default function CommandesEnCoursPage() {
       .update({ variante: nouvelleVariante })
       .eq('id', cmd.id)
 
-    setCommandesSemaineSuivante(prev =>
+    setCommandes(prev =>
       prev.map(c => c.id === cmd.id ? { ...c, variante: nouvelleVariante } : c)
     )
     setSaving(false)
@@ -249,16 +210,21 @@ export default function CommandesEnCoursPage() {
     </div>
   )
 
-  const aucuneCommande = commandesSemaineCourante.length === 0 && commandesSemaineSuivante.length === 0
+  const commandesParSemaine = commandes.reduce((acc: Record<string, Commande[]>, cmd) => {
+    const label = getSemaineLabel(cmd.menus.date_livraison)
+    if (!acc[label]) acc[label] = []
+    acc[label].push(cmd)
+    return acc
+  }, {})
 
   return (
-    <div style={{ padding: "40px 48px", maxWidth: "800px" }}>
+    <div style={{ padding: "40px 48px", maxWidth: "800px", margin: "0 auto" }}>
 
       <h1 style={{ fontSize: "28px", fontWeight: 600, color: "#1A1A1A", letterSpacing: "-0.02em", marginBottom: "32px" }}>
         Commandes en cours
       </h1>
 
-      {aucuneCommande ? (
+      {commandes.length === 0 ? (
         <div style={{
           background: "#fff", border: "1px solid #E8E3D8",
           borderRadius: "16px", padding: "40px", textAlign: "center",
@@ -277,51 +243,28 @@ export default function CommandesEnCoursPage() {
           </Link>
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-
-          {/* Semaine en cours */}
-          {commandesSemaineCourante.length > 0 && (
-            <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px 24px" }}>
-              <p style={{ fontSize: "12px", fontWeight: 700, color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "4px" }}>
-                Cette semaine
-              </p>
-              <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "12px", fontStyle: "italic" }}>
-                Les commandes de la semaine en cours ne peuvent plus être modifiées
+        <div>
+          {peutModifier && (
+            <p style={{ fontSize: "12px", color: "#00CCCC", marginBottom: "16px" }}>
+              Pré-commandes modifiables jusqu'au {deadlineLabel} à 23h59
+            </p>
+          )}
+          {Object.entries(commandesParSemaine).map(([semaine, cmds]) => (
+            <div key={semaine} style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px 24px", marginBottom: "16px" }}>
+              <p style={{ fontSize: "12px", fontWeight: 700, color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "16px" }}>
+                {semaine}
               </p>
               <div>
-                {commandesSemaineCourante.map(cmd => (
-                  <CommandeRow key={cmd.id} cmd={cmd} modifiable={false} />
+                {cmds.map(cmd => (
+                  <CommandeRow
+                    key={cmd.id}
+                    cmd={cmd}
+                    modifiable={peutModifier && cmd.menus.date_livraison >= semaineSuivante.lundi && cmd.menus.date_livraison <= semaineSuivante.vendredi}
+                  />
                 ))}
               </div>
             </div>
-          )}
-
-          {/* Semaine suivante */}
-          {commandesSemaineSuivante.length > 0 && (
-            <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px 24px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-                <p style={{ fontSize: "12px", fontWeight: 700, color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-                  Semaine prochaine
-                </p>
-                {peutModifier && (
-                  <span style={{ fontSize: "11px", color: "#00CCCC", fontWeight: 500 }}>
-                    Modifiable jusqu'au {deadline} à 22h
-                  </span>
-                )}
-              </div>
-              {!peutModifier && (
-                <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "12px", fontStyle: "italic" }}>
-                  La deadline de modification est dépassée
-                </p>
-              )}
-              <div>
-                {commandesSemaineSuivante.map(cmd => (
-                  <CommandeRow key={cmd.id} cmd={cmd} modifiable={peutModifier} />
-                ))}
-              </div>
-            </div>
-          )}
-
+          ))}
         </div>
       )}
     </div>

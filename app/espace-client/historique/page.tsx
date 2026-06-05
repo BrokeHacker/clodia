@@ -224,7 +224,7 @@ export default function HistoriquePage() {
     .reduce((acc, c) => acc + (c.prix_total ?? 0), 0)
 
   return (
-    <div style={{ padding: "40px 48px", maxWidth: "800px" }}>
+    <div style={{ padding: "40px 48px", maxWidth: "800px", margin: "0 auto" }}>
 
       <h1 style={{ fontSize: "28px", fontWeight: 600, color: "#1A1A1A", letterSpacing: "-0.02em", marginBottom: "24px" }}>
         Historique des commandes

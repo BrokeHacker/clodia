@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
+import { formatTelephone } from "@/lib/utils"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import { fetchPointsLivraison, PointLivraisonDB } from "@/lib/menus"
@@ -235,7 +236,7 @@ function InscriptionContent() {
                 type="tel"
                 value={telephone}
                 onChange={e => {
-                  const val = e.target.value
+                  const val = formatTelephone(e.target.value)
                   setTelephone(val)
                   setTelephoneVerifie(false)
                   setClientExistantId(null)

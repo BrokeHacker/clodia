@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { formatTelephone, displayTelephone } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 import { supabase, createSupabaseBrowserClient } from '@/lib/supabase';
 import { PointLivraisonDB, getTarifUnitaire, getTarifPrecommande, fetchTarifs, Tarif, fetchMenusSemaineCourante, fetchMenusSemaineSuivante, getDisponible } from "@/lib/menus";
@@ -406,7 +407,7 @@ function CheckoutContent() {
                     type="tel"
                     value={telephone}
                     onChange={e => {
-                      const val = e.target.value;
+                      const val = formatTelephone(e.target.value);
                       setTelephone(val);
                       setTelephoneVerifie(false);
                       setClientTrouve(false);
@@ -526,7 +527,7 @@ function CheckoutContent() {
               </div>
               <p style={{ fontSize: "14px", color: "#1A1A1A", fontWeight: 500 }}>{prenom} {nom}</p>
               <p style={{ fontSize: "13px", color: "#6B6B6B", marginTop: "2px" }}>{email}</p>
-              <p style={{ fontSize: "13px", color: "#6B6B6B", marginTop: "2px" }}>{telephone}</p>
+              <p style={{ fontSize: "13px", color: "#6B6B6B", marginTop: "2px" }}>{displayTelephone(telephone)}</p>
             </div>
 
             {/* Point de livraison */}

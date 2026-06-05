@@ -121,7 +121,7 @@ export default function ProgrammationPage() {
     .join(', ')
 
   return (
-    <div style={{ padding: "40px 48px", maxWidth: "680px" }}>
+    <div style={{ padding: "40px 48px", maxWidth: "680px", margin: "0 auto" }}>
 
       <div style={{ marginBottom: "32px" }}>
         <h1 style={{ fontSize: "28px", fontWeight: 600, color: "#1A1A1A", letterSpacing: "-0.02em", marginBottom: "8px" }}>
