@@ -376,6 +376,8 @@ function CommanderContent() {
                 const dispoVege = getSlotDispo(menu.date_livraison, 'plat_vege');
                 const platComplet = dispoPlat !== null && dispoPlat === 0;
                 const vegeComplet = dispoVege !== null && dispoVege === 0;
+                const aPlatStandard = !!menu.plat && menu.plat.trim() !== '';
+                const aPlatVege = !!menu.plat_vege && menu.plat_vege.trim() !== '';
 
                 return (
                   <div
@@ -411,43 +413,49 @@ function CommanderContent() {
                     <div className="p-4">
                       {/* Boutons variante */}
                       <div className="flex gap-2 mb-3">
-                        <button
-                          disabled={platComplet}
-                          onClick={() => {
-                            if (platComplet) return;
-                            if (!itemPlat) updateCart(menu.id, "plat", 1);
-                          }}
-                          className={`flex-1 text-xs font-medium py-2 rounded-xl border transition-colors ${
-                            platComplet
-                              ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
-                              : itemPlat !== null
-                              ? "border-[#4D0F1F] bg-[#4D0F1F] text-white"
-                              : "border-gray-200 text-gray-400 hover:border-gray-300"
-                          }`}
-                        >
-                          {dispoPlat !== null ? `🍖 Plat (${dispoPlat} dispo)` : "🍖 Plat"}
-                        </button>
-                        <button
-                          disabled={vegeComplet}
-                          onClick={() => {
-                            if (vegeComplet) return;
-                            if (!itemVege) updateCart(menu.id, "plat_vege", 1);
-                          }}
-                          className={`flex-1 text-xs font-medium py-2 rounded-xl border transition-colors ${
-                            vegeComplet
-                              ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
-                              : itemVege !== null
-                              ? "border-[#00CCCC] bg-[#00CCCC] text-white"
-                              : "border-gray-200 text-gray-400 hover:border-gray-300"
-                          }`}
-                        >
-                          {dispoVege !== null ? `🌿 Végé (${dispoVege} dispo)` : "🌿 Végé"}
-                        </button>
+                        {aPlatStandard && (
+                          <button
+                            disabled={platComplet}
+                            onClick={() => {
+                              if (platComplet) return;
+                              if (!itemPlat) updateCart(menu.id, "plat", 1);
+                            }}
+                            className={`flex-1 text-xs font-medium py-2 rounded-xl border transition-colors ${
+                              platComplet
+                                ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                                : itemPlat !== null
+                                ? "border-[#4D0F1F] bg-[#4D0F1F] text-white"
+                                : "border-gray-200 text-gray-400 hover:border-gray-300"
+                            }`}
+                          >
+                            {dispoPlat !== null ? `🍖 Plat (${dispoPlat} dispo)` : "🍖 Plat"}
+                          </button>
+                        )}
+                        {aPlatVege && (
+                          <button
+                            disabled={vegeComplet}
+                            onClick={() => {
+                              if (vegeComplet) return;
+                              if (!itemVege) updateCart(menu.id, "plat_vege", 1);
+                            }}
+                            className={`flex-1 text-xs font-medium py-2 rounded-xl border transition-colors ${
+                              vegeComplet
+                                ? "border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed"
+                                : itemVege !== null
+                                ? "border-[#00CCCC] bg-[#00CCCC] text-white"
+                                : "border-gray-200 text-gray-400 hover:border-gray-300"
+                            }`}
+                          >
+                            {dispoVege !== null ? `🌿 Végé (${dispoVege} dispo)` : "🌿 Végé"}
+                          </button>
+                        )}
                       </div>
 
                       {/* Descriptif — hauteur fixe 3 lignes */}
                       <div style={{ height: "72px", overflow: "hidden", marginBottom: "12px" }}>
-                        <h3 className="font-semibold text-[#4D0F1F] text-sm mb-1 line-clamp-2">{menu.plat}</h3>
+                        <h3 className="font-semibold text-[#4D0F1F] text-sm mb-1 line-clamp-2">
+                          {aPlatStandard ? menu.plat : menu.plat_vege}
+                        </h3>
                         <p className="text-xs text-gray-400">+ {menu.dessert}</p>
                       </div>
 
@@ -458,7 +466,7 @@ function CommanderContent() {
                         </span>
                         {!inCart ? (
                           <button
-                            onClick={() => updateCart(menu.id, "plat", 1)}
+                            onClick={() => updateCart(menu.id, aPlatStandard ? "plat" : "plat_vege", 1)}
                             className="bg-[#FD3D6B] text-white text-xs font-semibold px-4 py-2 rounded-full hover:bg-[#e8345e] transition-colors"
                           >
                             + Ajouter
