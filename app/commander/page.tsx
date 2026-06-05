@@ -397,7 +397,18 @@ function CommanderContent() {
                         sizes="(max-width: 768px) 100vw, 50vw"
                       />
                       <div className="absolute top-3 left-3">
-                        <span className="bg-[#EAFF33] text-[#4D0F1F] text-xs font-semibold px-3 py-1 rounded-full">
+                        <span style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          backgroundColor: "rgba(255,255,255,0.95)",
+                          color: "#1A1A1A",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          padding: "4px 12px",
+                          borderRadius: "999px",
+                          whiteSpace: "nowrap",
+                          letterSpacing: "0.01em",
+                        }}>
                           {menu.jourSemaine} {menu.date}
                         </span>
                       </div>

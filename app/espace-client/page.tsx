@@ -165,14 +165,17 @@ export default function EspaceClientPage() {
       setDepensesMois(total)
 
       // Commandes en cours (count)
-      const { count: nbEnCours } = await supabase
+      const { data: enCoursData } = await supabase
         .from('commandes')
-        .select('id, menus(date_livraison)', { count: 'exact' })
+        .select('id, menus(date_livraison)')
         .eq('client_id', clientData.id)
         .neq('statut', 'annule')
-        .gte('menus.date_livraison', todayStr)
 
-      setNbCommandesEnCours(nbEnCours ?? 0)
+      const nbEnCours = (enCoursData ?? []).filter((c: any) =>
+        c.menus?.date_livraison > todayStr
+      ).length
+
+      setNbCommandesEnCours(nbEnCours)
 
       // Programmation
       const { data: progData } = await supabase
@@ -266,29 +269,41 @@ export default function EspaceClientPage() {
       )}
 
       {/* ── SECTION 1 — KPI 3 colonnes ── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", marginBottom: "40px" }}>
+      <div style={{ display: "grid", gap: "12px", marginBottom: "40px" }} className="grid-cols-1 md:grid-cols-3">
         <Link href="/espace-client/commandes" style={{ textDecoration: "none" }}>
-          <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px", cursor: "pointer", height: "100%" }}>
-            <p style={{ fontSize: "11px", color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
+          <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "16px 20px", cursor: "pointer", height: "100%" }}
+            className="flex md:block items-center gap-4">
+            <p style={{ fontSize: "11px", color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 0 }}
+              className="md:mb-2 shrink-0 w-24 md:w-auto">
               Commandes en cours
             </p>
-            <p style={{ fontSize: "32px", fontWeight: 600, color: "#1A1A1A", lineHeight: 1 }}>{nbCommandesEnCours}</p>
-            <p style={{ fontSize: "12px", color: "#00CCCC", marginTop: "4px" }}>Voir le détail →</p>
+            <div className="flex-1 md:block">
+              <p style={{ fontSize: "28px", fontWeight: 600, color: "#1A1A1A", lineHeight: 1 }}>{nbCommandesEnCours}</p>
+              <p style={{ fontSize: "12px", color: "#00CCCC", marginTop: "2px" }}>Voir le détail →</p>
+            </div>
           </div>
         </Link>
-        <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px" }}>
-          <p style={{ fontSize: "11px", color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
+        <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "16px 20px" }}
+          className="flex md:block items-center gap-4">
+          <p style={{ fontSize: "11px", color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 0 }}
+            className="md:mb-2 shrink-0 w-24 md:w-auto">
             Dépenses ce mois
           </p>
-          <p style={{ fontSize: "32px", fontWeight: 600, color: "#1A1A1A", lineHeight: 1 }}>{formatPrice(depensesMois)}</p>
-          <p style={{ fontSize: "12px", color: "#9B9B9B", marginTop: "4px" }}>commandes confirmées</p>
+          <div className="flex-1 md:block">
+            <p style={{ fontSize: "28px", fontWeight: 600, color: "#1A1A1A", lineHeight: 1 }}>{formatPrice(depensesMois)}</p>
+            <p style={{ fontSize: "12px", color: "#9B9B9B", marginTop: "2px" }}>commandes confirmées</p>
+          </div>
         </div>
-        <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px" }}>
-          <p style={{ fontSize: "11px", color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
+        <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "16px 20px" }}
+          className="flex md:block items-center gap-4">
+          <p style={{ fontSize: "11px", color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 0 }}
+            className="md:mb-2 shrink-0 w-24 md:w-auto">
             Total repas
           </p>
-          <p style={{ fontSize: "32px", fontWeight: 600, color: "#1A1A1A", lineHeight: 1 }}>{totalRepas}</p>
-          <p style={{ fontSize: "12px", color: "#9B9B9B", marginTop: "4px" }}>depuis votre inscription</p>
+          <div className="flex-1 md:block">
+            <p style={{ fontSize: "28px", fontWeight: 600, color: "#1A1A1A", lineHeight: 1 }}>{totalRepas}</p>
+            <p style={{ fontSize: "12px", color: "#9B9B9B", marginTop: "2px" }}>depuis votre inscription</p>
+          </div>
         </div>
       </div>
 
@@ -303,40 +318,86 @@ export default function EspaceClientPage() {
               Afficher le détail →
             </Link>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "10px" }}>
+          <div className="md:grid md:grid-cols-5" style={{ gap: "10px" }}>
+
+            {/* Version mobile — scroll horizontal */}
+            <div
+              className="flex md:hidden gap-3 overflow-x-auto pb-2"
+              style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
+            >
+              {derniersPlatsCmdIds.map(cmd => {
+                const plat = cmd.variante === 'vegetarien' ? cmd.menus.plat_vege : cmd.menus.plat
+                const rating = getRating(cmd.id)
+                return (
+                  <div key={cmd.id} style={{
+                    position: "relative", borderRadius: "14px", overflow: "hidden",
+                    aspectRatio: "3/4", flexShrink: 0, width: "45vw", scrollSnapAlign: "start",
+                  }}>
+                    <Image
+                      src={cmd.menus.photo || '/images/plats-clodia.jpg'}
+                      alt={plat}
+                      fill
+                      sizes="45vw"
+                      style={{ objectFit: "cover" }}
+                    />
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 50%)" }} />
+                    <div style={{ position: "absolute", top: "10px", left: "10px", zIndex: 2 }}>
+                      <span style={{
+                        display: "inline-flex", alignItems: "center",
+                        backgroundColor: "rgba(255,255,255,0.95)", color: "#1A1A1A",
+                        fontSize: "11px", fontWeight: 600, padding: "4px 10px",
+                        borderRadius: "999px", whiteSpace: "nowrap", letterSpacing: "0.01em",
+                      }}>
+                        {formatDate(cmd.menus.date_livraison)}
+                      </span>
+                    </div>
+                    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px" }}>
+                      <p style={{ fontSize: "11px", color: "#fff", fontWeight: 600, lineHeight: 1.3, marginBottom: "6px" }}>
+                        {plat}
+                      </p>
+                      <StarRating commandeId={cmd.id} initialNote={rating} clientId={client.id} onRated={handleRated} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Version desktop — grid */}
             {derniersPlatsCmdIds.map(cmd => {
               const plat = cmd.variante === 'vegetarien' ? cmd.menus.plat_vege : cmd.menus.plat
               const rating = getRating(cmd.id)
               return (
-                <div key={cmd.id} style={{ position: "relative", borderRadius: "14px", overflow: "hidden", aspectRatio: "3/4" }}>
+                <div key={cmd.id + '-desktop'} className="hidden md:block" style={{
+                  position: "relative", borderRadius: "14px", overflow: "hidden", aspectRatio: "3/4",
+                }}>
                   <Image
                     src={cmd.menus.photo || '/images/plats-clodia.jpg'}
                     alt={plat}
                     fill
-                    sizes="(max-width: 900px) 50vw, 20vw"
+                    sizes="20vw"
                     style={{ objectFit: "cover" }}
                   />
-                  <div style={{
-                    position: "absolute", inset: 0,
-                    background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 50%)",
-                  }} />
-                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px" }}>
-                    <p style={{ fontSize: "9px", color: "rgba(255,255,255,0.7)", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, transparent 50%)" }} />
+                  <div style={{ position: "absolute", top: "10px", left: "10px", zIndex: 2 }}>
+                    <span style={{
+                      display: "inline-flex", alignItems: "center",
+                      backgroundColor: "rgba(255,255,255,0.95)", color: "#1A1A1A",
+                      fontSize: "11px", fontWeight: 600, padding: "4px 10px",
+                      borderRadius: "999px", whiteSpace: "nowrap", letterSpacing: "0.01em",
+                    }}>
                       {formatDate(cmd.menus.date_livraison)}
-                    </p>
+                    </span>
+                  </div>
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px" }}>
                     <p style={{ fontSize: "11px", color: "#fff", fontWeight: 600, lineHeight: 1.3, marginBottom: "6px" }}>
                       {plat}
                     </p>
-                    <StarRating
-                      commandeId={cmd.id}
-                      initialNote={rating}
-                      clientId={client.id}
-                      onRated={handleRated}
-                    />
+                    <StarRating commandeId={cmd.id} initialNote={rating} clientId={client.id} onRated={handleRated} />
                   </div>
                 </div>
               )
             })}
+
           </div>
         </div>
       )}

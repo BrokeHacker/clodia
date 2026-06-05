@@ -50,6 +50,8 @@ export default function MenuCarousel({ menus }: { menus: Menu[] }) {
   const startX = useRef(0);
   const startOffset = useRef(0);
   const animRef = useRef<number>(0);
+  const touchStartY = useRef(0);
+  const isHorizontalSwipe = useRef<boolean | null>(null);
   const [active, setActive] = useState(0);
 
   const normalize = useCallback((val: number) => {
@@ -149,11 +151,58 @@ export default function MenuCarousel({ menus }: { menus: Menu[] }) {
             transform: `translateX(${offset}px)`,
             willChange: "transform",
             gap: CARD_GAP,
+            touchAction: "pan-y",
           }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
+          onTouchStart={(e) => {
+            touchStartY.current = e.touches[0].clientY;
+            isHorizontalSwipe.current = null;
+            cancelAnimationFrame(animRef.current);
+            isDragging.current = true;
+            startX.current = e.touches[0].clientX;
+            startOffset.current = offsetRef.current;
+          }}
+          onTouchMove={(e) => {
+            const deltaX = e.touches[0].clientX - startX.current;
+            const deltaY = e.touches[0].clientY - touchStartY.current;
+            if (isHorizontalSwipe.current === null) {
+              isHorizontalSwipe.current = Math.abs(deltaX) > Math.abs(deltaY);
+            }
+            if (!isHorizontalSwipe.current) {
+              isDragging.current = false;
+              return;
+            }
+            e.preventDefault();
+            const next = normalize(startOffset.current + deltaX);
+            offsetRef.current = next;
+            setOffset(next);
+            setActive(getActive(next));
+          }}
+          onTouchEnd={() => {
+            if (!isDragging.current) return;
+            isDragging.current = false;
+            isHorizontalSwipe.current = null;
+            const nearest = Math.round(-offsetRef.current / UNIT) * -UNIT;
+            const normalized = normalize(nearest);
+            const from = offsetRef.current;
+            const distance = normalized - from;
+            const duration = Math.min(Math.abs(distance) * 0.4, 220);
+            const start = performance.now();
+            const step = (now: number) => {
+              const elapsed = now - start;
+              const progress = Math.min(elapsed / duration, 1);
+              const ease = 1 - Math.pow(1 - progress, 4);
+              const current = from + distance * ease;
+              offsetRef.current = current;
+              setOffset(current);
+              setActive(getActive(current));
+              if (progress < 1) animRef.current = requestAnimationFrame(step);
+            };
+            animRef.current = requestAnimationFrame(step);
+          }}
         >
           {items.map((menu, i) => {
             const realIdx = i % total;
@@ -257,7 +306,7 @@ export default function MenuCarousel({ menus }: { menus: Menu[] }) {
         {/* Flèches */}
         <button
           onClick={() => goTo(-1)}
-          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-white transition-colors"
+          className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/90 shadow hidden md:flex items-center justify-center hover:bg-white transition-colors"
           aria-label="Précédent"
         >
           <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -266,7 +315,7 @@ export default function MenuCarousel({ menus }: { menus: Menu[] }) {
         </button>
         <button
           onClick={() => goTo(1)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/90 shadow flex items-center justify-center hover:bg-white transition-colors"
+          className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/90 shadow hidden md:flex items-center justify-center hover:bg-white transition-colors"
           aria-label="Suivant"
         >
           <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

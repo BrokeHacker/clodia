@@ -80,7 +80,7 @@ export default function CommandesEnCoursPage() {
         .select('*, menus(date_livraison, plat, plat_vege, dessert, photo)')
         .eq('client_id', clientData.id)
         .neq('statut', 'annule')
-        .gte('menus.date_livraison', today)
+        .gt('menus.date_livraison', today)
         .order('menus(date_livraison)', { ascending: true })
 
       setCommandes((data ?? []).filter((c: any) => c.menus))
