@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
-import { getSemainesDisponibles } from "@/lib/menus"
+import { getSemainesDisponibles, fetchPointLivraisonDefaut } from "@/lib/menus"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -120,13 +120,15 @@ export default function EspaceClientPage() {
 
       const { data: clientData } = await supabase
         .from('clients')
-        .select('*, points_livraison(*)')
+        .select('*')
         .eq('user_id', session.user.id)
         .single()
 
       if (!clientData) return
       setClient(clientData)
-      setPointLivraison(clientData.points_livraison)
+
+      const pointDefaut = await fetchPointLivraisonDefaut(clientData.id, supabase)
+      setPointLivraison(pointDefaut)
 
       const today = new Date()
       const todayStr = today.toISOString().split('T')[0]

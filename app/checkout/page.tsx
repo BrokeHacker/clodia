@@ -3,9 +3,8 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { formatTelephone, displayTelephone } from "@/lib/utils";
-import { useSearchParams } from "next/navigation";
 import { supabase, createSupabaseBrowserClient } from '@/lib/supabase';
-import { PointLivraisonDB, getTarifUnitaire, getTarifPrecommande, fetchTarifs, Tarif, fetchMenusSemaineCourante, fetchMenusSemaineSuivante, getDisponible } from "@/lib/menus";
+import { PointLivraisonDB, getTarifUnitaire, getTarifPrecommande, fetchTarifs, Tarif, fetchMenusSemaineCourante, fetchMenusSemaineSuivante, getDisponible, fetchPointsLivraison, fetchPointsLivraisonClient, fetchPointLivraisonDefaut } from "@/lib/menus";
 import { Menu } from "@/lib/data";
 
 interface CartItem {
@@ -21,13 +20,14 @@ function formatPrice(p: number) {
 }
 
 function CheckoutContent() {
-  const searchParams = useSearchParams();
   const [etape, setEtape] = useState<Etape>("auth");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [point, setPoint] = useState<PointLivraisonDB | null>(null);
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
   const [menusCurrentWeek, setMenusCurrentWeek] = useState<Menu[]>([]);
   const [menusNextWeek, setMenusNextWeek] = useState<Menu[]>([]);
+  const [mesPoints, setMesPoints] = useState<any[]>([]);
+  const [pointMode, setPointMode] = useState<'saved' | 'new'>('saved');
 
   const [email, setEmail] = useState("");
   const [telephone, setTelephone] = useState("");
@@ -40,11 +40,22 @@ function CheckoutContent() {
   const [commandeEnCours, setCommandeEnCours] = useState(false);
   const [erreurSlots, setErreurSlots] = useState<{date: string, variante: string, dispo: number, demande: number}[]>([]);
   const [authLoading, setAuthLoading] = useState(true);
+  const [pointsLoading, setPointsLoading] = useState(true);
 
   useEffect(() => {
     async function init() {
       const supabaseBrowser = createSupabaseBrowserClient();
       const { data: { session } } = await supabaseBrowser.auth.getSession();
+
+      // Charger le panier depuis sessionStorage dans tous les cas
+      try {
+        const savedCart = sessionStorage.getItem('clodia-cart');
+        if (savedCart) setCart(JSON.parse(savedCart));
+      } catch {}
+
+      fetchTarifs().then(setTarifs);
+      fetchMenusSemaineCourante().then(setMenusCurrentWeek);
+      fetchMenusSemaineSuivante().then(setMenusNextWeek);
 
       if (session) {
         const { data: clientData } = await supabaseBrowser
@@ -54,47 +65,30 @@ function CheckoutContent() {
           .single();
 
         if (clientData) {
+          const points = await fetchPointsLivraisonClient(clientData.id, supabaseBrowser);
+          setMesPoints(points);
+
+          const defaut = points.find((p: any) => p.est_defaut);
+          if (defaut) setPoint(defaut.points_livraison);
+
           setPrenom(clientData.prenom ?? '');
           setNom(clientData.nom ?? '');
           setEmail(clientData.email ?? '');
           setTelephone(clientData.telephone ?? '');
           setTelephoneVerifie(true);
+          setPointsLoading(false);
           setEtape('recap');
+        } else {
+          setPointsLoading(false);
         }
+      } else {
+        try {
+          const savedPoint = sessionStorage.getItem('clodia-point');
+          if (savedPoint) setPoint(JSON.parse(savedPoint));
+        } catch {}
+        setPointsLoading(false);
       }
 
-      try {
-        const savedCart = sessionStorage.getItem('clodia-cart');
-        if (savedCart) setCart(JSON.parse(savedCart));
-        const savedPoint = sessionStorage.getItem('clodia-point');
-        if (savedPoint) setPoint(JSON.parse(savedPoint));
-      } catch {}
-      fetchTarifs().then(setTarifs);
-      fetchMenusSemaineCourante().then(setMenusCurrentWeek);
-      fetchMenusSemaineSuivante().then(setMenusNextWeek);
-
-      const authSuccess = searchParams.get('auth');
-      if (authSuccess === 'success') {
-        const supabaseBrowser = createSupabaseBrowserClient();
-        const { data: { session } } = await supabaseBrowser.auth.getSession();
-
-        if (session) {
-          const { data: clientData } = await supabaseBrowser
-            .from('clients')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .single();
-
-          if (clientData) {
-            setPrenom(clientData.prenom ?? '');
-            setNom(clientData.nom ?? '');
-            setEmail(clientData.email ?? '');
-            setTelephone(clientData.telephone ?? '');
-            setTelephoneVerifie(true);
-            setEtape('recap');
-          }
-        }
-      }
       setAuthLoading(false);
     }
     init();
@@ -223,13 +217,39 @@ function CheckoutContent() {
           prenom,
           nom,
           email,
-          point_livraison: point?.id ?? null,
         }, { onConflict: 'telephone' })
         .select('id')
         .single()
 
       if (clientError || !clientData) throw new Error('Erreur création client')
       const clientId = clientData.id
+
+      // Enregistrer le point de livraison si pas déjà enregistré
+      if (point) {
+        const { data: existingPoint } = await supabase
+          .from('client_points_livraison')
+          .select('id')
+          .eq('client_id', clientId)
+          .eq('point_livraison_id', point.id)
+          .single()
+
+        if (!existingPoint) {
+          const { count } = await supabase
+            .from('client_points_livraison')
+            .select('*', { count: 'exact', head: true })
+            .eq('client_id', clientId)
+
+          if ((count ?? 0) < 3) {
+            await supabase
+              .from('client_points_livraison')
+              .insert({
+                client_id: clientId,
+                point_livraison_id: point.id,
+                est_defaut: (count ?? 0) === 0,
+              })
+          }
+        }
+      }
 
       // ── ÉTAPE 3 : Créer les lignes commandes ──
       const lignesCommandes = cartWithMenus.map(item => {
@@ -531,16 +551,82 @@ function CheckoutContent() {
             </div>
 
             {/* Point de livraison */}
-            {point && (
-              <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px" }}>
-                <p style={{ fontSize: "12px", fontWeight: 700, color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>
-                  Point de livraison
-                </p>
-                <p style={{ fontSize: "14px", color: "#1A1A1A", fontWeight: 500 }}>{point.hopital}</p>
-                <p style={{ fontSize: "13px", color: "#6B6B6B", marginTop: "2px" }}>{point.batiment} — {point.service}</p>
-                <p style={{ fontSize: "12px", color: "#00CCCC", marginTop: "4px" }}>{point.service_desc}</p>
-              </div>
-            )}
+            <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px", marginBottom: "16px" }}>
+              <p style={{ fontSize: "12px", fontWeight: 700, color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>
+                Point de livraison
+              </p>
+
+              {/* Si l'utilisateur a des points enregistrés */}
+              {mesPoints.length > 0 && (
+                <div style={{ marginBottom: "12px" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "8px" }}>
+                    {mesPoints.map(cp => (
+                      <button
+                        key={cp.id}
+                        onClick={() => {
+                          setPoint(cp.points_livraison)
+                          setPointMode('saved')
+                        }}
+                        style={{
+                          display: "flex", alignItems: "center", gap: "10px",
+                          padding: "10px 14px", borderRadius: "12px", textAlign: "left",
+                          border: `2px solid ${point?.id === cp.points_livraison.id ? "#4D0F1F" : "#E8E3D8"}`,
+                          background: point?.id === cp.points_livraison.id ? "#F5F0E8" : "#fff",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <div style={{
+                          width: 16, height: 16, borderRadius: "50%",
+                          border: `2px solid ${point?.id === cp.points_livraison.id ? "#4D0F1F" : "#E8E3D8"}`,
+                          background: point?.id === cp.points_livraison.id ? "#4D0F1F" : "#fff",
+                          flexShrink: 0,
+                        }} />
+                        <div>
+                          <p style={{ fontSize: "13px", fontWeight: 600, color: "#1A1A1A" }}>
+                            {cp.points_livraison.service}
+                            {cp.est_defaut && <span style={{ fontSize: "10px", color: "#00CCCC", marginLeft: "6px" }}>Par défaut</span>}
+                          </p>
+                          <p style={{ fontSize: "11px", color: "#6B6B6B" }}>
+                            {cp.points_livraison.hopital} · {cp.points_livraison.batiment}
+                          </p>
+                          {cp.points_livraison.service_desc && (
+                            <p style={{ fontSize: "11px", color: "#00CCCC", marginTop: "2px" }}>{cp.points_livraison.service_desc}</p>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Option autre frigidaire */}
+                  <button
+                    onClick={() => {
+                      if (pointMode === 'new') {
+                        setPointMode('saved')
+                        const defaut = mesPoints.find((p: any) => p.est_defaut)
+                        if (defaut) setPoint(defaut.points_livraison)
+                      } else {
+                        setPointMode('new')
+                        setPoint(null)
+                      }
+                    }}
+                    style={{ fontSize: "12px", color: "#007FFF", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}
+                  >
+                    {pointMode === 'new' ? '← Utiliser un frigidaire enregistré' : '+ Choisir un autre frigidaire'}
+                  </button>
+                </div>
+              )}
+
+              {/* Cascade si pas de points enregistrés ou mode "autre" */}
+              {!pointsLoading && (mesPoints.length === 0 || pointMode === 'new') && (
+                <>
+                  <PointLivraisonCascade point={point} setPoint={setPoint} />
+                  {point && (
+                    <p style={{ fontSize: "12px", color: "#00CCCC", marginTop: "8px" }}>{point.service_desc}</p>
+                  )}
+                </>
+              )}
+
+            </div>
 
             {/* Récap commande */}
             <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px" }}>
@@ -638,6 +724,53 @@ function CheckoutContent() {
       </section>
     </div>
   );
+}
+
+function PointLivraisonCascade({ point, setPoint }: { point: any, setPoint: (p: any) => void }) {
+  const [allPoints, setAllPoints] = useState<any[]>([])
+  const [hopital, setHopital] = useState(point?.hopital ?? '')
+  const [batiment, setBatiment] = useState(point?.batiment ?? '')
+  const [service, setService] = useState(point?.service ?? '')
+
+  useEffect(() => {
+    fetchPointsLivraison().then(setAllPoints)
+  }, [])
+
+  // Sync si point change depuis l'extérieur
+  useEffect(() => {
+    if (point) {
+      setHopital(point.hopital ?? '')
+      setBatiment(point.batiment ?? '')
+      setService(point.service ?? '')
+    }
+  }, [point?.id])
+
+  const hopitaux = [...new Set(allPoints.map(p => p.hopital))]
+  const batiments = [...new Set(allPoints.filter(p => p.hopital === hopital).map(p => p.batiment))]
+  const services = allPoints.filter(p => p.hopital === hopital && p.batiment === batiment)
+
+  const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#FD3D6B] bg-white"
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      <select value={hopital} onChange={e => { setHopital(e.target.value); setBatiment(''); setService(''); setPoint(null) }} className={inputClass}>
+        <option value="">Choisissez votre hôpital</option>
+        {hopitaux.map(h => <option key={h} value={h}>{h}</option>)}
+      </select>
+      <select value={batiment} onChange={e => { setBatiment(e.target.value); setService(''); setPoint(null) }} disabled={!hopital} className={inputClass} style={{ opacity: !hopital ? 0.4 : 1 }}>
+        <option value="">Choisissez votre bâtiment</option>
+        {batiments.map(b => <option key={b} value={b}>{b}</option>)}
+      </select>
+      <select value={service} onChange={e => {
+        setService(e.target.value)
+        const found = services.find(p => p.service === e.target.value)
+        setPoint(found ?? null)
+      }} disabled={!batiment} className={inputClass} style={{ opacity: !batiment ? 0.4 : 1 }}>
+        <option value="">Choisissez votre service</option>
+        {services.map(p => <option key={p.service} value={p.service}>{p.service}</option>)}
+      </select>
+    </div>
+  )
 }
 
 export default function CheckoutPage() {

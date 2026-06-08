@@ -216,7 +216,7 @@ export default function MenuCarousel({ menus }: { menus: Menu[] }) {
                 {menu.photo ? (
                   <Image
                     src={menu.photo}
-                    alt={menu.plat}
+                    alt={menu.plat ?? "Photo du plat"}
                     fill
                     sizes="340px"
                     className="object-cover pointer-events-none"

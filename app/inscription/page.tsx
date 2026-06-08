@@ -182,7 +182,53 @@ function InscriptionContent() {
       } else {
         await supabase
           .from('clients')
-          .insert({ prenom, nom, email, telephone: telNormalise, user_id: userId, point_livraison: pointSelectionne?.id ?? null })
+          .insert({ prenom, nom, email, telephone: telNormalise, user_id: userId })
+      }
+
+      if (pointSelectionne) {
+        // Si client existant
+        if (clientExistantId) {
+          // Vérifier si ce point n'est pas déjà enregistré
+          const { data: existing } = await supabase
+            .from('client_points_livraison')
+            .select('id')
+            .eq('client_id', clientExistantId)
+            .eq('point_livraison_id', pointSelectionne.id)
+            .single()
+
+          if (!existing) {
+            // Vérifier s'il a déjà un défaut
+            const { count } = await supabase
+              .from('client_points_livraison')
+              .select('*', { count: 'exact', head: true })
+              .eq('client_id', clientExistantId)
+
+            await supabase
+              .from('client_points_livraison')
+              .insert({
+                client_id: clientExistantId,
+                point_livraison_id: pointSelectionne.id,
+                est_defaut: (count ?? 0) === 0,
+              })
+          }
+        } else {
+          // Nouveau client — premier point = défaut
+          const { data: newClient } = await supabase
+            .from('clients')
+            .select('id')
+            .eq('telephone', telNormalise)
+            .single()
+
+          if (newClient) {
+            await supabase
+              .from('client_points_livraison')
+              .insert({
+                client_id: newClient.id,
+                point_livraison_id: pointSelectionne.id,
+                est_defaut: true,
+              })
+          }
+        }
       }
 
       if (redirect === 'checkout') {

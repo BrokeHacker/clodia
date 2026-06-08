@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import { formatTelephone, displayTelephone } from "@/lib/utils"
-import { fetchPointsLivraison, PointLivraisonDB } from "@/lib/menus"
+import { fetchPointsLivraison, PointLivraisonDB, fetchPointsLivraisonClient, fetchPointLivraisonDefaut } from "@/lib/menus"
 import { useRouter } from "next/navigation"
 
 export default function ProfilPage() {
@@ -23,9 +23,9 @@ export default function ProfilPage() {
   const [hopital, setHopital] = useState("")
   const [batiment, setBatiment] = useState("")
   const [service, setService] = useState("")
+  const [mesPoints, setMesPoints] = useState<any[]>([])
+  const [ajouterMode, setAjouterMode] = useState(false)
   const [pointSelectionne, setPointSelectionne] = useState<PointLivraisonDB | null>(null)
-  const [editPoint, setEditPoint] = useState(false)
-  const [saving, setSaving] = useState(false)
   const [saveSuccess, setSaveSuccess] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
@@ -37,7 +37,7 @@ export default function ProfilPage() {
 
       const { data: clientData } = await supabase
         .from('clients')
-        .select('*, points_livraison(*)')
+        .select('*')
         .eq('user_id', session.user.id)
         .single()
 
@@ -46,12 +46,8 @@ export default function ProfilPage() {
         setPrenomEdit(clientData.prenom ?? '')
         setNomEdit(clientData.nom ?? '')
         setTelephoneEdit(clientData.telephone ?? '')
-        if (clientData.points_livraison) {
-          setHopital(clientData.points_livraison.hopital ?? '')
-          setBatiment(clientData.points_livraison.batiment ?? '')
-          setService(clientData.points_livraison.service ?? '')
-          setPointSelectionne(clientData.points_livraison)
-        }
+        const points = await fetchPointsLivraisonClient(clientData.id, supabase)
+        setMesPoints(points)
       }
 
       fetchPointsLivraison().then(setPoints)
@@ -101,17 +97,60 @@ export default function ProfilPage() {
     setTimeout(() => setSaveInfosSuccess(false), 3000)
   }
 
-  async function savePoint() {
-    if (!pointSelectionne) return
-    setSaving(true)
+  async function setDefaut(clientPointId: string) {
+    // Retirer le défaut actuel
     await supabase
-      .from('clients')
-      .update({ point_livraison: pointSelectionne.id })
-      .eq('id', client.id)
-    setSaving(false)
+      .from('client_points_livraison')
+      .update({ est_defaut: false })
+      .eq('client_id', client.id)
+
+    // Définir le nouveau défaut
+    await supabase
+      .from('client_points_livraison')
+      .update({ est_defaut: true })
+      .eq('id', clientPointId)
+
+    const points = await fetchPointsLivraisonClient(client.id, supabase)
+    setMesPoints(points)
     setSaveSuccess(true)
-    setEditPoint(false)
     setTimeout(() => setSaveSuccess(false), 3000)
+  }
+
+  async function supprimerPoint(clientPointId: string) {
+    await supabase
+      .from('client_points_livraison')
+      .delete()
+      .eq('id', clientPointId)
+
+    const points = await fetchPointsLivraisonClient(client.id, supabase)
+    setMesPoints(points)
+  }
+
+  async function ajouterPoint() {
+    if (!pointSelectionne) return
+
+    try {
+      await supabase
+        .from('client_points_livraison')
+        .insert({
+          client_id: client.id,
+          point_livraison_id: pointSelectionne.id,
+          est_defaut: mesPoints.length === 0,
+        })
+
+      const points = await fetchPointsLivraisonClient(client.id, supabase)
+      setMesPoints(points)
+      setAjouterMode(false)
+      setHopital('')
+      setBatiment('')
+      setService('')
+      setPointSelectionne(null)
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } catch {
+      // Limite de 3 atteinte ou doublon
+      alert('Vous avez déjà ce frigidaire ou avez atteint la limite de 3 frigidaires.')
+    }
   }
 
   async function handleSupprimerCompte() {
@@ -136,12 +175,6 @@ export default function ProfilPage() {
         <h1 style={{ fontSize: "28px", fontWeight: 600, color: "#1A1A1A", letterSpacing: "-0.02em", marginBottom: "32px" }}>
           Mon profil
         </h1>
-
-        {saveSuccess && (
-          <div style={{ background: "#E8FFF8", borderRadius: "12px", padding: "12px 16px", marginBottom: "20px" }}>
-            <p style={{ fontSize: "13px", color: "#00CCCC", fontWeight: 600 }}>✓ Point de livraison mis à jour</p>
-          </div>
-        )}
 
         {/* Infos personnelles — éditable */}
         <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "24px", marginBottom: "16px" }}>
@@ -227,58 +260,105 @@ export default function ProfilPage() {
           )}
         </div>
 
-        {/* Point de livraison */}
+        {/* Mes frigidaires */}
         <div style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "24px", marginBottom: "16px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
             <p style={{ fontSize: "12px", fontWeight: 700, color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Mon frigidaire
+              Mes frigidaires ({mesPoints.length}/3)
             </p>
-            {!editPoint && (
-              <button onClick={() => setEditPoint(true)} style={{ fontSize: "12px", color: "#007FFF", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
-                Modifier
+            {mesPoints.length < 3 && !ajouterMode && (
+              <button onClick={() => setAjouterMode(true)} style={{ fontSize: "12px", color: "#007FFF", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
+                + Ajouter
               </button>
             )}
           </div>
 
-          {!editPoint ? (
-            pointSelectionne ? (
-              <div>
-                <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{pointSelectionne.hopital}</p>
-                <p style={{ fontSize: "13px", color: "#6B6B6B", marginTop: "2px" }}>{pointSelectionne.batiment} — {pointSelectionne.service}</p>
-                <p style={{ fontSize: "12px", color: "#00CCCC", marginTop: "4px" }}>{pointSelectionne.service_desc}</p>
+          {saveSuccess && (
+            <div style={{ background: "#E8FFF8", borderRadius: "10px", padding: "10px 14px", marginBottom: "16px" }}>
+              <p style={{ fontSize: "12px", color: "#00CCCC", fontWeight: 600 }}>✓ Frigidaires mis à jour</p>
+            </div>
+          )}
+
+          {/* Liste des frigidaires enregistrés */}
+          {mesPoints.length === 0 && !ajouterMode && (
+            <p style={{ fontSize: "13px", color: "#9B9B9B" }}>Aucun frigidaire enregistré</p>
+          )}
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            {mesPoints.map(cp => (
+              <div key={cp.id} style={{
+                display: "flex", alignItems: "center", gap: "12px",
+                padding: "12px 14px", borderRadius: "12px",
+                background: cp.est_defaut ? "#E8FFF8" : "#FAFAF8",
+                border: `1px solid ${cp.est_defaut ? "#00CCCC" : "#E8E3D8"}`,
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
+                    <p style={{ fontSize: "13px", fontWeight: 600, color: "#1A1A1A" }}>
+                      {cp.points_livraison.service}
+                    </p>
+                    {cp.est_defaut && (
+                      <span style={{ fontSize: "10px", fontWeight: 700, color: "#00CCCC", background: "#E8FFF8", padding: "2px 8px", borderRadius: "999px", border: "1px solid #00CCCC" }}>
+                        Par défaut
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ fontSize: "12px", color: "#6B6B6B" }}>
+                    {cp.points_livraison.hopital} · {cp.points_livraison.batiment}
+                  </p>
+                  <p style={{ fontSize: "11px", color: "#00CCCC", marginTop: "2px" }}>
+                    {cp.points_livraison.service_desc}
+                  </p>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-end" }}>
+                  {!cp.est_defaut && (
+                    <button onClick={() => setDefaut(cp.id)} style={{ fontSize: "11px", color: "#007FFF", background: "none", border: "none", cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>
+                      Définir par défaut
+                    </button>
+                  )}
+                  <button onClick={() => supprimerPoint(cp.id)} style={{ fontSize: "11px", color: "#FD3D6B", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
+                    Supprimer
+                  </button>
+                </div>
               </div>
-            ) : (
-              <p style={{ fontSize: "13px", color: "#9B9B9B" }}>Aucun point de livraison défini</p>
-            )
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-              <select value={hopital} onChange={e => handleHopitalChange(e.target.value)} className={inputClass}>
-                <option value="">Choisissez votre hôpital</option>
-                {hopitaux.map(h => <option key={h} value={h}>{h}</option>)}
-              </select>
-              <select value={batiment} onChange={e => handleBatimentChange(e.target.value)} disabled={!hopital} className={inputClass} style={{ opacity: !hopital ? 0.4 : 1 }}>
-                <option value="">Choisissez votre bâtiment</option>
-                {getBatiments(hopital).map(b => <option key={b} value={b}>{b}</option>)}
-              </select>
-              <select value={service} onChange={e => handleServiceChange(e.target.value)} disabled={!batiment} className={inputClass} style={{ opacity: !batiment ? 0.4 : 1 }}>
-                <option value="">Choisissez votre service</option>
-                {getServices(hopital, batiment).map(p => <option key={p.service} value={p.service}>{p.service}</option>)}
-              </select>
-              {pointSelectionne && (
-                <p style={{ fontSize: "12px", color: "#00CCCC" }}>{pointSelectionne.service_desc}</p>
-              )}
-              <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
-                <button onClick={savePoint} disabled={!pointSelectionne || saving} style={{
+            ))}
+          </div>
+
+          {/* Formulaire ajout */}
+          {ajouterMode && (
+            <div style={{ marginTop: mesPoints.length > 0 ? "16px" : "0", paddingTop: mesPoints.length > 0 ? "16px" : "0", borderTop: mesPoints.length > 0 ? "1px solid #E8E3D8" : "none" }}>
+              <p style={{ fontSize: "12px", fontWeight: 600, color: "#6B6B6B", marginBottom: "10px" }}>
+                Ajouter un frigidaire
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <select value={hopital} onChange={e => handleHopitalChange(e.target.value)} className={inputClass}>
+                  <option value="">Choisissez votre hôpital</option>
+                  {hopitaux.map(h => <option key={h} value={h}>{h}</option>)}
+                </select>
+                <select value={batiment} onChange={e => handleBatimentChange(e.target.value)} disabled={!hopital} className={inputClass} style={{ opacity: !hopital ? 0.4 : 1 }}>
+                  <option value="">Choisissez votre bâtiment</option>
+                  {getBatiments(hopital).map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
+                <select value={service} onChange={e => handleServiceChange(e.target.value)} disabled={!batiment} className={inputClass} style={{ opacity: !batiment ? 0.4 : 1 }}>
+                  <option value="">Choisissez votre service</option>
+                  {getServices(hopital, batiment).map(p => <option key={p.service} value={p.service}>{p.service}</option>)}
+                </select>
+                {pointSelectionne && (
+                  <p style={{ fontSize: "12px", color: "#00CCCC" }}>{pointSelectionne.service_desc}</p>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
+                <button onClick={ajouterPoint} disabled={!pointSelectionne} style={{
                   flex: 1, background: pointSelectionne ? "#4D0F1F" : "#E8E3D8",
                   color: pointSelectionne ? "#fff" : "#9B9B9B",
-                  fontSize: "13px", fontWeight: 600, padding: "12px",
+                  fontSize: "13px", fontWeight: 600, padding: "10px",
                   borderRadius: "999px", border: "none", cursor: pointSelectionne ? "pointer" : "not-allowed",
                 }}>
-                  {saving ? "Enregistrement..." : "Enregistrer"}
+                  Ajouter
                 </button>
-                <button onClick={() => setEditPoint(false)} style={{
+                <button onClick={() => { setAjouterMode(false); setHopital(''); setBatiment(''); setService(''); setPointSelectionne(null) }} style={{
                   flex: 1, background: "#F5F0E8", color: "#1A1A1A",
-                  fontSize: "13px", fontWeight: 600, padding: "12px",
+                  fontSize: "13px", fontWeight: 600, padding: "10px",
                   borderRadius: "999px", border: "none", cursor: "pointer",
                 }}>
                   Annuler

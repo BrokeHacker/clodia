@@ -109,6 +109,27 @@ export async function fetchPointsLivraison(): Promise<PointLivraisonDB[]> {
   return data ?? []
 }
 
+export async function fetchPointLivraisonDefaut(clientId: string, supabaseClient = supabase) {
+  const { data } = await supabaseClient
+    .from('client_points_livraison')
+    .select('*, points_livraison(*)')
+    .eq('client_id', clientId)
+    .eq('est_defaut', true)
+    .single()
+
+  return data?.points_livraison ?? null
+}
+
+export async function fetchPointsLivraisonClient(clientId: string, supabaseClient = supabase) {
+  const { data } = await supabaseClient
+    .from('client_points_livraison')
+    .select('*, points_livraison(*)')
+    .eq('client_id', clientId)
+    .order('est_defaut', { ascending: false })
+
+  return data ?? []
+}
+
 export interface Tarif {
   id: string
   type: string
@@ -171,11 +192,13 @@ function getSemaineISO(date: Date): { semaine: number; annee: number } {
 
 export async function fetchMenusSemaineCourante(): Promise<Menu[]> {
   const { semaineCourante } = getSemainesDisponibles()
+  const now = new Date()
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const { data, error } = await supabase
     .from('menus')
     .select('*')
     .eq('publie', true)
-    .gte('date_livraison', semaineCourante.lundi)
+    .gt('date_livraison', today)
     .lte('date_livraison', semaineCourante.vendredi)
     .order('date_livraison', { ascending: true })
   if (error) { console.error(error); return [] }

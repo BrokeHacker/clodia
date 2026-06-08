@@ -21,16 +21,21 @@ export function displayTelephone(tel: string): string {
 export function formatTelephone(val: string): string {
   const cleaned = val.replace(/[^\d+]/g, '')
 
+  // Format +33XXXXXXXXX → +33 6 77 83 76 86
   if (cleaned.startsWith('+33')) {
     const digits = cleaned.slice(3)
-    const groups = digits.match(/.{1,2}/g) ?? []
-    return '+33' + (groups.length ? ' ' + groups.join(' ') : '')
+    if (!digits) return '+33'
+    const first = digits[0]
+    const rest = digits.slice(1)
+    const groups = rest.match(/.{1,2}/g) ?? []
+    return '+33 ' + first + (groups.length ? ' ' + groups.join(' ') : '')
   }
 
+  // Format 0XXXXXXXXX → 06 77 83 76 86
   if (cleaned.startsWith('0')) {
-    const digits = cleaned.slice(1)
-    const groups = digits.match(/.{1,2}/g) ?? []
-    return '0' + (groups.length ? groups[0] + (groups.length > 1 ? ' ' + groups.slice(1).join(' ') : '') : '')
+    const all = cleaned.slice(0, 10) // limiter à 10 chiffres
+    const groups = all.match(/.{1,2}/g) ?? []
+    return groups.join(' ')
   }
 
   return cleaned

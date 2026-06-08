@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Menu } from "@/lib/data";
-import { fetchMenusSemaineCourante, fetchMenusSemaineSuivante, fetchTarifs, Tarif, getTarifUnitaire, getTarifPrecommande, fetchPointsLivraison, PointLivraisonDB, fetchSlotsUnite, SlotUnite, getDisponible, getSemainesDisponibles } from "@/lib/menus";
+import { fetchMenusSemaineCourante, fetchMenusSemaineSuivante, fetchTarifs, Tarif, getTarifUnitaire, getTarifPrecommande, fetchPointsLivraison, PointLivraisonDB, fetchSlotsUnite, SlotUnite, getDisponible, getSemainesDisponibles, fetchPointsLivraisonClient, fetchPointLivraisonDefaut } from "@/lib/menus";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 
 type Variante = "plat" | "plat_vege";
@@ -39,6 +39,8 @@ function CommanderContent() {
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
   const [points, setPoints] = useState<PointLivraisonDB[]>([]);
   const [slots, setSlots] = useState<SlotUnite[]>([]);
+  const [mesPoints, setMesPoints] = useState<any[]>([]);
+  const [pointMode, setPointMode] = useState<'saved' | 'new'>('saved');
 
   const [hopital, setHopital] = useState(() => {
     if (typeof window === 'undefined') return "";
@@ -82,20 +84,27 @@ function CommanderContent() {
       if (session) {
         const { data: clientData } = await supabaseBrowser
           .from('clients')
-          .select('*, points_livraison(*)')
+          .select('*')
           .eq('user_id', session.user.id)
           .single()
 
-        if (clientData?.points_livraison) {
-          const pl = clientData.points_livraison
-          if (!sessionStorage.getItem('clodia-hopital')) {
-            setHopital(pl.hopital ?? '')
-            setBatiment(pl.batiment ?? '')
-            setService(pl.service ?? '')
-            sessionStorage.setItem('clodia-hopital', pl.hopital ?? '')
-            sessionStorage.setItem('clodia-batiment', pl.batiment ?? '')
-            sessionStorage.setItem('clodia-service', pl.service ?? '')
-            sessionStorage.setItem('clodia-point', JSON.stringify(pl))
+        if (clientData) {
+          const clientPoints = await fetchPointsLivraisonClient(clientData.id, supabaseBrowser)
+          setMesPoints(clientPoints)
+
+          // Pré-remplir avec le point par défaut si rien dans sessionStorage
+          if (clientPoints.length > 0) {
+            const defaut = clientPoints.find((p: any) => p.est_defaut)
+            if (defaut?.points_livraison) {
+              const pl = defaut.points_livraison
+              setHopital(pl.hopital ?? '')
+              setBatiment(pl.batiment ?? '')
+              setService(pl.service ?? '')
+              sessionStorage.setItem('clodia-hopital', pl.hopital ?? '')
+              sessionStorage.setItem('clodia-batiment', pl.batiment ?? '')
+              sessionStorage.setItem('clodia-service', pl.service ?? '')
+              sessionStorage.setItem('clodia-point', JSON.stringify(pl))
+            }
           }
         }
       }
@@ -688,45 +697,108 @@ function CommanderContent() {
                     <label className="text-xs font-semibold text-gray-500 uppercase tracking-widest block mb-3">
                       Point de livraison
                     </label>
-                    <div className="flex flex-col gap-2">
-                      <select
-                        value={hopital}
-                        onChange={(e) => handleHopitalChange(e.target.value)}
-                        className="w-full text-sm bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[#4D0F1F] focus:outline-none focus:border-[#FD3D6B]"
-                      >
-                        <option value="">Hôpital…</option>
-                        {hopitaux.map((h) => (
-                          <option key={h} value={h}>{h}</option>
+
+                    {/* Frigidaires enregistrés */}
+                    {mesPoints.length > 0 && pointMode === 'saved' && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "8px" }}>
+                        {mesPoints.map(cp => (
+                          <button
+                            key={cp.id}
+                            onClick={() => {
+                              const pl = cp.points_livraison
+                              setHopital(pl.hopital)
+                              setBatiment(pl.batiment)
+                              setService(pl.service)
+                            }}
+                            style={{
+                              display: "flex", alignItems: "center", gap: "8px",
+                              padding: "8px 12px", borderRadius: "10px", textAlign: "left",
+                              border: `2px solid ${selectedPoint?.id === cp.points_livraison.id ? "#FD3D6B" : "#E8E3D8"}`,
+                              background: selectedPoint?.id === cp.points_livraison.id ? "#FFF0F3" : "#fff",
+                              cursor: "pointer", width: "100%",
+                            }}
+                          >
+                            <div style={{
+                              width: 14, height: 14, borderRadius: "50%", flexShrink: 0,
+                              border: `2px solid ${selectedPoint?.id === cp.points_livraison.id ? "#FD3D6B" : "#E8E3D8"}`,
+                              background: selectedPoint?.id === cp.points_livraison.id ? "#FD3D6B" : "#fff",
+                            }} />
+                            <div>
+                              <p style={{ fontSize: "12px", fontWeight: 600, color: "#1A1A1A" }}>
+                                {cp.points_livraison.service}
+                                {cp.est_defaut && <span style={{ fontSize: "10px", color: "#00CCCC", marginLeft: "6px" }}>Par défaut</span>}
+                              </p>
+                              <p style={{ fontSize: "11px", color: "#6B6B6B" }}>{cp.points_livraison.hopital} · {cp.points_livraison.batiment}</p>
+                              {cp.points_livraison.service_desc && (
+                                <p style={{ fontSize: "11px", color: "#00CCCC", marginTop: "2px" }}>{cp.points_livraison.service_desc}</p>
+                              )}
+                            </div>
+                          </button>
                         ))}
-                      </select>
-                      <select
-                        value={batiment}
-                        onChange={(e) => handleBatimentChange(e.target.value)}
-                        disabled={!hopital}
-                        className="w-full text-sm bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[#4D0F1F] focus:outline-none focus:border-[#FD3D6B] disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        <option value="">Bâtiment…</option>
-                        {getBatiments(hopital).map((b) => (
-                          <option key={b} value={b}>{b}</option>
-                        ))}
-                      </select>
-                      <select
-                        value={service}
-                        onChange={(e) => setService(e.target.value)}
-                        disabled={!batiment}
-                        className="w-full text-sm bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[#4D0F1F] focus:outline-none focus:border-[#FD3D6B] disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        <option value="">Service…</option>
-                        {getServices(hopital, batiment).map((p) => (
-                          <option key={p.service} value={p.service}>{p.service}</option>
-                        ))}
-                      </select>
-                    </div>
-                    {selectedPoint && (
-                      <p className="text-xs text-[#00CCCC] mt-2 leading-relaxed">
-                        {selectedPoint.service_desc}
-                      </p>
+                        <button
+                          onClick={() => setPointMode('new')}
+                          className="text-xs text-[#007FFF] font-semibold text-left mt-1"
+                          style={{ background: "none", border: "none", cursor: "pointer" }}
+                        >
+                          + Choisir un autre frigidaire
+                        </button>
+                      </div>
                     )}
+
+                    {/* Cascade classique */}
+                    {(mesPoints.length === 0 || pointMode === 'new') && (
+                      <>
+                        {pointMode === 'new' && mesPoints.length > 0 && (
+                          <button
+                            onClick={() => setPointMode('saved')}
+                            className="text-xs text-[#007FFF] font-semibold mb-3 block"
+                            style={{ background: "none", border: "none", cursor: "pointer" }}
+                          >
+                            ← Mes frigidaires enregistrés
+                          </button>
+                        )}
+                        <div className="flex flex-col gap-2">
+                          <select
+                            value={hopital}
+                            onChange={(e) => handleHopitalChange(e.target.value)}
+                            className="w-full text-sm bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[#4D0F1F] focus:outline-none focus:border-[#FD3D6B]"
+                          >
+                            <option value="">Hôpital…</option>
+                            {hopitaux.map((h) => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                          <select
+                            value={batiment}
+                            onChange={(e) => handleBatimentChange(e.target.value)}
+                            disabled={!hopital}
+                            className="w-full text-sm bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[#4D0F1F] focus:outline-none focus:border-[#FD3D6B] disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            <option value="">Bâtiment…</option>
+                            {getBatiments(hopital).map((b) => (
+                              <option key={b} value={b}>{b}</option>
+                            ))}
+                          </select>
+                          <select
+                            value={service}
+                            onChange={(e) => setService(e.target.value)}
+                            disabled={!batiment}
+                            className="w-full text-sm bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-[#4D0F1F] focus:outline-none focus:border-[#FD3D6B] disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            <option value="">Service…</option>
+                            {getServices(hopital, batiment).map((p) => (
+                              <option key={p.service} value={p.service}>{p.service}</option>
+                            ))}
+                          </select>
+                        </div>
+                        {selectedPoint && (
+                          <p className="text-xs text-[#00CCCC] mt-2 leading-relaxed">
+                            {selectedPoint.service_desc}
+                          </p>
+                        )}
+                      </>
+                    )}
+
                   </div>
 
                   <button
