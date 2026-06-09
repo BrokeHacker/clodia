@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
-import { formatTelephone } from "@/lib/utils"
+import { formatTelephone, normaliserTelephone } from "@/lib/utils"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import { fetchPointsLivraison, PointLivraisonDB } from "@/lib/menus"
@@ -78,12 +78,6 @@ function InscriptionContent() {
     return { valide: nbOk === 4, force, regles }
   }
 
-  function normaliserTelephone(tel: string): string {
-    const cleaned = tel.replace(/\s/g, '').replace(/-/g, '')
-    if (cleaned.startsWith('0')) return '+33' + cleaned.slice(1)
-    if (cleaned.startsWith('+33')) return cleaned
-    return cleaned
-  }
 
   async function rechercherClient(telOverride?: string) {
     const telNormalise = normaliserTelephone(telOverride ?? telephone)
@@ -96,7 +90,7 @@ function InscriptionContent() {
 
     const { data } = await supabase
       .from('clients')
-      .select('*')
+      .select('id, prenom, nom, email, telephone, user_id')
       .eq('telephone', telNormalise)
       .single()
 
@@ -200,7 +194,7 @@ function InscriptionContent() {
             // Vérifier s'il a déjà un défaut
             const { count } = await supabase
               .from('client_points_livraison')
-              .select('*', { count: 'exact', head: true })
+              .select('id', { count: 'exact', head: true })
               .eq('client_id', clientExistantId)
 
             await supabase
@@ -237,8 +231,7 @@ function InscriptionContent() {
         router.push('/espace-client')
       }
 
-    } catch (err) {
-      console.error(err)
+    } catch {
       setErrors({ global: "Une erreur est survenue. Veuillez réessayer." })
     } finally {
       setLoading(false)

@@ -1,3 +1,16 @@
+export function normaliserTelephone(tel: string): string {
+  const cleaned = tel.replace(/\s/g, '').replace(/-/g, '')
+  if (cleaned.startsWith('0')) return '+33' + cleaned.slice(1)
+  if (cleaned.startsWith('+33')) return cleaned
+  return cleaned
+}
+
+export function formatPrice(p: number): string {
+  return p.toFixed(2).replace('.', ',') + ' €'
+}
+
+export const REGEX_TELEPHONE = /^\+33[1-9]\d{8}$/
+
 export function displayTelephone(tel: string): string {
   if (!tel) return ''
   const cleaned = tel.replace(/\s/g, '')

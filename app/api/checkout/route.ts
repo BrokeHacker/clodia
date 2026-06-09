@@ -41,8 +41,7 @@ export async function POST(req: NextRequest) {
       .in('id', commandeIds)
 
     return NextResponse.json({ url: session.url })
-  } catch (err) {
-    console.error('Erreur création session Stripe:', err)
+  } catch {
     return NextResponse.json({ error: 'Erreur Stripe' }, { status: 500 })
   }
 }

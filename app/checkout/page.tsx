@@ -2,10 +2,11 @@
 
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { formatTelephone, displayTelephone } from "@/lib/utils";
+import { formatTelephone, displayTelephone, normaliserTelephone, formatPrice } from "@/lib/utils";
 import { supabase, createSupabaseBrowserClient } from '@/lib/supabase';
 import { PointLivraisonDB, getTarifUnitaire, getTarifPrecommande, fetchTarifs, Tarif, fetchMenusSemaineCourante, fetchMenusSemaineSuivante, getDisponible, fetchPointsLivraison, fetchPointsLivraisonClient, fetchPointLivraisonDefaut } from "@/lib/menus";
 import { Menu } from "@/lib/data";
+import { ClientPoint } from "@/types";
 
 interface CartItem {
   menuId: string;
@@ -15,9 +16,6 @@ interface CartItem {
 
 type Etape = "auth" | "infos" | "recap";
 
-function formatPrice(p: number) {
-  return p.toFixed(2).replace(".", ",") + " €";
-}
 
 function CheckoutContent() {
   const [etape, setEtape] = useState<Etape>("auth");
@@ -26,7 +24,7 @@ function CheckoutContent() {
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
   const [menusCurrentWeek, setMenusCurrentWeek] = useState<Menu[]>([]);
   const [menusNextWeek, setMenusNextWeek] = useState<Menu[]>([]);
-  const [mesPoints, setMesPoints] = useState<any[]>([]);
+  const [mesPoints, setMesPoints] = useState<ClientPoint[]>([]);
   const [pointMode, setPointMode] = useState<'saved' | 'new'>('saved');
 
   const [email, setEmail] = useState("");
@@ -60,7 +58,7 @@ function CheckoutContent() {
       if (session) {
         const { data: clientData } = await supabaseBrowser
           .from('clients')
-          .select('*')
+          .select('id, prenom, nom, email, telephone, user_id')
           .eq('user_id', session.user.id)
           .single();
 
@@ -68,7 +66,7 @@ function CheckoutContent() {
           const points = await fetchPointsLivraisonClient(clientData.id, supabaseBrowser);
           setMesPoints(points);
 
-          const defaut = points.find((p: any) => p.est_defaut);
+          const defaut = points.find((p: ClientPoint) => p.est_defaut);
           if (defaut) setPoint(defaut.points_livraison);
 
           setPrenom(clientData.prenom ?? '');
@@ -113,12 +111,6 @@ function CheckoutContent() {
     return acc + prix * item.quantite;
   }, 0);
 
-  function normaliserTelephone(tel: string): string {
-    const cleaned = tel.replace(/\s/g, '').replace(/-/g, '');
-    if (cleaned.startsWith('0')) return '+33' + cleaned.slice(1);
-    if (cleaned.startsWith('+33')) return cleaned;
-    return cleaned;
-  }
 
   async function rechercherClient(telOverride?: string) {
     const telNormalise = normaliserTelephone(telOverride ?? telephone);
@@ -131,7 +123,7 @@ function CheckoutContent() {
 
     const { data, error } = await supabase
       .from('clients')
-      .select('*')
+      .select('id, prenom, nom, email, telephone')
       .eq('telephone', telNormalise)
       .single();
 
@@ -175,7 +167,7 @@ function CheckoutContent() {
         const dates = [...new Set(itemsCourante.map(i => i.menu.date_livraison))]
         const { data: slotsData, error: slotsError } = await supabase
           .from('slots_unite')
-          .select('*')
+          .select('id, date_livraison, variante, total, reserves, confirmes')
           .in('date_livraison', dates)
 
         if (slotsError) throw new Error('Erreur vérification disponibilités')
@@ -236,7 +228,7 @@ function CheckoutContent() {
         if (!existingPoint) {
           const { count } = await supabase
             .from('client_points_livraison')
-            .select('*', { count: 'exact', head: true })
+            .select('id', { count: 'exact', head: true })
             .eq('client_id', clientId)
 
           if ((count ?? 0) < 3) {
@@ -274,7 +266,6 @@ function CheckoutContent() {
         .insert(lignesCommandes)
 
       if (commandeError) {
-        console.error('Détail erreur commandes:', JSON.stringify(commandeError))
         throw new Error('Erreur création commandes')
       }
 
@@ -324,8 +315,7 @@ function CheckoutContent() {
 
       window.location.href = url
 
-    } catch (err) {
-      console.error(err)
+    } catch {
       alert('Une erreur est survenue. Veuillez réessayer.')
     } finally {
       setCommandeEnCours(false)
@@ -602,7 +592,7 @@ function CheckoutContent() {
                     onClick={() => {
                       if (pointMode === 'new') {
                         setPointMode('saved')
-                        const defaut = mesPoints.find((p: any) => p.est_defaut)
+                        const defaut = mesPoints.find((p: ClientPoint) => p.est_defaut)
                         if (defaut) setPoint(defaut.points_livraison)
                       } else {
                         setPointMode('new')
@@ -726,8 +716,8 @@ function CheckoutContent() {
   );
 }
 
-function PointLivraisonCascade({ point, setPoint }: { point: any, setPoint: (p: any) => void }) {
-  const [allPoints, setAllPoints] = useState<any[]>([])
+function PointLivraisonCascade({ point, setPoint }: { point: PointLivraisonDB | null, setPoint: (p: PointLivraisonDB | null) => void }) {
+  const [allPoints, setAllPoints] = useState<PointLivraisonDB[]>([])
   const [hopital, setHopital] = useState(point?.hopital ?? '')
   const [batiment, setBatiment] = useState(point?.batiment ?? '')
   const [service, setService] = useState(point?.service ?? '')

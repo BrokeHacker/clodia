@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { enrichMenu, Menu } from './data'
+import { ClientPoint, PointLivraison } from '@/types'
 
 export function getSemainesDisponibles(): {
   semaineCourante: { lundi: string; vendredi: string; label: string }
@@ -84,9 +85,9 @@ export async function fetchSlotsUnite(dates: string[]): Promise<SlotUnite[]> {
   if (dates.length === 0) return []
   const { data, error } = await supabase
     .from('slots_unite')
-    .select('*')
+    .select('id, date_livraison, variante, total, reserves, confirmes')
     .in('date_livraison', dates)
-  if (error) { console.error(error); return [] }
+  if (error) { return [] }
   return data ?? []
 }
 
@@ -101,33 +102,43 @@ export interface PointLivraisonDB {
 export async function fetchPointsLivraison(): Promise<PointLivraisonDB[]> {
   const { data, error } = await supabase
     .from('points_livraison')
-    .select('*')
+    .select('id, hopital, batiment, service, service_desc')
     .eq('hopital', 'CHU Limoges')
     .order('batiment', { ascending: true })
     .order('service', { ascending: true })
-  if (error) { console.error(error); return [] }
+  if (error) { return [] }
   return data ?? []
 }
 
-export async function fetchPointLivraisonDefaut(clientId: string, supabaseClient = supabase) {
+export async function fetchPointLivraisonDefaut(clientId: string, supabaseClient = supabase): Promise<PointLivraison | null> {
   const { data } = await supabaseClient
     .from('client_points_livraison')
-    .select('*, points_livraison(*)')
+    .select('id, est_defaut, points_livraison(id, hopital, batiment, service, service_desc)')
     .eq('client_id', clientId)
     .eq('est_defaut', true)
     .single()
 
-  return data?.points_livraison ?? null
+  return (data?.points_livraison
+    ? Array.isArray(data.points_livraison)
+      ? data.points_livraison[0]
+      : data.points_livraison
+    : null) as PointLivraison | null
 }
 
-export async function fetchPointsLivraisonClient(clientId: string, supabaseClient = supabase) {
+export async function fetchPointsLivraisonClient(clientId: string, supabaseClient = supabase): Promise<ClientPoint[]> {
   const { data } = await supabaseClient
     .from('client_points_livraison')
-    .select('*, points_livraison(*)')
+    .select('id, est_defaut, points_livraison(id, hopital, batiment, service, service_desc)')
     .eq('client_id', clientId)
     .order('est_defaut', { ascending: false })
 
-  return data ?? []
+  return (data ?? []).map((item: any) => ({
+    id: item.id,
+    est_defaut: item.est_defaut,
+    points_livraison: Array.isArray(item.points_livraison)
+      ? item.points_livraison[0]
+      : item.points_livraison,
+  })) as ClientPoint[]
 }
 
 export interface Tarif {
@@ -141,19 +152,16 @@ export interface Tarif {
 export async function fetchTarifs(): Promise<Tarif[]> {
   const { data, error } = await supabase
     .from('tarifs')
-    .select('*')
+    .select('id, type, repas_de, repas_a, prix_unitaire')
     .order('type')
     .order('repas_de', { ascending: true })
-  if (error) { console.error(error); return [] }
+  if (error) { return [] }
   return (data ?? []) as Tarif[]
 }
 
 export function getTarifUnitaire(tarifs: Tarif[]): number {
   const t = tarifs.find(t => t.type === 'unite')
   if (!t) {
-    if (tarifs.length > 0) {
-      console.warn('getTarifUnitaire : aucun tarif "unite" trouvé dans Supabase')
-    }
     return 0
   }
   return t.prix_unitaire
@@ -165,17 +173,11 @@ export function getTarifPrecommande(tarifs: Tarif[], quantite: number): number {
     .sort((a, b) => a.repas_de - b.repas_de)
 
   if (quantite === 0) {
-    if (!paliers[0]) {
-      console.warn('getTarifPrecommande : aucun palier pré-commande trouvé dans Supabase')
-      return 0
-    }
+    if (!paliers[0]) { return 0 }
     return paliers[0].prix_unitaire
   }
   const palier = paliers.findLast(t => quantite >= t.repas_de)
-  if (!palier) {
-    console.warn('getTarifPrecommande : aucun palier trouvé pour quantité', quantite)
-    return 0
-  }
+  if (!palier) { return 0 }
   return palier.prix_unitaire
 }
 
@@ -196,12 +198,12 @@ export async function fetchMenusSemaineCourante(): Promise<Menu[]> {
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   const { data, error } = await supabase
     .from('menus')
-    .select('*')
+    .select('id, date_livraison, semaine, annee, plat, plat_vege, dessert, publie, photo')
     .eq('publie', true)
     .gt('date_livraison', today)
     .lte('date_livraison', semaineCourante.vendredi)
     .order('date_livraison', { ascending: true })
-  if (error) { console.error(error); return [] }
+  if (error) { return [] }
   return (data ?? []).map(enrichMenu)
 }
 
@@ -209,12 +211,12 @@ export async function fetchMenusSemaineSuivante(): Promise<Menu[]> {
   const { semaineSuivante } = getSemainesDisponibles()
   const { data, error } = await supabase
     .from('menus')
-    .select('*')
+    .select('id, date_livraison, semaine, annee, plat, plat_vege, dessert, publie, photo')
     .eq('publie', true)
     .gte('date_livraison', semaineSuivante.lundi)
     .lte('date_livraison', semaineSuivante.vendredi)
     .order('date_livraison', { ascending: true })
-  if (error) { console.error(error); return [] }
+  if (error) { return [] }
   return (data ?? []).map(enrichMenu)
 }
 
@@ -236,12 +238,12 @@ export async function fetchMenusCarrousel(): Promise<Menu[]> {
 
   const { data, error } = await supabase
     .from('menus')
-    .select('*')
+    .select('id, date_livraison, semaine, annee, plat, plat_vege, dessert, publie, photo')
     .eq('publie', true)
     .in('semaine', [semaineCourante, semaineSuivante])
     .order('date_livraison', { ascending: true })
 
-  if (error) { console.error(error); return [] }
+  if (error) { return [] }
 
   const filtered = (data ?? []).filter(m => {
     const anneeOk =

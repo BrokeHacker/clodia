@@ -1,42 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
+import { formatPrice } from "@/lib/utils"
 import { getSemainesDisponibles, fetchPointLivraisonDefaut } from "@/lib/menus"
+import { Client, Commande, Rating, Programmation, PointLivraison } from "@/types"
 import Link from "next/link"
 import Image from "next/image"
-
-interface Commande {
-  id: string
-  menu_id: string
-  variante: string
-  quantite: number
-  prix_unitaire: number
-  prix_total: number
-  statut: string
-  type: string
-  menus: {
-    date_livraison: string
-    plat: string
-    plat_vege: string
-    dessert: string
-    photo: string
-  }
-}
-
-interface Rating {
-  commande_id: string
-  note: number
-}
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr)
   return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
-function formatPrice(p: number): string {
-  return p.toFixed(2).replace('.', ',') + ' €'
-}
 
 const joursOrdre = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi']
 const variantesLabels: Record<string, string> = {
@@ -96,22 +72,32 @@ function StarRating({ commandeId, initialNote, clientId, onRated }: {
 export default function EspaceClientPage() {
   const supabase = createSupabaseBrowserClient()
 
-  const [client, setClient] = useState<any>(null)
-  const [pointLivraison, setPointLivraison] = useState<any>(null)
+  const [client, setClient] = useState<Client | null>(null)
+  const [pointLivraison, setPointLivraison] = useState<PointLivraison | null>(null)
   const [derniersPlatsCmdIds, setDerniersPlatsCmdIds] = useState<Commande[]>([])
   const [ratings, setRatings] = useState<Rating[]>([])
   const [totalRepas, setTotalRepas] = useState(0)
   const [depensesMois, setDepensesMois] = useState(0)
   const [nbCommandesEnCours, setNbCommandesEnCours] = useState(0)
-  const [programmation, setProgrammation] = useState<any>(null)
+  const [programmation, setProgrammation] = useState<Programmation | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const { deadlinePrecommande } = getSemainesDisponibles()
-  const now = new Date()
-  const diff = deadlinePrecommande.getTime() - now.getTime()
-  const joursRestants = Math.ceil(diff / (1000 * 60 * 60 * 24))
-  const deadlineDepassee = diff <= 0
-  const deadlineLabel = deadlinePrecommande.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const [semaines, setSemaines] = useState<ReturnType<typeof getSemainesDisponibles> | null>(null)
+
+  useEffect(() => {
+    setSemaines(getSemainesDisponibles())
+  }, [])
+
+  const deadlineInfos = useMemo(() => {
+    if (!semaines) return null
+    const now = new Date()
+    const diff = semaines.deadlinePrecommande.getTime() - now.getTime()
+    return {
+      joursRestants: Math.ceil(diff / (1000 * 60 * 60 * 24)),
+      deadlineDepassee: diff <= 0,
+      deadlineLabel: semaines.deadlinePrecommande.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }),
+    }
+  }, [semaines])
 
   useEffect(() => {
     async function load() {
@@ -120,7 +106,7 @@ export default function EspaceClientPage() {
 
       const { data: clientData } = await supabase
         .from('clients')
-        .select('*')
+        .select('id, prenom, nom, email, telephone, user_id')
         .eq('user_id', session.user.id)
         .single()
 
@@ -137,19 +123,19 @@ export default function EspaceClientPage() {
       // 5 derniers plats confirmés
       const { data: derniersPlats } = await supabase
         .from('commandes')
-        .select('*, menus(date_livraison, plat, plat_vege, dessert, photo)')
+        .select('id, variante, statut, menus(date_livraison, plat, plat_vege, dessert, photo)')
         .eq('client_id', clientData.id)
         .eq('statut', 'confirme')
         .lt('menus.date_livraison', todayStr)
         .order('created_at', { ascending: false })
         .limit(5)
 
-      setDerniersPlatsCmdIds((derniersPlats ?? []).filter((c: any) => c.menus))
+      setDerniersPlatsCmdIds((derniersPlats ?? []).filter((c: Commande) => c.menus))
 
       // Total repas
       const { count } = await supabase
         .from('commandes')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('client_id', clientData.id)
         .eq('statut', 'confirme')
 
@@ -163,7 +149,7 @@ export default function EspaceClientPage() {
         .eq('statut', 'confirme')
         .gte('created_at', debutMois)
 
-      const total = (cmdMois ?? []).reduce((acc: number, c: any) => acc + (c.prix_total ?? 0), 0)
+      const total = (cmdMois ?? []).reduce((acc: number, c: { prix_total?: number }) => acc + (c.prix_total ?? 0), 0)
       setDepensesMois(total)
 
       // Commandes en cours (count)
@@ -173,8 +159,8 @@ export default function EspaceClientPage() {
         .eq('client_id', clientData.id)
         .neq('statut', 'annule')
 
-      const nbEnCours = (enCoursData ?? []).filter((c: any) =>
-        c.menus?.date_livraison > todayStr
+      const nbEnCours = (enCoursData ?? []).filter((c: { menus?: { date_livraison: string } | null }) =>
+        c.menus?.date_livraison && c.menus.date_livraison > todayStr
       ).length
 
       setNbCommandesEnCours(nbEnCours)
@@ -182,7 +168,7 @@ export default function EspaceClientPage() {
       // Programmation
       const { data: progData } = await supabase
         .from('programmations')
-        .select('*')
+        .select('id, client_id, jours, variante, actif')
         .eq('client_id', clientData.id)
         .single()
 
@@ -243,7 +229,7 @@ export default function EspaceClientPage() {
       </div>
 
       {/* Alerte deadline */}
-      {!deadlineDepassee && joursRestants <= 3 && (
+      {!deadlineInfos?.deadlineDepassee && (deadlineInfos?.joursRestants ?? 99) <= 3 && (
         <div style={{
           background: "#FFF9D6", border: "1px solid #FF9933",
           borderRadius: "16px", padding: "16px 20px",
@@ -253,10 +239,10 @@ export default function EspaceClientPage() {
           <div>
             <p style={{ fontSize: "13px", fontWeight: 600, color: "#FF9933" }}>
               <i className="ti ti-clock" style={{ marginRight: 6 }} />
-              Deadline dans {joursRestants} jour{joursRestants > 1 ? 's' : ''} !
+              Deadline dans {deadlineInfos?.joursRestants} jour{(deadlineInfos?.joursRestants ?? 0) > 1 ? 's' : ''} !
             </p>
             <p style={{ fontSize: "12px", color: "#6B6B6B", marginTop: "2px" }}>
-              Pré-commandez avant {deadlineLabel} à 23h59 pour la {getSemainesDisponibles().semaineSuivante.label}
+              Pré-commandez avant {deadlineInfos?.deadlineLabel} à 23h59 pour la {semaines?.semaineSuivante.label ?? ''}
             </p>
           </div>
           <Link href="/espace-client/programmation" style={{
@@ -328,7 +314,7 @@ export default function EspaceClientPage() {
               style={{ scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}
             >
               {derniersPlatsCmdIds.map(cmd => {
-                const plat = cmd.variante === 'vegetarien' ? cmd.menus.plat_vege : cmd.menus.plat
+                const plat = cmd.variante === 'vegetarien' ? cmd.menus?.plat_vege ?? '' : cmd.menus?.plat ?? ''
                 const rating = getRating(cmd.id)
                 return (
                   <div key={cmd.id} style={{
@@ -336,7 +322,7 @@ export default function EspaceClientPage() {
                     aspectRatio: "3/4", flexShrink: 0, width: "45vw", scrollSnapAlign: "start",
                   }}>
                     <Image
-                      src={cmd.menus.photo || '/images/plats-clodia.jpg'}
+                      src={cmd.menus?.photo || '/images/plats-clodia.jpg'}
                       alt={plat}
                       fill
                       sizes="45vw"
@@ -350,14 +336,14 @@ export default function EspaceClientPage() {
                         fontSize: "11px", fontWeight: 600, padding: "4px 10px",
                         borderRadius: "999px", whiteSpace: "nowrap", letterSpacing: "0.01em",
                       }}>
-                        {formatDate(cmd.menus.date_livraison)}
+                        {formatDate(cmd.menus?.date_livraison ?? '')}
                       </span>
                     </div>
                     <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px" }}>
                       <p style={{ fontSize: "11px", color: "#fff", fontWeight: 600, lineHeight: 1.3, marginBottom: "6px" }}>
                         {plat}
                       </p>
-                      <StarRating commandeId={cmd.id} initialNote={rating} clientId={client.id} onRated={handleRated} />
+                      <StarRating commandeId={cmd.id} initialNote={rating} clientId={client!.id} onRated={handleRated} />
                     </div>
                   </div>
                 )
@@ -366,14 +352,14 @@ export default function EspaceClientPage() {
 
             {/* Version desktop — grid */}
             {derniersPlatsCmdIds.map(cmd => {
-              const plat = cmd.variante === 'vegetarien' ? cmd.menus.plat_vege : cmd.menus.plat
+              const plat = cmd.variante === 'vegetarien' ? cmd.menus?.plat_vege ?? '' : cmd.menus?.plat ?? ''
               const rating = getRating(cmd.id)
               return (
                 <div key={cmd.id + '-desktop'} className="hidden md:block" style={{
                   position: "relative", borderRadius: "14px", overflow: "hidden", aspectRatio: "3/4",
                 }}>
                   <Image
-                    src={cmd.menus.photo || '/images/plats-clodia.jpg'}
+                    src={cmd.menus?.photo || '/images/plats-clodia.jpg'}
                     alt={plat}
                     fill
                     sizes="20vw"
@@ -387,14 +373,14 @@ export default function EspaceClientPage() {
                       fontSize: "11px", fontWeight: 600, padding: "4px 10px",
                       borderRadius: "999px", whiteSpace: "nowrap", letterSpacing: "0.01em",
                     }}>
-                      {formatDate(cmd.menus.date_livraison)}
+                      {formatDate(cmd.menus?.date_livraison ?? '')}
                     </span>
                   </div>
                   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "12px" }}>
                     <p style={{ fontSize: "11px", color: "#fff", fontWeight: 600, lineHeight: 1.3, marginBottom: "6px" }}>
                       {plat}
                     </p>
-                    <StarRating commandeId={cmd.id} initialNote={rating} clientId={client.id} onRated={handleRated} />
+                    <StarRating commandeId={cmd.id} initialNote={rating} clientId={client!.id} onRated={handleRated} />
                   </div>
                 </div>
               )

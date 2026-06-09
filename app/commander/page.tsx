@@ -7,6 +7,8 @@ import { useSearchParams } from "next/navigation";
 import { Menu } from "@/lib/data";
 import { fetchMenusSemaineCourante, fetchMenusSemaineSuivante, fetchTarifs, Tarif, getTarifUnitaire, getTarifPrecommande, fetchPointsLivraison, PointLivraisonDB, fetchSlotsUnite, SlotUnite, getDisponible, getSemainesDisponibles, fetchPointsLivraisonClient, fetchPointLivraisonDefaut } from "@/lib/menus";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
+import { ClientPoint } from "@/types";
+import { formatPrice } from "@/lib/utils";
 
 type Variante = "plat" | "plat_vege";
 
@@ -16,13 +18,18 @@ interface CartItem {
   quantite: number;
 }
 
-function formatPrice(p: number) {
-  return p.toFixed(2).replace(".", ",") + " €";
-}
 
 function CommanderContent() {
   const searchParams = useSearchParams();
-  const { semaineCourante, semaineSuivante, deadlinePrecommande } = getSemainesDisponibles();
+  const [semaines, setSemaines] = useState<ReturnType<typeof getSemainesDisponibles> | null>(null);
+
+  useEffect(() => {
+    setSemaines(getSemainesDisponibles());
+  }, []);
+
+  const semaineCourante = semaines?.semaineCourante;
+  const semaineSuivante = semaines?.semaineSuivante;
+  const deadlinePrecommande = semaines?.deadlinePrecommande;
 
   const [semaineKey, setSemaineKey] = useState<"courante" | "suivante" | null>(null);
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -39,7 +46,7 @@ function CommanderContent() {
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
   const [points, setPoints] = useState<PointLivraisonDB[]>([]);
   const [slots, setSlots] = useState<SlotUnite[]>([]);
-  const [mesPoints, setMesPoints] = useState<any[]>([]);
+  const [mesPoints, setMesPoints] = useState<ClientPoint[]>([]);
   const [pointMode, setPointMode] = useState<'saved' | 'new'>('saved');
 
   const [hopital, setHopital] = useState(() => {
@@ -84,7 +91,7 @@ function CommanderContent() {
       if (session) {
         const { data: clientData } = await supabaseBrowser
           .from('clients')
-          .select('*')
+          .select('id, prenom, nom, email, telephone')
           .eq('user_id', session.user.id)
           .single()
 
@@ -94,7 +101,7 @@ function CommanderContent() {
 
           // Pré-remplir avec le point par défaut si rien dans sessionStorage
           if (clientPoints.length > 0) {
-            const defaut = clientPoints.find((p: any) => p.est_defaut)
+            const defaut = clientPoints.find((p: ClientPoint) => p.est_defaut)
             if (defaut?.points_livraison) {
               const pl = defaut.points_livraison
               setHopital(pl.hopital ?? '')
@@ -233,20 +240,6 @@ function CommanderContent() {
     }))
     .filter((item) => item.menu);
 
-  function handlePay() {
-    alert(
-      "Paiement Stripe bientôt disponible ! Votre panier :\n" +
-        cartWithMenus
-          .map(
-            (i) =>
-              `• ${i.menu.jourSemaine} ${i.menu.date} — ${
-                i.variante === "plat" ? "Plat traditionnel" : "Végétarien"
-              } × ${i.quantite} = ${formatPrice(getPrixUnitaire(semaineKey, quantiteTotale) * i.quantite)}`
-          )
-          .join("\n") +
-        `\n\nTotal : ${formatPrice(total)}`
-    );
-  }
 
   return (
     <div style={{ background: "#FAFAF8", minHeight: "100vh" }}>
@@ -317,13 +310,13 @@ function CommanderContent() {
                   fontSize: "11px", fontWeight: 700, letterSpacing: "0.1em",
                   textTransform: "uppercase", color: "#00CCCC", marginBottom: "8px",
                 }}>
-                  Avant le {deadlinePrecommande.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} à 23h59
+                  Avant le {deadlinePrecommande?.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) ?? ''} à 23h59
                 </p>
                 <p style={{
                   fontSize: "18px", fontWeight: 600, color: "#1A1A1A",
                   marginBottom: "16px", lineHeight: 1.2,
                 }}>
-                  Pré-commander pour<br />la {semaineSuivante.label}
+                  Pré-commander pour<br />la {semaineSuivante?.label ?? ''}
                 </p>
                 <div className="flex flex-col gap-2">
                   <span className="flex items-center gap-2 text-sm text-gray-600">
@@ -358,7 +351,7 @@ function CommanderContent() {
                   fontSize: "18px", fontWeight: 600, color: "#1A1A1A",
                   marginBottom: "16px", lineHeight: 1.2,
                 }}>
-                  Commander pour<br />la {semaineCourante.label}
+                  Commander pour<br />la {semaineCourante?.label ?? ''}
                 </p>
                 <div className="flex flex-col gap-2">
                   <span className="flex items-center gap-2 text-sm text-gray-600">
@@ -701,32 +694,26 @@ function CommanderContent() {
                     {/* Frigidaires enregistrés */}
                     {mesPoints.length > 0 && pointMode === 'saved' && (
                       <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "8px" }}>
-                        {mesPoints.map(cp => (
+                        {mesPoints.filter((cp: ClientPoint) => cp.est_defaut).map(cp => (
                           <button
                             key={cp.id}
-                            onClick={() => {
-                              const pl = cp.points_livraison
-                              setHopital(pl.hopital)
-                              setBatiment(pl.batiment)
-                              setService(pl.service)
-                            }}
                             style={{
                               display: "flex", alignItems: "center", gap: "8px",
                               padding: "8px 12px", borderRadius: "10px", textAlign: "left",
-                              border: `2px solid ${selectedPoint?.id === cp.points_livraison.id ? "#FD3D6B" : "#E8E3D8"}`,
-                              background: selectedPoint?.id === cp.points_livraison.id ? "#FFF0F3" : "#fff",
-                              cursor: "pointer", width: "100%",
+                              border: `2px solid #FD3D6B`,
+                              background: "#FFF0F3",
+                              cursor: "default", width: "100%",
                             }}
                           >
                             <div style={{
                               width: 14, height: 14, borderRadius: "50%", flexShrink: 0,
-                              border: `2px solid ${selectedPoint?.id === cp.points_livraison.id ? "#FD3D6B" : "#E8E3D8"}`,
-                              background: selectedPoint?.id === cp.points_livraison.id ? "#FD3D6B" : "#fff",
+                              border: `2px solid #FD3D6B`,
+                              background: "#FD3D6B",
                             }} />
                             <div>
                               <p style={{ fontSize: "12px", fontWeight: 600, color: "#1A1A1A" }}>
                                 {cp.points_livraison.service}
-                                {cp.est_defaut && <span style={{ fontSize: "10px", color: "#00CCCC", marginLeft: "6px" }}>Par défaut</span>}
+                                <span style={{ fontSize: "10px", color: "#00CCCC", marginLeft: "6px" }}>Par défaut</span>
                               </p>
                               <p style={{ fontSize: "11px", color: "#6B6B6B" }}>{cp.points_livraison.hopital} · {cp.points_livraison.batiment}</p>
                               {cp.points_livraison.service_desc && (
@@ -749,13 +736,63 @@ function CommanderContent() {
                     {(mesPoints.length === 0 || pointMode === 'new') && (
                       <>
                         {pointMode === 'new' && mesPoints.length > 0 && (
-                          <button
-                            onClick={() => setPointMode('saved')}
-                            className="text-xs text-[#007FFF] font-semibold mb-3 block"
-                            style={{ background: "none", border: "none", cursor: "pointer" }}
-                          >
-                            ← Mes frigidaires enregistrés
-                          </button>
+                          <>
+                            <button
+                              onClick={() => {
+                                setPointMode('saved')
+                                const defaut = mesPoints.find((p: ClientPoint) => p.est_defaut)
+                                if (defaut?.points_livraison) {
+                                  const pl = defaut.points_livraison
+                                  setHopital(pl.hopital)
+                                  setBatiment(pl.batiment)
+                                  setService(pl.service)
+                                }
+                              }}
+                              className="text-xs text-[#007FFF] font-semibold mb-3 block"
+                              style={{ background: "none", border: "none", cursor: "pointer" }}
+                            >
+                              ← Retour au frigidaire par défaut
+                            </button>
+
+                            {mesPoints.filter((cp: ClientPoint) => !cp.est_defaut).length > 0 && (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "12px" }}>
+                                <p style={{ fontSize: "11px", color: "#9B9B9B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "4px" }}>
+                                  Mes autres frigidaires
+                                </p>
+                                {mesPoints.filter((cp: ClientPoint) => !cp.est_defaut).map(cp => (
+                                  <button
+                                    key={cp.id}
+                                    onClick={() => {
+                                      const pl = cp.points_livraison
+                                      setHopital(pl.hopital)
+                                      setBatiment(pl.batiment)
+                                      setService(pl.service)
+                                    }}
+                                    style={{
+                                      display: "flex", alignItems: "center", gap: "8px",
+                                      padding: "8px 12px", borderRadius: "10px", textAlign: "left",
+                                      border: `2px solid ${selectedPoint?.id === cp.points_livraison.id ? "#FD3D6B" : "#E8E3D8"}`,
+                                      background: selectedPoint?.id === cp.points_livraison.id ? "#FFF0F3" : "#fff",
+                                      cursor: "pointer", width: "100%",
+                                    }}
+                                  >
+                                    <div style={{
+                                      width: 14, height: 14, borderRadius: "50%", flexShrink: 0,
+                                      border: `2px solid ${selectedPoint?.id === cp.points_livraison.id ? "#FD3D6B" : "#E8E3D8"}`,
+                                      background: selectedPoint?.id === cp.points_livraison.id ? "#FD3D6B" : "#fff",
+                                    }} />
+                                    <div>
+                                      <p style={{ fontSize: "12px", fontWeight: 600, color: "#1A1A1A" }}>{cp.points_livraison.service}</p>
+                                      <p style={{ fontSize: "11px", color: "#6B6B6B" }}>{cp.points_livraison.hopital} · {cp.points_livraison.batiment}</p>
+                                      {cp.points_livraison.service_desc && (
+                                        <p style={{ fontSize: "11px", color: "#00CCCC", marginTop: "2px" }}>{cp.points_livraison.service_desc}</p>
+                                      )}
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </>
                         )}
                         <div className="flex flex-col gap-2">
                           <select

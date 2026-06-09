@@ -2,39 +2,15 @@
 
 import { useEffect, useState } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
+import { formatPrice } from "@/lib/utils"
+import { Commande, Rating, Client } from "@/types"
 import Image from "next/image"
-
-interface Commande {
-  id: string
-  variante: string
-  quantite: number
-  prix_unitaire: number
-  prix_total: number
-  statut: string
-  created_at: string
-  menus: {
-    date_livraison: string
-    plat: string
-    plat_vege: string
-    dessert: string
-    photo: string
-  }
-}
-
-interface Rating {
-  commande_id: string
-  note: number
-  updated_at: string
-}
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr)
   return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
-function formatPrice(p: number): string {
-  return p.toFixed(2).replace('.', ',') + ' €'
-}
 
 function peutNoter(datelivraison: string): boolean {
   const livraison = new Date(datelivraison)
@@ -122,7 +98,7 @@ const PAGE_SIZE = 10
 export default function HistoriquePage() {
   const supabase = createSupabaseBrowserClient()
 
-  const [client, setClient] = useState<any>(null)
+  const [client, setClient] = useState<Pick<Client, 'id'> | null>(null)
   const [commandes, setCommandes] = useState<Commande[]>([])
   const [ratings, setRatings] = useState<Rating[]>([])
   const [loading, setLoading] = useState(true)
@@ -174,23 +150,23 @@ export default function HistoriquePage() {
 
     const { data, count } = await supabase
       .from('commandes')
-      .select('*, menus(date_livraison, plat, plat_vege, dessert, photo)', { count: 'exact' })
-      .eq('client_id', client.id)
+      .select('id, variante, quantite, prix_unitaire, prix_total, statut, created_at, menus(date_livraison, plat, plat_vege, dessert, photo)', { count: 'exact' })
+      .eq('client_id', client!.id)
       .lt('menus.date_livraison', today)
       .gte('menus.date_livraison', debutMois)
       .lte('menus.date_livraison', finMois)
       .order('created_at', { ascending: false })
       .range(from, to)
 
-    setCommandes((data ?? []).filter((c: any) => c.menus))
+    setCommandes((data ?? []).filter((c: Commande) => c.menus))
     setTotal(count ?? 0)
 
-    const ids = (data ?? []).map((c: any) => c.id)
+    const ids = (data ?? []).map((c: Commande) => c.id)
     if (ids.length > 0) {
       const { data: ratingsData } = await supabase
         .from('ratings')
         .select('commande_id, note, updated_at')
-        .eq('client_id', client.id)
+        .eq('client_id', client!.id)
         .in('commande_id', ids)
       setRatings(ratingsData ?? [])
     }
@@ -211,7 +187,7 @@ export default function HistoriquePage() {
   }
 
   const commandesGroupees = commandes.reduce((acc: Record<string, Commande[]>, cmd) => {
-    const date = cmd.menus.date_livraison
+    const date = cmd.menus?.date_livraison ?? ''
     if (!acc[date]) acc[date] = []
     acc[date].push(cmd)
     return acc
@@ -281,10 +257,10 @@ export default function HistoriquePage() {
 
                   <div style={{ padding: "0 20px" }}>
                     {cmds.map((cmd, i) => {
-                      const plat = cmd.variante === 'vegetarien' ? cmd.menus.plat_vege : cmd.menus.plat
+                      const plat = cmd.variante === 'vegetarien' ? cmd.menus?.plat_vege : cmd.menus?.plat
                       const statut = statutConfig[cmd.statut] ?? statutConfig.en_attente
                       const rating = getRating(cmd.id)
-                      const afficherNotation = cmd.statut === 'confirme' && peutNoter(cmd.menus.date_livraison)
+                      const afficherNotation = cmd.statut === 'confirme' && peutNoter(cmd.menus?.date_livraison ?? '')
 
                       return (
                         <div key={cmd.id} style={{
@@ -297,8 +273,8 @@ export default function HistoriquePage() {
                             overflow: "hidden", flexShrink: 0, position: "relative",
                             background: "#F5F0E8",
                           }}>
-                            {cmd.menus.photo ? (
-                              <Image src={cmd.menus.photo} alt={plat} fill sizes="48px" style={{ objectFit: "cover" }} />
+                            {cmd.menus?.photo ? (
+                              <Image src={cmd.menus?.photo ?? ''} alt={plat ?? ''} fill sizes="48px" style={{ objectFit: "cover" }} />
                             ) : (
                               <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
                                 <i className="ti ti-soup" style={{ fontSize: 18, color: "#C4704F" }} />
@@ -311,14 +287,14 @@ export default function HistoriquePage() {
                               {plat}
                             </p>
                             <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>
-                              + {cmd.menus.dessert} · {cmd.variante === 'vegetarien' ? 'Végétarien' : 'Standard'} × {cmd.quantite}
+                              + {cmd.menus?.dessert} ·{cmd.variante === 'vegetarien' ? 'Végétarien' : 'Standard'} × {cmd.quantite}
                             </p>
                             {afficherNotation && (
                               <StarRating
                                 commandeId={cmd.id}
                                 initialNote={rating?.note ?? null}
                                 initialUpdatedAt={rating?.updated_at ?? null}
-                                clientId={client.id}
+                                clientId={client!.id}
                                 onRated={handleRated}
                               />
                             )}

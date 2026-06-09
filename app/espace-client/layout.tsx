@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
+import { Client } from "@/types"
 
 const navItems = [
   { href: "/espace-client", label: "Accueil", icon: "ti-home" },
@@ -17,7 +18,7 @@ export default function EspaceClientLayout({ children }: { children: React.React
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createSupabaseBrowserClient()
-  const [client, setClient] = useState<any>(null)
+  const [client, setClient] = useState<Pick<Client, 'prenom' | 'nom'> | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

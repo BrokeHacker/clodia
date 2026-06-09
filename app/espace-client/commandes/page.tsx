@@ -1,34 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
+import { formatPrice } from "@/lib/utils"
 import { getSemainesDisponibles } from "@/lib/menus"
+import { Commande, Client } from "@/types"
 import Image from "next/image"
 import Link from "next/link"
-
-interface Commande {
-  id: string
-  variante: string
-  quantite: number
-  prix_unitaire: number
-  statut: string
-  menus: {
-    date_livraison: string
-    plat: string
-    plat_vege: string
-    dessert: string
-    photo: string
-  }
-}
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr)
   return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
-function formatPrice(p: number): string {
-  return p.toFixed(2).replace('.', ',') + ' €'
-}
 
 function getSemaineLabel(dateStr: string): string {
   const d = new Date(dateStr)
@@ -49,15 +33,25 @@ const statutConfig: Record<string, { label: string; color: string; bg: string }>
 export default function CommandesEnCoursPage() {
   const supabase = createSupabaseBrowserClient()
 
-  const [client, setClient] = useState<any>(null)
+  const [client, setClient] = useState<Pick<Client, 'id'> | null>(null)
   const [commandes, setCommandes] = useState<Commande[]>([])
   const [loading, setLoading] = useState(true)
   const [modifyingId, setModifyingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const { deadlinePrecommande, semaineSuivante } = getSemainesDisponibles()
-  const peutModifier = new Date() < deadlinePrecommande
-  const deadlineLabel = deadlinePrecommande.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })
+  const [semaines, setSemaines] = useState<ReturnType<typeof getSemainesDisponibles> | null>(null)
+
+  useEffect(() => {
+    setSemaines(getSemainesDisponibles())
+  }, [])
+
+  const semaineSuivante = semaines?.semaineSuivante
+  const peutModifier = useMemo(() =>
+    semaines ? new Date() < semaines.deadlinePrecommande : false
+  , [semaines])
+  const deadlineLabel = useMemo(() =>
+    semaines?.deadlinePrecommande.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) ?? ''
+  , [semaines])
 
   useEffect(() => {
     async function load() {
@@ -77,13 +71,13 @@ export default function CommandesEnCoursPage() {
 
       const { data } = await supabase
         .from('commandes')
-        .select('*, menus(date_livraison, plat, plat_vege, dessert, photo)')
+        .select('id, menu_id, variante, quantite, prix_unitaire, statut, type, menus(date_livraison, plat, plat_vege, dessert, photo)')
         .eq('client_id', clientData.id)
         .neq('statut', 'annule')
         .gt('menus.date_livraison', today)
         .order('menus(date_livraison)', { ascending: true })
 
-      setCommandes((data ?? []).filter((c: any) => c.menus))
+      setCommandes((data ?? []).filter((c: Commande) => c.menus))
       setLoading(false)
     }
     load()
@@ -98,7 +92,7 @@ export default function CommandesEnCoursPage() {
       .eq('id', cmd.id)
 
     setCommandes(prev =>
-      prev.map(c => c.id === cmd.id ? { ...c, variante: nouvelleVariante } : c)
+      prev.map(c => c.id === cmd.id ? { ...c, variante: nouvelleVariante as 'standard' | 'vegetarien' } : c)
     )
     setSaving(false)
     setModifyingId(null)
@@ -106,7 +100,7 @@ export default function CommandesEnCoursPage() {
 
   function CommandeRow({ cmd, modifiable }: { cmd: Commande; modifiable: boolean }) {
     const statut = statutConfig[cmd.statut] ?? statutConfig.en_attente
-    const plat = cmd.variante === 'vegetarien' ? cmd.menus.plat_vege : cmd.menus.plat
+    const plat = cmd.variante === 'vegetarien' ? cmd.menus?.plat_vege : cmd.menus?.plat
     const isModifying = modifyingId === cmd.id
 
     return (
@@ -118,8 +112,8 @@ export default function CommandesEnCoursPage() {
           overflow: "hidden", flexShrink: 0, position: "relative",
           background: "#F5F0E8",
         }}>
-          {cmd.menus.photo ? (
-            <Image src={cmd.menus.photo} alt={plat} fill sizes="52px" style={{ objectFit: "cover" }} />
+          {cmd.menus?.photo ? (
+            <Image src={cmd.menus?.photo ?? ''} alt={plat ?? ''} fill sizes="52px" style={{ objectFit: "cover" }} />
           ) : (
             <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <i className="ti ti-soup" style={{ fontSize: 20, color: "#C4704F" }} />
@@ -130,7 +124,7 @@ export default function CommandesEnCoursPage() {
         {/* Infos */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{ fontSize: "13px", fontWeight: 500, color: "#1A1A1A", marginBottom: "2px" }}>
-            {formatDate(cmd.menus.date_livraison)}
+            {formatDate(cmd.menus?.date_livraison ?? '')}
           </p>
 
           {isModifying ? (
@@ -172,7 +166,7 @@ export default function CommandesEnCoursPage() {
             </div>
           ) : (
             <p style={{ fontSize: "12px", color: "#6B6B6B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {plat} · + {cmd.menus.dessert}
+              {plat} · + {cmd.menus?.dessert}
             </p>
           )}
         </div>
@@ -211,7 +205,7 @@ export default function CommandesEnCoursPage() {
   )
 
   const commandesParSemaine = commandes.reduce((acc: Record<string, Commande[]>, cmd) => {
-    const label = getSemaineLabel(cmd.menus.date_livraison)
+    const label = getSemaineLabel(cmd.menus?.date_livraison ?? '')
     if (!acc[label]) acc[label] = []
     acc[label].push(cmd)
     return acc
@@ -259,7 +253,7 @@ export default function CommandesEnCoursPage() {
                   <CommandeRow
                     key={cmd.id}
                     cmd={cmd}
-                    modifiable={peutModifier && cmd.menus.date_livraison >= semaineSuivante.lundi && cmd.menus.date_livraison <= semaineSuivante.vendredi}
+                    modifiable={peutModifier && !!cmd.menus?.date_livraison && !!semaineSuivante && cmd.menus.date_livraison >= semaineSuivante.lundi && cmd.menus.date_livraison <= semaineSuivante.vendredi}
                   />
                 ))}
               </div>

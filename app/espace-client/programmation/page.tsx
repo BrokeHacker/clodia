@@ -45,7 +45,7 @@ export default function ProgrammationPage() {
 
       const { data: prog } = await supabase
         .from('programmations')
-        .select('*')
+        .select('id, client_id, jours, variante, actif')
         .eq('client_id', clientData.id)
         .single()
 
@@ -72,7 +72,7 @@ export default function ProgrammationPage() {
     setSaving(true)
 
     const payload = {
-      client_id: client.id,
+      client_id: client!.id,
       jours: joursSelectionnes,
       variante,
       actif,

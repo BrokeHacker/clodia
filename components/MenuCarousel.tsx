@@ -13,7 +13,6 @@ interface Menu {
   date_livraison?: string;
 }
 
-const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];
 
 function formatJourDate(menu: Menu, index: number): string {
   const joursNoms = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi"];

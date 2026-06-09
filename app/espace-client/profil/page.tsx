@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
-import { formatTelephone, displayTelephone } from "@/lib/utils"
+import { formatTelephone, displayTelephone, normaliserTelephone } from "@/lib/utils"
 import { fetchPointsLivraison, PointLivraisonDB, fetchPointsLivraisonClient, fetchPointLivraisonDefaut } from "@/lib/menus"
+import { Client, ClientPoint } from "@/types"
 import { useRouter } from "next/navigation"
 
 export default function ProfilPage() {
@@ -11,7 +12,7 @@ export default function ProfilPage() {
   const router = useRouter()
 
   const [loading, setLoading] = useState(true)
-  const [client, setClient] = useState<any>(null)
+  const [client, setClient] = useState<Client | null>(null)
   const [editInfos, setEditInfos] = useState(false)
   const [prenomEdit, setPrenomEdit] = useState("")
   const [nomEdit, setNomEdit] = useState("")
@@ -23,7 +24,7 @@ export default function ProfilPage() {
   const [hopital, setHopital] = useState("")
   const [batiment, setBatiment] = useState("")
   const [service, setService] = useState("")
-  const [mesPoints, setMesPoints] = useState<any[]>([])
+  const [mesPoints, setMesPoints] = useState<ClientPoint[]>([])
   const [ajouterMode, setAjouterMode] = useState(false)
   const [pointSelectionne, setPointSelectionne] = useState<PointLivraisonDB | null>(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
@@ -37,7 +38,7 @@ export default function ProfilPage() {
 
       const { data: clientData } = await supabase
         .from('clients')
-        .select('*')
+        .select('id, prenom, nom, email, telephone, user_id')
         .eq('user_id', session.user.id)
         .single()
 
@@ -68,12 +69,6 @@ export default function ProfilPage() {
     setPointSelectionne(found ?? null)
   }
 
-  function normaliserTelephone(tel: string): string {
-    const cleaned = tel.replace(/\s/g, '').replace(/-/g, '')
-    if (cleaned.startsWith('0')) return '+33' + cleaned.slice(1)
-    if (cleaned.startsWith('+33')) return cleaned
-    return cleaned
-  }
 
   async function saveInfos() {
     const newErrors: Record<string, string> = {}
@@ -88,9 +83,9 @@ export default function ProfilPage() {
     await supabase
       .from('clients')
       .update({ prenom: prenomEdit, nom: nomEdit, telephone: telNormalise })
-      .eq('id', client.id)
+      .eq('id', client!.id)
 
-    setClient({ ...client, prenom: prenomEdit, nom: nomEdit, telephone: telNormalise })
+    setClient(prev => prev ? { ...prev, prenom: prenomEdit, nom: nomEdit, telephone: telNormalise } : prev)
     setSavingInfos(false)
     setSaveInfosSuccess(true)
     setEditInfos(false)
@@ -102,7 +97,7 @@ export default function ProfilPage() {
     await supabase
       .from('client_points_livraison')
       .update({ est_defaut: false })
-      .eq('client_id', client.id)
+      .eq('client_id', client!.id)
 
     // Définir le nouveau défaut
     await supabase
@@ -110,7 +105,7 @@ export default function ProfilPage() {
       .update({ est_defaut: true })
       .eq('id', clientPointId)
 
-    const points = await fetchPointsLivraisonClient(client.id, supabase)
+    const points = await fetchPointsLivraisonClient(client!.id, supabase)
     setMesPoints(points)
     setSaveSuccess(true)
     setTimeout(() => setSaveSuccess(false), 3000)
@@ -122,7 +117,7 @@ export default function ProfilPage() {
       .delete()
       .eq('id', clientPointId)
 
-    const points = await fetchPointsLivraisonClient(client.id, supabase)
+    const points = await fetchPointsLivraisonClient(client!.id, supabase)
     setMesPoints(points)
   }
 
@@ -133,12 +128,12 @@ export default function ProfilPage() {
       await supabase
         .from('client_points_livraison')
         .insert({
-          client_id: client.id,
+          client_id: client!.id,
           point_livraison_id: pointSelectionne.id,
           est_defaut: mesPoints.length === 0,
         })
 
-      const points = await fetchPointsLivraisonClient(client.id, supabase)
+      const points = await fetchPointsLivraisonClient(client!.id, supabase)
       setMesPoints(points)
       setAjouterMode(false)
       setHopital('')
@@ -155,7 +150,7 @@ export default function ProfilPage() {
 
   async function handleSupprimerCompte() {
     if (deleteConfirmText !== 'SUPPRIMER') return
-    await supabase.from('clients').update({ user_id: null }).eq('id', client.id)
+    await supabase.from('clients').update({ user_id: null }).eq('id', client!.id)
     await supabase.auth.signOut()
     router.push('/')
   }
