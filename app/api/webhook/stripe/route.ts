@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
+import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { supabase } from '@/lib/supabase'
+
+if (!process.env.STRIPE_WEBHOOK_SECRET) throw new Error('Missing STRIPE_WEBHOOK_SECRET')
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!
 
 export async function POST(req: NextRequest) {
   const body = await req.text()
@@ -8,17 +12,13 @@ export async function POST(req: NextRequest) {
 
   let event
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    )
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
   } catch {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as any
+    const session = event.data.object as Stripe.Checkout.Session
     const commandeIds = session.metadata?.commande_ids?.split(',') ?? []
 
     if (commandeIds.length > 0) {
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (event.type === 'checkout.session.expired') {
-    const session = event.data.object as any
+    const session = event.data.object as Stripe.Checkout.Session
     const commandeIds = session.metadata?.commande_ids?.split(',') ?? []
 
     if (commandeIds.length > 0) {

@@ -231,7 +231,8 @@ function InscriptionContent() {
         router.push('/espace-client')
       }
 
-    } catch {
+    } catch (err) {
+      console.error('[inscription] error:', err)
       setErrors({ global: "Une erreur est survenue. Veuillez réessayer." })
     } finally {
       setLoading(false)

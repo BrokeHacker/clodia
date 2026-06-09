@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
+import { Client } from "@/types"
 
 const JOURS = [
   { key: 'lundi', label: 'Lundi' },
@@ -20,7 +21,7 @@ const VARIANTES = [
 export default function ProgrammationPage() {
   const supabase = createSupabaseBrowserClient()
 
-  const [client, setClient] = useState<any>(null)
+  const [client, setClient] = useState<Pick<Client, 'id'> | null>(null)
   const [joursSelectionnes, setJoursSelectionnes] = useState<string[]>([])
   const [variante, setVariante] = useState('standard')
   const [actif, setActif] = useState(true)
@@ -70,42 +71,51 @@ export default function ProgrammationPage() {
   async function handleSave() {
     if (joursSelectionnes.length === 0) return
     setSaving(true)
+    try {
+      const payload = {
+        client_id: client!.id,
+        jours: joursSelectionnes,
+        variante,
+        actif,
+        updated_at: new Date().toISOString(),
+      }
 
-    const payload = {
-      client_id: client!.id,
-      jours: joursSelectionnes,
-      variante,
-      actif,
-      updated_at: new Date().toISOString(),
+      if (programmationId) {
+        await supabase
+          .from('programmations')
+          .update(payload)
+          .eq('id', programmationId)
+      } else {
+        const { data } = await supabase
+          .from('programmations')
+          .insert(payload)
+          .select('id')
+          .single()
+        if (data) setProgrammationId(data.id)
+      }
+
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } catch (err) {
+      console.error('[programmation] handleSave error:', err)
+    } finally {
+      setSaving(false)
     }
-
-    if (programmationId) {
-      await supabase
-        .from('programmations')
-        .update(payload)
-        .eq('id', programmationId)
-    } else {
-      const { data } = await supabase
-        .from('programmations')
-        .insert(payload)
-        .select('id')
-        .single()
-      if (data) setProgrammationId(data.id)
-    }
-
-    setSaving(false)
-    setSaveSuccess(true)
-    setTimeout(() => setSaveSuccess(false), 3000)
   }
 
   async function handleToggleActif() {
     if (!programmationId) return
     const nouvelEtat = !actif
     setActif(nouvelEtat)
-    await supabase
-      .from('programmations')
-      .update({ actif: nouvelEtat, updated_at: new Date().toISOString() })
-      .eq('id', programmationId)
+    try {
+      await supabase
+        .from('programmations')
+        .update({ actif: nouvelEtat, updated_at: new Date().toISOString() })
+        .eq('id', programmationId)
+    } catch (err) {
+      console.error('[programmation] handleToggleActif error:', err)
+      setActif(!nouvelEtat)
+    }
   }
 
   if (loading) return (

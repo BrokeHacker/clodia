@@ -158,42 +158,34 @@ function CheckoutContent() {
   }
 
   async function handlePaiement() {
+    if (commandeEnCours) return
     setCommandeEnCours(true)
     setErreurSlots([])
 
     try {
-      // ── ÉTAPE 1 : Vérifier les slots pour la semaine en cours ──
+      // ── ÉTAPE 1 : Réserver les slots de manière atomique ──
       if (itemsCourante.length > 0) {
-        const dates = [...new Set(itemsCourante.map(i => i.menu.date_livraison))]
-        const { data: slotsData, error: slotsError } = await supabase
-          .from('slots_unite')
-          .select('id, date_livraison, variante, total, reserves, confirmes')
-          .in('date_livraison', dates)
+        const reservations = itemsCourante.map(item => ({
+          date_livraison: item.menu.date_livraison,
+          variante: item.variante === 'plat_vege' ? 'vegetarien' : 'standard',
+          quantite: item.quantite,
+        }))
 
-        if (slotsError) throw new Error('Erreur vérification disponibilités')
+        const { error: rpcError } = await supabase.rpc('reserver_slots', {
+          p_reservations: reservations,
+        })
 
-        const conflits: {date: string, variante: string, dispo: number, demande: number}[] = []
-
-        for (const item of itemsCourante) {
-          const varianteSlot = item.variante === 'plat_vege' ? 'vegetarien' : 'standard'
-          const slot = slotsData?.find(s =>
-            s.date_livraison === item.menu.date_livraison && s.variante === varianteSlot
-          )
-          if (slot) {
-            const dispo = getDisponible(slot)
-            if (item.quantite > dispo) {
-              conflits.push({
-                date: `${item.menu.jourSemaine} ${item.menu.date}`,
-                variante: item.variante === 'plat_vege' ? 'végétarien' : 'standard',
-                dispo,
-                demande: item.quantite,
-              })
-            }
+        if (rpcError) {
+          if (rpcError.message.includes('Slot complet')) {
+            setErreurSlots([{
+              date: rpcError.message,
+              variante: '',
+              dispo: 0,
+              demande: 0,
+            }])
+          } else {
+            alert('Erreur lors de la réservation des créneaux. Veuillez réessayer.')
           }
-        }
-
-        if (conflits.length > 0) {
-          setErreurSlots(conflits)
           setCommandeEnCours(false)
           return
         }
@@ -269,25 +261,7 @@ function CheckoutContent() {
         throw new Error('Erreur création commandes')
       }
 
-      // ── ÉTAPE 4 : Mettre à jour slots_unite pour la semaine en cours ──
-      for (const item of itemsCourante) {
-        const varianteSlot = item.variante === 'plat_vege' ? 'vegetarien' : 'standard'
-        const { data: slotActuel } = await supabase
-          .from('slots_unite')
-          .select('id, reserves')
-          .eq('date_livraison', item.menu.date_livraison)
-          .eq('variante', varianteSlot)
-          .single()
-
-        if (slotActuel) {
-          await supabase
-            .from('slots_unite')
-            .update({ reserves: (slotActuel.reserves ?? 0) + item.quantite })
-            .eq('id', slotActuel.id)
-        }
-      }
-
-      // ── ÉTAPE 5 : Stripe ──
+      // ── ÉTAPE 4 : Stripe ──
       const { data: commandesCreees } = await supabase
         .from('commandes')
         .select('id')
@@ -315,7 +289,8 @@ function CheckoutContent() {
 
       window.location.href = url
 
-    } catch {
+    } catch (err) {
+      console.error('[checkout] handlePaiement error:', err)
       alert('Une erreur est survenue. Veuillez réessayer.')
     } finally {
       setCommandeEnCours(false)

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import { formatTelephone, displayTelephone, normaliserTelephone } from "@/lib/utils"
-import { fetchPointsLivraison, PointLivraisonDB, fetchPointsLivraisonClient, fetchPointLivraisonDefaut } from "@/lib/menus"
+import { fetchPointsLivraison, PointLivraisonDB, fetchPointsLivraisonClient } from "@/lib/menus"
 import { Client, ClientPoint } from "@/types"
 import { useRouter } from "next/navigation"
 
@@ -28,6 +28,7 @@ export default function ProfilPage() {
   const [ajouterMode, setAjouterMode] = useState(false)
   const [pointSelectionne, setPointSelectionne] = useState<PointLivraisonDB | null>(null)
   const [saveSuccess, setSaveSuccess] = useState(false)
+  const [savingPoint, setSavingPoint] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
 
@@ -71,6 +72,7 @@ export default function ProfilPage() {
 
 
   async function saveInfos() {
+    if (savingInfos) return
     const newErrors: Record<string, string> = {}
     if (!prenomEdit.trim()) newErrors.prenom = "Prénom requis"
     if (!nomEdit.trim()) newErrors.nom = "Nom requis"
@@ -80,45 +82,64 @@ export default function ProfilPage() {
     if (Object.keys(newErrors).length > 0) return
 
     setSavingInfos(true)
-    await supabase
-      .from('clients')
-      .update({ prenom: prenomEdit, nom: nomEdit, telephone: telNormalise })
-      .eq('id', client!.id)
+    try {
+      await supabase
+        .from('clients')
+        .update({ prenom: prenomEdit, nom: nomEdit, telephone: telNormalise })
+        .eq('id', client!.id)
 
-    setClient(prev => prev ? { ...prev, prenom: prenomEdit, nom: nomEdit, telephone: telNormalise } : prev)
-    setSavingInfos(false)
-    setSaveInfosSuccess(true)
-    setEditInfos(false)
-    setTimeout(() => setSaveInfosSuccess(false), 3000)
+      setClient(prev => prev ? { ...prev, prenom: prenomEdit, nom: nomEdit, telephone: telNormalise } : prev)
+      setSaveInfosSuccess(true)
+      setEditInfos(false)
+      setTimeout(() => setSaveInfosSuccess(false), 3000)
+    } catch (err) {
+      console.error('[profil] saveInfos error:', err)
+    } finally {
+      setSavingInfos(false)
+    }
   }
 
   async function setDefaut(clientPointId: string) {
-    // Retirer le défaut actuel
-    await supabase
-      .from('client_points_livraison')
-      .update({ est_defaut: false })
-      .eq('client_id', client!.id)
+    if (savingPoint) return
+    setSavingPoint(true)
+    try {
+      await supabase
+        .from('client_points_livraison')
+        .update({ est_defaut: false })
+        .eq('client_id', client!.id)
 
-    // Définir le nouveau défaut
-    await supabase
-      .from('client_points_livraison')
-      .update({ est_defaut: true })
-      .eq('id', clientPointId)
+      await supabase
+        .from('client_points_livraison')
+        .update({ est_defaut: true })
+        .eq('id', clientPointId)
 
-    const points = await fetchPointsLivraisonClient(client!.id, supabase)
-    setMesPoints(points)
-    setSaveSuccess(true)
-    setTimeout(() => setSaveSuccess(false), 3000)
+      const points = await fetchPointsLivraisonClient(client!.id, supabase)
+      setMesPoints(points)
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000)
+    } catch (err) {
+      console.error('[profil] setDefaut error:', err)
+    } finally {
+      setSavingPoint(false)
+    }
   }
 
   async function supprimerPoint(clientPointId: string) {
-    await supabase
-      .from('client_points_livraison')
-      .delete()
-      .eq('id', clientPointId)
+    if (savingPoint) return
+    setSavingPoint(true)
+    try {
+      await supabase
+        .from('client_points_livraison')
+        .delete()
+        .eq('id', clientPointId)
 
-    const points = await fetchPointsLivraisonClient(client!.id, supabase)
-    setMesPoints(points)
+      const points = await fetchPointsLivraisonClient(client!.id, supabase)
+      setMesPoints(points)
+    } catch (err) {
+      console.error('[profil] supprimerPoint error:', err)
+    } finally {
+      setSavingPoint(false)
+    }
   }
 
   async function ajouterPoint() {
@@ -150,9 +171,13 @@ export default function ProfilPage() {
 
   async function handleSupprimerCompte() {
     if (deleteConfirmText !== 'SUPPRIMER') return
-    await supabase.from('clients').update({ user_id: null }).eq('id', client!.id)
-    await supabase.auth.signOut()
-    router.push('/')
+    try {
+      await supabase.from('clients').update({ user_id: null }).eq('id', client!.id)
+      await supabase.auth.signOut()
+      router.push('/')
+    } catch (err) {
+      console.error('[profil] handleSupprimerCompte error:', err)
+    }
   }
 
   const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#FD3D6B] bg-white"
@@ -307,11 +332,11 @@ export default function ProfilPage() {
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-end" }}>
                   {!cp.est_defaut && (
-                    <button onClick={() => setDefaut(cp.id)} style={{ fontSize: "11px", color: "#007FFF", background: "none", border: "none", cursor: "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>
+                    <button onClick={() => setDefaut(cp.id)} disabled={savingPoint} style={{ fontSize: "11px", color: "#007FFF", background: "none", border: "none", cursor: savingPoint ? "not-allowed" : "pointer", fontWeight: 600, whiteSpace: "nowrap" }}>
                       Définir par défaut
                     </button>
                   )}
-                  <button onClick={() => supprimerPoint(cp.id)} style={{ fontSize: "11px", color: "#FD3D6B", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
+                  <button onClick={() => supprimerPoint(cp.id)} disabled={savingPoint} style={{ fontSize: "11px", color: "#FD3D6B", background: "none", border: "none", cursor: savingPoint ? "not-allowed" : "pointer", fontWeight: 600 }}>
                     Supprimer
                   </button>
                 </div>

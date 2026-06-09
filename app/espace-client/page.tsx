@@ -33,6 +33,7 @@ function StarRating({ commandeId, initialNote, clientId, onRated }: {
   const [saving, setSaving] = useState(false)
 
   async function handleRate(n: number) {
+    if (saving) return
     setSaving(true)
     await supabase.from('ratings').upsert({
       commande_id: commandeId,

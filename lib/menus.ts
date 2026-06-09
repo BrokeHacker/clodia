@@ -125,6 +125,12 @@ export async function fetchPointLivraisonDefaut(clientId: string, supabaseClient
     : null) as PointLivraison | null
 }
 
+interface ClientPointRaw {
+  id: string
+  est_defaut: boolean
+  points_livraison: PointLivraison | PointLivraison[]
+}
+
 export async function fetchPointsLivraisonClient(clientId: string, supabaseClient = supabase): Promise<ClientPoint[]> {
   const { data } = await supabaseClient
     .from('client_points_livraison')
@@ -132,7 +138,7 @@ export async function fetchPointsLivraisonClient(clientId: string, supabaseClien
     .eq('client_id', clientId)
     .order('est_defaut', { ascending: false })
 
-  return (data ?? []).map((item: any) => ({
+  return (data ?? []).map((item: ClientPointRaw) => ({
     id: item.id,
     est_defaut: item.est_defaut,
     points_livraison: Array.isArray(item.points_livraison)

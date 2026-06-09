@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Menu } from "@/lib/data";
-import { fetchMenusSemaineCourante, fetchMenusSemaineSuivante, fetchTarifs, Tarif, getTarifUnitaire, getTarifPrecommande, fetchPointsLivraison, PointLivraisonDB, fetchSlotsUnite, SlotUnite, getDisponible, getSemainesDisponibles, fetchPointsLivraisonClient, fetchPointLivraisonDefaut } from "@/lib/menus";
+import { fetchMenusSemaineCourante, fetchMenusSemaineSuivante, fetchTarifs, Tarif, getTarifUnitaire, getTarifPrecommande, fetchPointsLivraison, PointLivraisonDB, fetchSlotsUnite, SlotUnite, getDisponible, getSemainesDisponibles, fetchPointsLivraisonClient } from "@/lib/menus";
 import { createSupabaseBrowserClient } from "@/lib/supabase";
 import { ClientPoint } from "@/types";
 import { formatPrice } from "@/lib/utils";
@@ -32,15 +32,7 @@ function CommanderContent() {
   const deadlinePrecommande = semaines?.deadlinePrecommande;
 
   const [semaineKey, setSemaineKey] = useState<"courante" | "suivante" | null>(null);
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const saved = sessionStorage.getItem('clodia-cart');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [menusCurrentWeek, setMenusCurrentWeek] = useState<Menu[]>([]);
   const [menusNextWeek, setMenusNextWeek] = useState<Menu[]>([]);
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
@@ -49,18 +41,21 @@ function CommanderContent() {
   const [mesPoints, setMesPoints] = useState<ClientPoint[]>([]);
   const [pointMode, setPointMode] = useState<'saved' | 'new'>('saved');
 
-  const [hopital, setHopital] = useState(() => {
-    if (typeof window === 'undefined') return "";
-    try { return sessionStorage.getItem('clodia-hopital') ?? ""; } catch { return ""; }
-  });
-  const [batiment, setBatiment] = useState(() => {
-    if (typeof window === 'undefined') return "";
-    try { return sessionStorage.getItem('clodia-batiment') ?? ""; } catch { return ""; }
-  });
-  const [service, setService] = useState(() => {
-    if (typeof window === 'undefined') return "";
-    try { return sessionStorage.getItem('clodia-service') ?? ""; } catch { return ""; }
-  });
+  const [hopital, setHopital] = useState("");
+  const [batiment, setBatiment] = useState("");
+  const [service, setService] = useState("");
+  const [sessionLoaded, setSessionLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedCart = sessionStorage.getItem('clodia-cart');
+      if (savedCart) setCart(JSON.parse(savedCart));
+      setHopital(sessionStorage.getItem('clodia-hopital') ?? '');
+      setBatiment(sessionStorage.getItem('clodia-batiment') ?? '');
+      setService(sessionStorage.getItem('clodia-service') ?? '');
+    } catch {}
+    setSessionLoaded(true);
+  }, []);
 
   useEffect(() => {
     try {
