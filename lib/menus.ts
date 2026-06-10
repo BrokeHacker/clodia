@@ -48,8 +48,11 @@ export function getSemainesDisponibles(): {
   const lundiCourante = toLundi(offsetCourante)
   const lundiSuivante = toLundi(offsetSuivante)
 
-  const mercrediDeadline = toLundi(1)
-  mercrediDeadline.setDate(mercrediDeadline.getDate() + 2)
+  // La deadline est le mercredi 23h59 de la semaine courante (S0)
+  // car du lundi au mercredi on commande pour S+1
+  // et du jeudi au dimanche on commande pour S+2 (deadline = mercredi S+1)
+  const mercrediDeadline = new Date(lundiSemaineCourante)
+  mercrediDeadline.setDate(lundiSemaineCourante.getDate() + (estApresJeudi ? 9 : 2))
   mercrediDeadline.setHours(23, 59, 0, 0)
 
   return {

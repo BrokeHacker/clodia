@@ -101,6 +101,11 @@ export default function EspaceClientPage() {
   }, [semaines])
 
   useEffect(() => {
+    console.log('DEBUG deadlineInfos:', deadlineInfos)
+    console.log('DEBUG semaines:', semaines?.deadlinePrecommande)
+  }, [deadlineInfos])
+
+  useEffect(() => {
     async function load() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return
@@ -240,7 +245,9 @@ export default function EspaceClientPage() {
           <div>
             <p style={{ fontSize: "13px", fontWeight: 600, color: "#FF9933" }}>
               <i className="ti ti-clock" style={{ marginRight: 6 }} />
-              Deadline dans {deadlineInfos?.joursRestants} jour{(deadlineInfos?.joursRestants ?? 0) > 1 ? 's' : ''} !
+              {(deadlineInfos?.joursRestants ?? 0) <= 1
+                ? 'Deadline ce soir à minuit !'
+                : `Deadline dans ${deadlineInfos?.joursRestants} jours !`}
             </p>
             <p style={{ fontSize: "12px", color: "#6B6B6B", marginTop: "2px" }}>
               Pré-commandez avant {deadlineInfos?.deadlineLabel} à 23h59 pour la {semaines?.semaineSuivante.label ?? ''}

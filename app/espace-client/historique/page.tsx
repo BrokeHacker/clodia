@@ -12,13 +12,6 @@ function formatDate(dateStr: string): string {
 }
 
 
-function peutNoter(datelivraison: string): boolean {
-  const livraison = new Date(datelivraison)
-  const now = new Date()
-  const diff = now.getTime() - livraison.getTime()
-  return diff >= 0 && diff <= 7 * 24 * 60 * 60 * 1000
-}
-
 function peutModifierNote(updatedAt: string): boolean {
   const updated = new Date(updatedAt)
   const now = new Date()
@@ -260,7 +253,7 @@ export default function HistoriquePage() {
                       const plat = cmd.variante === 'vegetarien' ? cmd.menus?.plat_vege : cmd.menus?.plat
                       const statut = statutConfig[cmd.statut] ?? statutConfig.en_attente
                       const rating = getRating(cmd.id)
-                      const afficherNotation = cmd.statut === 'confirme' && peutNoter(cmd.menus?.date_livraison ?? '')
+                      const afficherNotation = cmd.statut === 'confirme'
 
                       return (
                         <div key={cmd.id} style={{

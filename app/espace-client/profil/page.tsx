@@ -125,6 +125,7 @@ export default function ProfilPage() {
   }
 
   async function supprimerPoint(clientPointId: string) {
+    if (mesPoints.length <= 1) return
     if (savingPoint) return
     setSavingPoint(true)
     try {
@@ -336,9 +337,11 @@ export default function ProfilPage() {
                       Définir par défaut
                     </button>
                   )}
-                  <button onClick={() => supprimerPoint(cp.id)} disabled={savingPoint} style={{ fontSize: "11px", color: "#FD3D6B", background: "none", border: "none", cursor: savingPoint ? "not-allowed" : "pointer", fontWeight: 600 }}>
-                    Supprimer
-                  </button>
+                  {mesPoints.length > 1 && (
+                    <button onClick={() => supprimerPoint(cp.id)} disabled={savingPoint} style={{ fontSize: "11px", color: "#FD3D6B", background: "none", border: "none", cursor: savingPoint ? "not-allowed" : "pointer", fontWeight: 600 }}>
+                      Supprimer
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

@@ -58,20 +58,22 @@ function CommanderContent() {
   }, []);
 
   useEffect(() => {
+    if (!sessionLoaded) return
     try {
       sessionStorage.setItem('clodia-cart', JSON.stringify(cart));
     } catch {
       // sessionStorage indisponible
     }
-  }, [cart]);
+  }, [cart, sessionLoaded]);
 
   useEffect(() => {
+    if (!sessionLoaded) return
     try {
       sessionStorage.setItem('clodia-hopital', hopital);
       sessionStorage.setItem('clodia-batiment', batiment);
       sessionStorage.setItem('clodia-service', service);
     } catch {}
-  }, [hopital, batiment, service]);
+  }, [hopital, batiment, service, sessionLoaded]);
 
   useEffect(() => {
     async function init() {
@@ -215,18 +217,32 @@ function CommanderContent() {
     });
   }
 
-  const quantiteTotale = cart.reduce((a, c) => a + c.quantite, 0);
-
-  function getPrixUnitaire(semaine: string | null, qte: number): number {
-    if (semaine === 'suivante') return getTarifPrecommande(tarifs, qte);
-    return getTarifUnitaire(tarifs);
-  }
-
   const allMenus = [...menusCurrentWeek, ...menusNextWeek];
+
+  const qtePrecommande = cart
+    .filter(item => menusNextWeek.some(m => m.id === item.menuId))
+    .reduce((a, c) => a + c.quantite, 0)
+
+  const prixUnite = getTarifUnitaire(tarifs)
+
   const total = cart.reduce((acc, item) => {
-    const menu = allMenus.find((m) => m.id === item.menuId);
-    return acc + (menu ? getPrixUnitaire(semaineKey, quantiteTotale) * item.quantite : 0);
-  }, 0);
+    const menu = allMenus.find((m) => m.id === item.menuId)
+    if (!menu) return acc
+    const isPrecommande = menusNextWeek.some(m => m.id === item.menuId)
+    const prix = isPrecommande
+      ? getTarifPrecommande(tarifs, qtePrecommande)
+      : prixUnite
+    return acc + prix * item.quantite
+  }, 0)
+
+  // Garder quantiteTotale pour l'affichage du compteur de repas
+  const quantiteTotale = cart.reduce((a, c) => a + c.quantite, 0)
+
+  // Adapter getPrixUnitaire pour l'affichage sur les cards
+  function getPrixUnitaire(semaine: string | null): number {
+    if (semaine === 'suivante') return getTarifPrecommande(tarifs, qtePrecommande)
+    return prixUnite
+  }
 
   const cartWithMenus = cart
     .map((item) => ({
@@ -470,7 +486,7 @@ function CommanderContent() {
                       {/* Prix + bouton — toujours alignés */}
                       <div className="flex items-center justify-between">
                         <span className="text-[#FF9933] font-semibold">
-                          {formatPrice(getPrixUnitaire(semaineKey, quantiteTotale))}
+                          {formatPrice(getPrixUnitaire(semaineKey))}
                         </span>
                         {!inCart ? (
                           <button
