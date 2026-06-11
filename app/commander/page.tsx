@@ -327,7 +327,7 @@ function CommanderContent() {
                   fontSize: "18px", fontWeight: 600, color: "#1A1A1A",
                   marginBottom: "16px", lineHeight: 1.2,
                 }}>
-                  Pré-commander pour<br />la {semaineSuivante?.label ?? ''}
+                  Pré-commander du {new Date(semaineSuivante?.lundi ?? '').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} au {new Date(semaineSuivante?.vendredi ?? '').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
                 </p>
                 <div className="flex flex-col gap-2">
                   <span className="flex items-center gap-2 text-sm text-gray-600">
@@ -362,7 +362,7 @@ function CommanderContent() {
                   fontSize: "18px", fontWeight: 600, color: "#1A1A1A",
                   marginBottom: "16px", lineHeight: 1.2,
                 }}>
-                  Commander pour<br />la {semaineCourante?.label ?? ''}
+                  Commander du {new Date(semaineCourante?.lundi ?? '').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} au {new Date(semaineCourante?.vendredi ?? '').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
                 </p>
                 <div className="flex flex-col gap-2">
                   <span className="flex items-center gap-2 text-sm text-gray-600">

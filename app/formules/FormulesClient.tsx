@@ -403,7 +403,7 @@ export default function FormulesClient() {
                   padding: "15px", borderRadius: "999px",
                   textDecoration: "none", letterSpacing: "0.01em",
                 }}>
-                  Commander pour la semaine en cours →
+                  Commander pour les prochains jours →
                 </Link>
                 <p style={{
                   fontSize: "11px", color: "#9B9B9B",
