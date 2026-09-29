@@ -27,12 +27,16 @@ function ReinitialiserContent() {
       setEtatSession('invalide')
       return
     }
-    supabase.auth.getSession()
-      .then(({ data }) => setEtatSession(data.session ? 'valide' : 'invalide'))
-      .catch((err: unknown) => {
+    async function verifierSession() {
+      try {
+        const { data } = await supabase.auth.getSession()
+        setEtatSession(data.session ? 'valide' : 'invalide')
+      } catch (err: unknown) {
         console.error('[reinitialiser-mot-de-passe] error:', err)
         setEtatSession('invalide')
-      })
+      }
+    }
+    verifierSession()
   }, [supabase, erreurLien])
 
   useEffect(() => {
