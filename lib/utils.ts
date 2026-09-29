@@ -53,3 +53,17 @@ export function formatTelephone(val: string): string {
 
   return cleaned
 }
+
+export type ForceMotDePasse = 'faible' | 'moyen' | 'fort'
+
+export function validerMotDePasse(mdp: string): { valide: boolean; force: ForceMotDePasse; regles: { label: string; ok: boolean }[] } {
+  const regles = [
+    { label: "8 caractères minimum", ok: mdp.length >= 8 },
+    { label: "1 majuscule", ok: /[A-Z]/.test(mdp) },
+    { label: "1 chiffre", ok: /[0-9]/.test(mdp) },
+    { label: "1 caractère spécial (!@#$%^&*...)", ok: /[^A-Za-z0-9]/.test(mdp) },
+  ]
+  const nbOk = regles.filter(r => r.ok).length
+  const force = nbOk <= 1 ? 'faible' : nbOk <= 3 ? 'moyen' : 'fort'
+  return { valide: nbOk === 4, force, regles }
+}

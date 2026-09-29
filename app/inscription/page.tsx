@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from "react"
 import Link from "next/link"
-import { formatTelephone, normaliserTelephone } from "@/lib/utils"
+import { formatTelephone, normaliserTelephone, validerMotDePasse } from "@/lib/utils"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import { useRouter, useSearchParams } from "next/navigation"
 import { fetchPointsLivraison, PointLivraisonDB } from "@/lib/menus"
@@ -64,18 +64,6 @@ function InscriptionContent() {
     setService(val)
     const found = points.find(p => p.hopital === hopital && p.batiment === batiment && p.service === val)
     setPointSelectionne(found ?? null)
-  }
-
-  function validerMotDePasse(mdp: string): { valide: boolean; force: 'faible' | 'moyen' | 'fort'; regles: { label: string; ok: boolean }[] } {
-    const regles = [
-      { label: "8 caractères minimum", ok: mdp.length >= 8 },
-      { label: "1 majuscule", ok: /[A-Z]/.test(mdp) },
-      { label: "1 chiffre", ok: /[0-9]/.test(mdp) },
-      { label: "1 caractère spécial (!@#$%^&*...)", ok: /[^A-Za-z0-9]/.test(mdp) },
-    ]
-    const nbOk = regles.filter(r => r.ok).length
-    const force = nbOk <= 1 ? 'faible' : nbOk <= 3 ? 'moyen' : 'fort'
-    return { valide: nbOk === 4, force, regles }
   }
 
 
