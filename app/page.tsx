@@ -10,6 +10,8 @@ import MenuCarousel from "@/components/MenuCarousel";
 import FAQAccordion from "@/components/FAQAccordion";
 import PointLivraisonSelector from "@/components/PointLivraisonSelector";
 
+export const revalidate = 3600
+
 const marqueeItems = [
   "Déclinaison végétarienne",
   "1 menu du jour — plat + dessert",
