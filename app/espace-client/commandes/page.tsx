@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
 import { formatPrice } from "@/lib/utils"
-import { getSemainesDisponibles } from "@/lib/menus"
 import { Commande, Client } from "@/types"
 import Image from "next/image"
 import Link from "next/link"
+import DemandeCommande from "@/components/DemandeCommande"
+import LienRecu from "@/components/LienRecu"
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr)
@@ -24,6 +25,9 @@ function getSemaineLabel(dateStr: string): string {
   return `Semaine du ${lundi.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} au ${vendredi.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`
 }
 
+// stripe_id : commandes d'un même paiement
+type CommandeEnCours = Commande & { stripe_id: string | null }
+
 const statutConfig: Record<string, { label: string; color: string; bg: string }> = {
   en_attente: { label: 'Réservé', color: '#FF9933', bg: '#FFF9D6' },
   confirme:   { label: 'Confirmé', color: '#00CCCC', bg: '#E8FFF8' },
@@ -34,24 +38,8 @@ export default function CommandesEnCoursPage() {
   const supabase = createSupabaseBrowserClient()
 
   const [client, setClient] = useState<Pick<Client, 'id'> | null>(null)
-  const [commandes, setCommandes] = useState<Commande[]>([])
+  const [commandes, setCommandes] = useState<CommandeEnCours[]>([])
   const [loading, setLoading] = useState(true)
-  const [modifyingId, setModifyingId] = useState<string | null>(null)
-  const [saving, setSaving] = useState(false)
-
-  const [semaines, setSemaines] = useState<ReturnType<typeof getSemainesDisponibles> | null>(null)
-
-  useEffect(() => {
-    setSemaines(getSemainesDisponibles())
-  }, [])
-
-  const semaineSuivante = semaines?.semaineSuivante
-  const peutModifier = useMemo(() =>
-    semaines ? new Date() < semaines.deadlinePrecommande : false
-  , [semaines])
-  const deadlineLabel = useMemo(() =>
-    semaines?.deadlinePrecommande.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }) ?? ''
-  , [semaines])
 
   useEffect(() => {
     async function load() {
@@ -71,40 +59,24 @@ export default function CommandesEnCoursPage() {
 
       const { data } = await supabase
         .from('commandes')
-        .select('id, menu_id, variante, quantite, prix_unitaire, statut, type, menus(date_livraison, plat, plat_vege, dessert, photo)')
+        .select('id, menu_id, variante, quantite, prix_unitaire, statut, type, stripe_id, menus(date_livraison, plat, plat_vege, dessert, photo)')
         .eq('client_id', clientData.id)
         .neq('statut', 'annule')
         .gt('menus.date_livraison', today)
         .order('menus(date_livraison)', { ascending: true })
 
-      setCommandes((data ?? []).filter((c: Commande) => c.menus))
+      setCommandes((data ?? []).filter((c: CommandeEnCours) => c.menus))
       setLoading(false)
     }
     load()
   }, [])
 
-  async function handleModifierVariante(cmd: Commande, nouvelleVariante: string) {
-    if (nouvelleVariante === cmd.variante) { setModifyingId(null); return }
-    setSaving(true)
-    await supabase
-      .from('commandes')
-      .update({ variante: nouvelleVariante })
-      .eq('id', cmd.id)
-
-    setCommandes(prev =>
-      prev.map(c => c.id === cmd.id ? { ...c, variante: nouvelleVariante as 'standard' | 'vegetarien' } : c)
-    )
-    setSaving(false)
-    setModifyingId(null)
-  }
-
-  function CommandeRow({ cmd, modifiable }: { cmd: Commande; modifiable: boolean }) {
+  function CommandeRow({ cmd }: { cmd: CommandeEnCours }) {
     const statut = statutConfig[cmd.statut] ?? statutConfig.en_attente
     const plat = cmd.variante === 'vegetarien' ? cmd.menus?.plat_vege : cmd.menus?.plat
-    const isModifying = modifyingId === cmd.id
 
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "12px 0", borderBottom: "1px solid #F0EDE6" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "12px 0", borderBottom: "1px solid #F0EDE6" }}>
 
         {/* Photo */}
         <div style={{
@@ -127,51 +99,18 @@ export default function CommandesEnCoursPage() {
             {formatDate(cmd.menus?.date_livraison ?? '')}
           </p>
 
-          {isModifying ? (
-            <div style={{ display: "flex", gap: "6px", marginTop: "6px" }}>
-              <button
-                onClick={() => handleModifierVariante(cmd, 'standard')}
-                disabled={saving}
-                style={{
-                  fontSize: "11px", fontWeight: 600, padding: "5px 12px",
-                  borderRadius: "999px", border: "none", cursor: "pointer",
-                  background: cmd.variante === 'standard' ? "#4D0F1F" : "#F5F0E8",
-                  color: cmd.variante === 'standard' ? "#fff" : "#1A1A1A",
-                }}
-              >
-                Plat standard
-              </button>
-              <button
-                onClick={() => handleModifierVariante(cmd, 'vegetarien')}
-                disabled={saving}
-                style={{
-                  fontSize: "11px", fontWeight: 600, padding: "5px 12px",
-                  borderRadius: "999px", border: "none", cursor: "pointer",
-                  background: cmd.variante === 'vegetarien' ? "#4D0F1F" : "#F5F0E8",
-                  color: cmd.variante === 'vegetarien' ? "#fff" : "#1A1A1A",
-                }}
-              >
-                Végétarien
-              </button>
-              <button
-                onClick={() => setModifyingId(null)}
-                style={{
-                  fontSize: "11px", padding: "5px 10px",
-                  borderRadius: "999px", border: "1px solid #E8E3D8",
-                  background: "transparent", color: "#9B9B9B", cursor: "pointer",
-                }}
-              >
-                Annuler
-              </button>
-            </div>
-          ) : (
-            <p style={{ fontSize: "12px", color: "#6B6B6B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <p style={{ fontSize: "12px", color: "#6B6B6B", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {plat} · + {cmd.menus?.dessert}
             </p>
-          )}
+
+          {/* Actions : ligne dédiée sous le texte */}
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+            {cmd.statut === 'confirme' && cmd.stripe_id && <LienRecu reference={cmd.stripe_id} />}
+            <DemandeCommande commandeId={cmd.id} libelle={`${formatDate(cmd.menus?.date_livraison ?? '')} · ${plat ?? ''}`} mode="modifier" />
+          </div>
         </div>
 
-        {/* Prix + statut + modifier */}
+        {/* Statut + prix */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px", flexShrink: 0 }}>
           <span style={{
             fontSize: "11px", fontWeight: 600,
@@ -181,17 +120,6 @@ export default function CommandesEnCoursPage() {
             {statut.label}
           </span>
           <p style={{ fontSize: "12px", color: "#9B9B9B" }}>{formatPrice(cmd.prix_unitaire)}</p>
-          {modifiable && !isModifying && (
-            <button
-              onClick={() => setModifyingId(cmd.id)}
-              style={{
-                fontSize: "11px", color: "#007FFF", fontWeight: 600,
-                background: "none", border: "none", cursor: "pointer", padding: 0,
-              }}
-            >
-              Modifier →
-            </button>
-          )}
         </div>
 
       </div>
@@ -204,7 +132,7 @@ export default function CommandesEnCoursPage() {
     </div>
   )
 
-  const commandesParSemaine = commandes.reduce((acc: Record<string, Commande[]>, cmd) => {
+  const commandesParSemaine = commandes.reduce((acc: Record<string, CommandeEnCours[]>, cmd) => {
     const label = getSemaineLabel(cmd.menus?.date_livraison ?? '')
     if (!acc[label]) acc[label] = []
     acc[label].push(cmd)
@@ -238,11 +166,9 @@ export default function CommandesEnCoursPage() {
         </div>
       ) : (
         <div>
-          {peutModifier && (
-            <p style={{ fontSize: "12px", color: "#00CCCC", marginBottom: "16px" }}>
-              Pré-commandes modifiables jusqu'au {deadlineLabel} à 23h59
-            </p>
-          )}
+          <p style={{ fontSize: "12px", color: "#6B6B6B", marginBottom: "16px" }}>
+            Pour modifier ou annuler une commande, utilisez le bouton « Modifier ou annuler » : notre équipe traite votre demande et vous répond.
+          </p>
           {Object.entries(commandesParSemaine).map(([semaine, cmds]) => (
             <div key={semaine} style={{ background: "#fff", border: "1px solid #E8E3D8", borderRadius: "16px", padding: "20px 24px", marginBottom: "16px" }}>
               <p style={{ fontSize: "12px", fontWeight: 700, color: "#9B9B9B", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "16px" }}>
@@ -250,11 +176,7 @@ export default function CommandesEnCoursPage() {
               </p>
               <div>
                 {cmds.map(cmd => (
-                  <CommandeRow
-                    key={cmd.id}
-                    cmd={cmd}
-                    modifiable={peutModifier && !!cmd.menus?.date_livraison && !!semaineSuivante && cmd.menus.date_livraison >= semaineSuivante.lundi && cmd.menus.date_livraison <= semaineSuivante.vendredi}
-                  />
+                  <CommandeRow key={cmd.id} cmd={cmd} />
                 ))}
               </div>
             </div>

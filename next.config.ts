@@ -17,6 +17,20 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  async redirects() {
+    return [
+      {
+        source: "/notre-histoire",
+        destination: "/qui-sommes-nous#histoire",
+        permanent: true,
+      },
+      {
+        source: "/nos-engagements",
+        destination: "/qui-sommes-nous#engagements",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

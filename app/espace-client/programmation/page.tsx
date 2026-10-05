@@ -140,7 +140,7 @@ export default function ProgrammationPage() {
         <p style={{ fontSize: "14px", color: "#9B9B9B", lineHeight: 1.6 }}>
           Définissez votre rythme habituel. Chaque jeudi, vous recevrez un rappel
           avec votre panier pré-rempli pour la semaine suivante. Sans engagement —
-          vous pouvez modifier ou annuler à tout moment avant mercredi 22h.
+          vous pouvez modifier ou annuler à tout moment avant mercredi 23h59.
         </p>
       </div>
 

@@ -2,13 +2,15 @@ import { supabase } from './supabase'
 import { enrichMenu, Menu } from './data'
 import { ClientPoint, PointLivraison } from '@/types'
 
-export function getSemainesDisponibles(): {
+// `now` est paramétrable : le serveur (UTC) lui passe l'heure de Paris pour obtenir
+// les mêmes semaines que le navigateur du client.
+export function getSemainesDisponibles(now: Date = new Date()): {
   semaineCourante: { lundi: string; vendredi: string; label: string }
   semaineSuivante: { lundi: string; vendredi: string; label: string }
   estApresJeudi: boolean
   deadlinePrecommande: Date
+  debutCommande: string
 } {
-  const now = new Date()
   const jourSemaine = now.getDay()
 
   const estApresJeudi = jourSemaine === 4 || jourSemaine === 5 || jourSemaine === 6 || jourSemaine === 0
@@ -42,6 +44,15 @@ export function getSemainesDisponibles(): {
     return `semaine du ${lundi.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}`
   }
 
+  // Première livraison commandable à l'unité : le prochain jour ouvré après aujourd'hui
+  // (on commande au plus tard la veille). Du jeudi au dimanche, la période va de là jusqu'au
+  // vendredi de la semaine suivante.
+  const debutCommande = new Date(now)
+  debutCommande.setHours(0, 0, 0, 0)
+  do {
+    debutCommande.setDate(debutCommande.getDate() + 1)
+  } while (debutCommande.getDay() === 0 || debutCommande.getDay() === 6)
+
   const offsetCourante = estApresJeudi ? 1 : 0
   const offsetSuivante = estApresJeudi ? 2 : 1
 
@@ -68,6 +79,7 @@ export function getSemainesDisponibles(): {
     },
     estApresJeudi,
     deadlinePrecommande: mercrediDeadline,
+    debutCommande: toStr(debutCommande),
   }
 }
 

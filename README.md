@@ -27,7 +27,7 @@ clodia/
 │   ├── globals.css             # Design system (couleurs, animations)
 │   ├── page.tsx                # Landing page (/)
 │   ├── comment-ca-marche/      # Page "Comment ça marche"
-│   ├── nos-engagements/        # Page "Nos engagements"
+│   ├── qui-sommes-nous/        # Page "Qui sommes-nous" (histoire + engagements)
 │   ├── formules/               # Page "Formules & tarifs"
 │   ├── commander/              # Page commande interactive
 │   ├── faq/                    # FAQ complète

@@ -115,7 +115,7 @@ export default function PointLivraisonSelector() {
           </p>
         </div>
         <a
-          href="mailto:contact@clodia.fr?subject=Demande de nouveau point de livraison"
+          href="/nous-contacter?sujet=nouveau_point"
           className="btn-outline-wine text-sm px-7 py-3 inline-block text-center"
         >
           Demander un nouveau point

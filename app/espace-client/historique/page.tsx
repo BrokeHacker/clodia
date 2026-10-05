@@ -5,6 +5,8 @@ import { createSupabaseBrowserClient } from "@/lib/supabase"
 import { formatPrice } from "@/lib/utils"
 import { Commande, Rating, Client } from "@/types"
 import Image from "next/image"
+import DemandeCommande from "@/components/DemandeCommande"
+import LienRecu from "@/components/LienRecu"
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr)
@@ -88,25 +90,29 @@ function StarRating({ commandeId, initialNote, initialUpdatedAt, clientId, onRat
 
 const PAGE_SIZE = 10
 
+// stripe_id : commandes d'un même paiement
+type CommandeHistorique = Commande & { stripe_id: string | null }
+
 export default function HistoriquePage() {
   const supabase = createSupabaseBrowserClient()
 
   const [client, setClient] = useState<Pick<Client, 'id'> | null>(null)
-  const [commandes, setCommandes] = useState<Commande[]>([])
+  const [commandes, setCommandes] = useState<CommandeHistorique[]>([])
   const [ratings, setRatings] = useState<Rating[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(0)
   const [total, setTotal] = useState(0)
+  // Compteurs du mois : même jeu de commandes que la liste, toutes pages confondues
+  const [stats, setStats] = useState({ nombre: 0, depense: 0 })
   const [moisFiltre, setMoisFiltre] = useState(() => {
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
   })
 
-  const today = new Date().toISOString().split('T')[0]
-
   const moisDisponibles = Array.from({ length: 12 }, (_, i) => {
-    const d = new Date()
-    d.setMonth(d.getMonth() - i)
+    // 1er du mois : évite le débordement (ex. 30 sept. - 7 mois = "30 février" -> 2 mars, d'où des clés en double)
+    const now = new Date()
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
     const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     const label = d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
     return { val, label }
@@ -136,22 +142,42 @@ export default function HistoriquePage() {
 
     const [annee, mois] = moisFiltre.split('-')
     const debutMois = `${annee}-${mois}-01`
-    const finMois = new Date(parseInt(annee), parseInt(mois), 0).toISOString().split('T')[0]
+    // Dernier jour du mois, écrit à la main (toISOString décalerait d'un jour à cause du fuseau)
+    const finMois = `${annee}-${mois}-${String(new Date(parseInt(annee), parseInt(mois), 0).getDate()).padStart(2, '0')}`
+    // Historique = menus livrés jusqu'à aujourd'hui inclus (heure de Paris), commandes confirmées uniquement
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Paris' })
+    const finPeriode = finMois < today ? finMois : today
 
     const from = page * PAGE_SIZE
     const to = from + PAGE_SIZE - 1
 
-    const { data, count } = await supabase
-      .from('commandes')
-      .select('id, variante, quantite, prix_unitaire, prix_total, statut, created_at, menus(date_livraison, plat, plat_vege, dessert, photo)', { count: 'exact' })
-      .eq('client_id', client!.id)
-      .lt('menus.date_livraison', today)
-      .gte('menus.date_livraison', debutMois)
-      .lte('menus.date_livraison', finMois)
-      .order('created_at', { ascending: false })
-      .range(from, to)
+    const [{ data, count }, { data: lignesMois }] = await Promise.all([
+      supabase
+        .from('commandes')
+        .select('id, variante, quantite, prix_unitaire, prix_total, statut, created_at, stripe_id, menus!inner(date_livraison, plat, plat_vege, dessert, photo)', { count: 'exact' })
+        .eq('client_id', client!.id)
+        .eq('statut', 'confirme')
+        .gte('menus.date_livraison', debutMois)
+        .lte('menus.date_livraison', finPeriode)
+        .order('created_at', { ascending: false })
+        .range(from, to),
+      // Compteurs : requête dédiée au mois (pas les 10 lignes de la page), mêmes filtres que la liste
+      supabase
+        .from('commandes')
+        .select('prix_total, menus!inner(date_livraison)')
+        .eq('client_id', client!.id)
+        .eq('statut', 'confirme')
+        .gte('menus.date_livraison', debutMois)
+        .lte('menus.date_livraison', finPeriode),
+    ])
 
-    setCommandes((data ?? []).filter((c: Commande) => c.menus))
+    const lignes = (lignesMois ?? []) as { prix_total: number | null }[]
+    setStats({
+      nombre: lignes.length,
+      depense: lignes.reduce((acc, l) => acc + (l.prix_total ?? 0), 0),
+    })
+
+    setCommandes((data ?? []).filter((c: CommandeHistorique) => c.menus))
     setTotal(count ?? 0)
 
     const ids = (data ?? []).map((c: Commande) => c.id)
@@ -179,7 +205,7 @@ export default function HistoriquePage() {
     })
   }
 
-  const commandesGroupees = commandes.reduce((acc: Record<string, Commande[]>, cmd) => {
+  const commandesGroupees = commandes.reduce((acc: Record<string, CommandeHistorique[]>, cmd) => {
     const date = cmd.menus?.date_livraison ?? ''
     if (!acc[date]) acc[date] = []
     acc[date].push(cmd)
@@ -187,10 +213,6 @@ export default function HistoriquePage() {
   }, {})
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
-
-  const totalMois = commandes
-    .filter(c => c.statut === 'confirme')
-    .reduce((acc, c) => acc + (c.prix_total ?? 0), 0)
 
   return (
     <div style={{ padding: "40px 48px", maxWidth: "800px", margin: "0 auto" }}>
@@ -218,10 +240,10 @@ export default function HistoriquePage() {
         {!loading && (
           <div style={{ display: "flex", gap: "16px" }}>
             <span style={{ fontSize: "13px", color: "#6B6B6B" }}>
-              <strong style={{ color: "#1A1A1A" }}>{total}</strong> commande{total > 1 ? 's' : ''}
+              <strong style={{ color: "#1A1A1A" }}>{stats.nombre}</strong> commande{stats.nombre > 1 ? 's' : ''}
             </span>
             <span style={{ fontSize: "13px", color: "#6B6B6B" }}>
-              <strong style={{ color: "#1A1A1A" }}>{formatPrice(totalMois)}</strong> dépensés
+              <strong style={{ color: "#1A1A1A" }}>{formatPrice(stats.depense)}</strong> dépensés
             </span>
           </div>
         )}
@@ -257,7 +279,7 @@ export default function HistoriquePage() {
 
                       return (
                         <div key={cmd.id} style={{
-                          display: "flex", alignItems: "center", gap: "12px",
+                          display: "flex", alignItems: "flex-start", gap: "12px",
                           padding: "14px 0",
                           borderBottom: i < cmds.length - 1 ? "1px solid #F0EDE6" : "none",
                         }}>
@@ -290,6 +312,14 @@ export default function HistoriquePage() {
                                 clientId={client!.id}
                                 onRated={handleRated}
                               />
+                            )}
+
+                            {/* Actions : ligne dédiée sous le texte (absente s'il n'y en a aucune) */}
+                            {cmd.statut === 'confirme' && (
+                              <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px", marginTop: "8px" }}>
+                                {cmd.stripe_id && <LienRecu reference={cmd.stripe_id} />}
+                                <DemandeCommande commandeId={cmd.id} libelle={`${formatDate(cmd.menus?.date_livraison ?? '')} · ${plat ?? ''}`} mode="general" />
+                              </div>
                             )}
                           </div>
 

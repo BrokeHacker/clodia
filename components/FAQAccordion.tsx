@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import type { FAQItem } from "@/lib/data";
 
 interface FAQAccordionProps {
@@ -47,6 +48,11 @@ export default function FAQAccordion({ items }: FAQAccordionProps) {
             {isOpen && (
               <div className="px-6 pb-5">
                 <p className="text-gray-500 text-sm leading-relaxed">{item.reponse}</p>
+                {item.lien && (
+                  <Link href={item.lien.href} className="inline-block mt-3 text-sm font-semibold text-[#FD3D6B] hover:underline">
+                    {item.lien.label} →
+                  </Link>
+                )}
               </div>
             )}
           </div>

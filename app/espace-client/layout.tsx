@@ -30,6 +30,8 @@ export default function EspaceClientLayout({ children }: { children: React.React
         .select('prenom, nom')
         .eq('user_id', session.user.id)
         .single()
+      // Session sans fiche client associée : on renvoie vers la connexion plutôt que d'afficher un espace vide
+      if (!data) { router.push('/connexion'); return }
       setClient(data)
       setLoading(false)
     }
@@ -81,7 +83,7 @@ export default function EspaceClientLayout({ children }: { children: React.React
         </div>
 
         {/* Navigation */}
-        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: "4px" }}>
+        <nav style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
           {navItems.map(item => {
             const isActive = pathname === item.href
             return (
@@ -102,10 +104,8 @@ export default function EspaceClientLayout({ children }: { children: React.React
               </Link>
             )
           })}
-        </nav>
-
-        {/* Déconnexion */}
-        <div style={{ borderTop: "1px solid #E8E3D8", paddingTop: "16px", marginTop: "16px" }}>
+          {/* Déconnexion : juste sous "Mon profil", toujours visible sans défilement */}
+          <div style={{ borderTop: "1px solid #E8E3D8", margin: "8px 0 4px" }} />
           <button
             onClick={handleDeconnexion}
             style={{
@@ -114,12 +114,13 @@ export default function EspaceClientLayout({ children }: { children: React.React
               background: "transparent", border: "none",
               fontSize: "14px", fontWeight: 500, color: "#9B9B9B",
               cursor: "pointer", transition: "all 0.15s ease",
+              textAlign: "left",
             }}
           >
             <i className="ti ti-logout" style={{ fontSize: 18 }} />
             Se déconnecter
           </button>
-        </div>
+        </nav>
 
       </aside>
 

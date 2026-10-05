@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { formatTelephone, displayTelephone, normaliserTelephone, formatPrice } from "@/lib/utils";
-import { supabase, createSupabaseBrowserClient } from '@/lib/supabase';
+import { createSupabaseBrowserClient } from '@/lib/supabase';
 import { PointLivraisonDB, getTarifUnitaire, getTarifPrecommande, fetchTarifs, Tarif, fetchMenusSemaineCourante, fetchMenusSemaineSuivante, getDisponible, fetchPointsLivraison, fetchPointsLivraisonClient, fetchPointLivraisonDefaut } from "@/lib/menus";
 import { Menu } from "@/lib/data";
 import { ClientPoint } from "@/types";
@@ -55,19 +55,35 @@ function CheckoutContent() {
       fetchMenusSemaineCourante().then(setMenusCurrentWeek);
       fetchMenusSemaineSuivante().then(setMenusNextWeek);
 
+      // Une session sans fiche client (parcours invité) est traitée comme un invité
+      let clientData: { id: string; prenom: string | null; nom: string | null; email: string | null; telephone: string | null; user_id: string } | null = null;
       if (session) {
-        const { data: clientData } = await supabaseBrowser
+        const res = await supabaseBrowser
           .from('clients')
           .select('id, prenom, nom, email, telephone, user_id')
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
+        clientData = res.data;
+      }
 
+      {
         if (clientData) {
           const points = await fetchPointsLivraisonClient(clientData.id, supabaseBrowser);
           setMesPoints(points);
 
+          // Le point choisi dans le panier est prioritaire sur le point par défaut du compte
+          let choisi: PointLivraisonDB | null = null;
+          try {
+            const sp = sessionStorage.getItem('clodia-point');
+            if (sp) choisi = JSON.parse(sp);
+          } catch {}
           const defaut = points.find((p: ClientPoint) => p.est_defaut);
-          if (defaut) setPoint(defaut.points_livraison);
+          if (choisi) {
+            setPoint(choisi);
+            if (!points.some((p: ClientPoint) => p.points_livraison.id === choisi!.id)) setPointMode('new');
+          } else if (defaut) {
+            setPoint(defaut.points_livraison);
+          }
 
           setPrenom(clientData.prenom ?? '');
           setNom(clientData.nom ?? '');
@@ -77,14 +93,24 @@ function CheckoutContent() {
           setPointsLoading(false);
           setEtape('recap');
         } else {
-          setPointsLoading(false);
-        }
-      } else {
         try {
           const savedPoint = sessionStorage.getItem('clodia-point');
-          if (savedPoint) setPoint(JSON.parse(savedPoint));
+          if (savedPoint) {
+            setPoint(JSON.parse(savedPoint));
+          } else {
+            // Repli : retrouver le point à partir des 3 choix mémorisés dans le panier
+            const h = sessionStorage.getItem('clodia-hopital') ?? '';
+            const b = sessionStorage.getItem('clodia-batiment') ?? '';
+            const s = sessionStorage.getItem('clodia-service') ?? '';
+            if (h && b && s) {
+              const tous = await fetchPointsLivraison();
+              const trouve = tous.find(p => p.hopital === h && p.batiment === b && p.service === s);
+              if (trouve) setPoint(trouve as PointLivraisonDB);
+            }
+          }
         } catch {}
         setPointsLoading(false);
+        }
       }
 
       setAuthLoading(false);
@@ -118,29 +144,12 @@ function CheckoutContent() {
       setErrors({ telephone: "Numéro de téléphone invalide" });
       return;
     }
-    setRechercheEnCours(true);
+    // Sécurité : plus aucune recherche de client par numéro depuis le navigateur
+    // (elle permettait de savoir qui est client et de lire ses informations).
+    // Le serveur (/api/checkout) retrouve ou crée la fiche au moment du paiement.
     setErrors({});
-
-    const { data, error } = await supabase
-      .from('clients')
-      .select('id, prenom, nom, email, telephone')
-      .eq('telephone', telNormalise)
-      .single();
-
-    setRechercheEnCours(false);
     setTelephoneVerifie(true);
-
-    if (data && !error) {
-      setPrenom(data.prenom ?? '');
-      setNom(data.nom ?? '');
-      setEmail(data.email ?? '');
-      setClientTrouve(true);
-    } else {
-      setClientTrouve(false);
-      setPrenom('');
-      setNom('');
-      setEmail('');
-    }
+    setClientTrouve(false);
   }
 
   function validateInfos() {
@@ -163,132 +172,37 @@ function CheckoutContent() {
     setErreurSlots([])
 
     try {
-      // ── ÉTAPE 1 : Réserver les slots de manière atomique ──
-      if (itemsCourante.length > 0) {
-        const reservations = itemsCourante.map(item => ({
-          date_livraison: item.menu.date_livraison,
-          variante: item.variante === 'plat_vege' ? 'vegetarien' : 'standard',
-          quantite: item.quantite,
-        }))
-
-        const { error: rpcError } = await supabase.rpc('reserver_slots', {
-          p_reservations: reservations,
-        })
-
-        if (rpcError) {
-          if (rpcError.message.includes('Slot complet')) {
-            setErreurSlots([{
-              date: rpcError.message,
-              variante: '',
-              dispo: 0,
-              demande: 0,
-            }])
-          } else {
-            alert('Erreur lors de la réservation des créneaux. Veuillez réessayer.')
-          }
-          setCommandeEnCours(false)
-          return
-        }
-      }
-
-      // ── ÉTAPE 2 : Upsert client ──
-      const telNormalise = normaliserTelephone(telephone)
-
-      const { data: clientData, error: clientError } = await supabase
-        .from('clients')
-        .upsert({
-          telephone: telNormalise,
-          prenom,
-          nom,
-          email,
-        }, { onConflict: 'telephone' })
-        .select('id')
-        .single()
-
-      if (clientError || !clientData) throw new Error('Erreur création client')
-      const clientId = clientData.id
-
-      // Enregistrer le point de livraison si pas déjà enregistré
-      if (point) {
-        const { data: existingPoint } = await supabase
-          .from('client_points_livraison')
-          .select('id')
-          .eq('client_id', clientId)
-          .eq('point_livraison_id', point.id)
-          .single()
-
-        if (!existingPoint) {
-          const { count } = await supabase
-            .from('client_points_livraison')
-            .select('id', { count: 'exact', head: true })
-            .eq('client_id', clientId)
-
-          if ((count ?? 0) < 3) {
-            await supabase
-              .from('client_points_livraison')
-              .insert({
-                client_id: clientId,
-                point_livraison_id: point.id,
-                est_defaut: (count ?? 0) === 0,
-              })
-          }
-        }
-      }
-
-      // ── ÉTAPE 3 : Créer les lignes commandes ──
-      const lignesCommandes = cartWithMenus.map(item => {
-        const isPrecommande = menusNextWeek.some(m => m.id === item.menuId)
-        const prixUnit = isPrecommande
-          ? getTarifPrecommande(tarifs, qtePrecommande)
-          : prixUnite
-        return {
-          client_id: clientId,
-          menu_id: item.menuId,
-          type: isPrecommande ? 'pre-commande' : 'unite',
-          variante: item.variante === 'plat_vege' ? 'vegetarien' : 'standard',
-          quantite: item.quantite,
-          prix_unitaire: prixUnit,
-          statut: 'en_attente',
-          point_livraison: point?.id ?? null,
-        }
-      })
-
-      const { error: commandeError } = await supabase
-        .from('commandes')
-        .insert(lignesCommandes)
-
-      if (commandeError) {
-        throw new Error('Erreur création commandes')
-      }
-
-      // ── ÉTAPE 4 : Stripe ──
-      const { data: commandesCreees } = await supabase
-        .from('commandes')
-        .select('id')
-        .eq('client_id', clientId)
-        .eq('statut', 'en_attente')
-        .order('created_at', { ascending: false })
-        .limit(lignesCommandes.length)
-
-      const commandeIds = commandesCreees?.map(c => c.id) ?? []
-
+      // Tout le traitement (prix, réservation des créneaux, client, commandes, Stripe)
+      // se fait côté serveur : le navigateur n'envoie que le panier et les coordonnées.
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          commandeIds,
-          email,
-          total,
-          prenom,
-          nom,
+          items: cartWithMenus.map(item => ({
+            menuId: item.menuId,
+            variante: item.variante,
+            quantite: item.quantite,
+          })),
+          pointId: point?.id ?? null,
+          client: { prenom, nom, email, telephone: normaliserTelephone(telephone) },
         }),
       })
 
-      const { url, error } = await response.json()
-      if (error || !url) throw new Error('Erreur création session Stripe')
+      const data = await response.json().catch(() => ({}))
 
-      window.location.href = url
+      if (!response.ok || !data.url) {
+        if (data.error === 'slot_complet') {
+          setErreurSlots([{ date: data.message ?? '', variante: '', dispo: 0, demande: 0 }])
+          return
+        }
+        if (data.error === 'compte_existant' || data.error === 'infos_invalides' || data.error === 'menu_indisponible') {
+          alert(data.message)
+          return
+        }
+        throw new Error(data.error ?? 'Erreur checkout')
+      }
 
+      window.location.href = data.url
     } catch (err) {
       console.error('[checkout] handlePaiement error:', err)
       alert('Une erreur est survenue. Veuillez réessayer.')
@@ -423,7 +337,7 @@ function CheckoutContent() {
                 )}
                 {telephoneVerifie && !clientTrouve && (
                   <p style={{ fontSize: "12px", color: "#9B9B9B", marginTop: "6px" }}>
-                    Numéro non reconnu — renseignez vos informations ci-dessous
+                    Renseignez vos informations ci-dessous
                   </p>
                 )}
               </div>
@@ -681,6 +595,10 @@ function CheckoutContent() {
 
             <p style={{ fontSize: "11px", color: "#9B9B9B", textAlign: "center" }}>
               Paiement sécurisé Stripe · Livraison incluse · Sans engagement
+            </p>
+            <p style={{ fontSize: "11px", color: "#9B9B9B", textAlign: "center", lineHeight: 1.5 }}>
+              Vos données sont traitées comme indiqué dans notre{" "}
+              <a href="/confidentialite" target="_blank" rel="noopener noreferrer" style={{ color: "#4D0F1F", textDecoration: "underline" }}>politique de confidentialité</a>.
             </p>
 
           </div>

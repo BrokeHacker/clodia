@@ -16,11 +16,6 @@ export default function CookieBanner() {
     setVisible(false);
   };
 
-  const decline = () => {
-    localStorage.setItem("clodia_cookies", "declined");
-    setVisible(false);
-  };
-
   if (!visible) return null;
 
   return (
@@ -57,11 +52,12 @@ export default function CookieBanner() {
               lineHeight: 1.6,
               margin: 0,
             }}>
-              Nous utilisons des cookies pour améliorer votre expérience
-              et analyser notre trafic. Vos données ne sont jamais
+              Ce site n&apos;utilise que des cookies strictement nécessaires
+              à son fonctionnement (connexion). Aucun cookie publicitaire
+              ni de mesure d&apos;audience. Vos données ne sont jamais
               revendues.{" "}
               <Link
-                href="/mentions-legales"
+                href="/confidentialite"
                 style={{ color: "#4A6741", textDecoration: "underline" }}
               >
                 En savoir plus
@@ -85,23 +81,7 @@ export default function CookieBanner() {
                 whiteSpace: "nowrap",
               }}
             >
-              Accepter
-            </button>
-            <button
-              onClick={decline}
-              style={{
-                backgroundColor: "transparent",
-                color: "#6B6B6B",
-                fontSize: "13px",
-                fontWeight: 500,
-                padding: "9px 22px",
-                borderRadius: "999px",
-                border: "1px solid #E8E3D8",
-                cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Refuser
+              J&apos;ai compris
             </button>
           </div>
 

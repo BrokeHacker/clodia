@@ -9,7 +9,7 @@ export default function MentionsLegalesPage() {
     <section className="py-24 bg-white">
       <div className="max-w-3xl mx-auto px-6">
         <h1 className="text-4xl font-semibold text-[#4D0F1F] mb-2">Mentions légales</h1>
-        <p className="text-gray-400 text-sm mb-16">Dernière mise à jour : mai 2025</p>
+        <p className="text-gray-400 text-sm mb-16">Dernière mise à jour : septembre 2026</p>
 
         <div className="flex flex-col gap-12 text-sm text-gray-600 leading-relaxed">
           <div>
@@ -23,6 +23,7 @@ export default function MentionsLegalesPage() {
               <li><strong>Siège social :</strong> 12 rue des Soignants, 87000 Limoges</li>
               <li><strong>Email :</strong> contact@clodia.fr</li>
               <li><strong>Téléphone :</strong> +33 (0)5 55 00 00 00</li>
+              <li><strong>Numéro de TVA intracommunautaire :</strong> FR 00 987654321</li>
               <li><strong>Directeur de la publication :</strong> Jean Dupont, Président</li>
             </ul>
           </div>
@@ -59,8 +60,9 @@ export default function MentionsLegalesPage() {
             </p>
             <p className="mt-3">
               Pour exercer ces droits ou pour toute question relative à la protection de vos données,
-              vous pouvez contacter notre délégué à la protection des données à l&apos;adresse :
-              dpo@clodia.fr.
+              vous pouvez nous écrire à l&apos;adresse privacy@clodia.fr. Le détail des traitements, des
+              durées de conservation et de vos droits figure dans notre{" "}
+              <a href="/confidentialite" className="underline text-[#4D0F1F]">politique de confidentialité</a>.
             </p>
             <p className="mt-3">
               Les données collectées lors d&apos;une commande (nom, prénom, email, données de
@@ -73,7 +75,7 @@ export default function MentionsLegalesPage() {
             <h2 className="text-lg font-semibold text-[#4D0F1F] mb-4">5. Cookies</h2>
             <p>
               Ce site utilise des cookies fonctionnels strictement nécessaires à son fonctionnement.
-              Aucun cookie publicitaire ou de tracking n&apos;est déposé sans votre consentement. Vous
+              Aucun cookie publicitaire ni outil de mesure d&apos;audience n&apos;est utilisé à ce jour. Vous
               pouvez configurer votre navigateur pour désactiver les cookies, mais certaines
               fonctionnalités du site pourraient ne plus être disponibles.
             </p>
@@ -92,7 +94,16 @@ export default function MentionsLegalesPage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold text-[#4D0F1F] mb-4">7. Droit applicable</h2>
+            <h2 className="text-lg font-semibold text-[#4D0F1F] mb-4">7. Médiation de la consommation</h2>
+            <p>
+              Conformément au Code de la consommation, tout consommateur peut recourir gratuitement
+              à un médiateur de la consommation en cas de litige non résolu avec Clodia SAS :
+              [Nom du médiateur], [adresse et site du médiateur].
+            </p>
+          </div>
+
+          <div>
+            <h2 className="text-lg font-semibold text-[#4D0F1F] mb-4">8. Droit applicable</h2>
             <p>
               Les présentes mentions légales sont soumises au droit français. En cas de litige,
               les tribunaux français seront seuls compétents.

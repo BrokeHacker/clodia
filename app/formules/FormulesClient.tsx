@@ -119,7 +119,7 @@ export default function FormulesClient() {
                     letterSpacing: "0.1em", textTransform: "uppercase",
                     color: "#4A6741",
                   }}>
-                    Avant mercredi 22h
+                    Avant mercredi 23h59
                   </span>
                   <span style={{
                     width: "5px", height: "5px", borderRadius: "50%",

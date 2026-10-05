@@ -97,7 +97,8 @@ function CommanderContent() {
           setMesPoints(clientPoints)
 
           // Pré-remplir avec le point par défaut si rien dans sessionStorage
-          if (clientPoints.length > 0) {
+          const dejaChoisi = !!sessionStorage.getItem('clodia-service')
+          if (clientPoints.length > 0 && !dejaChoisi) {
             const defaut = clientPoints.find((p: ClientPoint) => p.est_defaut)
             if (defaut?.points_livraison) {
               const pl = defaut.points_livraison
@@ -159,6 +160,8 @@ function CommanderContent() {
   );
 
   useEffect(() => {
+    // Ne rien effacer tant que la session n'est pas relue et que la liste des points n'est pas chargée
+    if (!sessionLoaded || points.length === 0) return;
     try {
       if (selectedPoint) {
         sessionStorage.setItem('clodia-point', JSON.stringify(selectedPoint));
@@ -166,7 +169,7 @@ function CommanderContent() {
         sessionStorage.removeItem('clodia-point');
       }
     } catch {}
-  }, [selectedPoint]);
+  }, [selectedPoint, sessionLoaded, points.length]);
 
   function handleHopitalChange(val: string) {
     setHopital(val);
@@ -362,7 +365,7 @@ function CommanderContent() {
                   fontSize: "18px", fontWeight: 600, color: "#1A1A1A",
                   marginBottom: "16px", lineHeight: 1.2,
                 }}>
-                  Commander du {new Date(semaineCourante?.lundi ?? '').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} au {new Date(semaineCourante?.vendredi ?? '').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                  Commander du {new Date(semaines?.debutCommande ?? '').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} au {new Date(semaineCourante?.vendredi ?? '').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
                 </p>
                 <div className="flex flex-col gap-2">
                   <span className="flex items-center gap-2 text-sm text-gray-600">
@@ -866,7 +869,7 @@ function CommanderContent() {
                   </button>
 
                   <p className="text-xs text-gray-400 text-center mt-3">
-                    Paiement sécurisé Stripe · Commande avant 22h
+                    Paiement sécurisé Stripe · Commande avant 23h59
                   </p>
                 </div>
               </div>

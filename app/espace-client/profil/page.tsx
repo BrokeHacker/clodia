@@ -2,14 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { createSupabaseBrowserClient } from "@/lib/supabase"
-import { formatTelephone, displayTelephone, normaliserTelephone } from "@/lib/utils"
+import { displayTelephone } from "@/lib/utils"
 import { fetchPointsLivraison, PointLivraisonDB, fetchPointsLivraisonClient } from "@/lib/menus"
 import { Client, ClientPoint } from "@/types"
-import { useRouter } from "next/navigation"
 
 export default function ProfilPage() {
   const supabase = createSupabaseBrowserClient()
-  const router = useRouter()
 
   const [loading, setLoading] = useState(true)
   const [client, setClient] = useState<Client | null>(null)
@@ -31,6 +29,14 @@ export default function ProfilPage() {
   const [savingPoint, setSavingPoint] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
+  const [changerEmail, setChangerEmail] = useState(false)
+  const [nouvelEmail, setNouvelEmail] = useState("")
+  const [mdpEmail, setMdpEmail] = useState("")
+  const [errorsEmail, setErrorsEmail] = useState<Record<string, string>>({})
+  const [changementEnCours, setChangementEnCours] = useState(false)
+  const [emailMessage, setEmailMessage] = useState("")
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState("")
 
   useEffect(() => {
     async function load() {
@@ -71,13 +77,69 @@ export default function ProfilPage() {
   }
 
 
+  // Changement d'adresse email : mot de passe redemandé, puis lien de confirmation envoyé par Supabase.
+  // La fiche client est mise à jour par la base (trigger) une fois le changement confirmé.
+  async function demanderChangementEmail() {
+    if (changementEnCours) return
+    const nouvelle = nouvelEmail.trim().toLowerCase()
+    const errs: Record<string, string> = {}
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(nouvelle)) errs.nouvelEmail = "Adresse email invalide"
+    else if (nouvelle === (client?.email ?? '').toLowerCase()) errs.nouvelEmail = "C'est déjà votre adresse actuelle"
+    if (!mdpEmail) errs.mdpEmail = "Mot de passe requis"
+    setErrorsEmail(errs)
+    if (Object.keys(errs).length > 0) return
+
+    setChangementEnCours(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user?.email) {
+        setErrorsEmail({ global: "Session expirée. Reconnectez-vous puis réessayez." })
+        return
+      }
+
+      const { error: errAuth } = await supabase.auth.signInWithPassword({ email: user.email, password: mdpEmail })
+      if (errAuth) {
+        setErrorsEmail({ mdpEmail: "Mot de passe incorrect" })
+        return
+      }
+
+      const redirection = `${window.location.origin}/auth/callback?next=${encodeURIComponent('/espace-client/profil')}&echec=${encodeURIComponent('/connexion?confirme=1')}`
+      const { data, error } = await supabase.auth.updateUser({ email: nouvelle }, { emailRedirectTo: redirection })
+      if (error) {
+        if (error.code === 'email_exists' || /already|registered/i.test(error.message)) {
+          setErrorsEmail({ nouvelEmail: "Cette adresse est déjà utilisée par un autre compte" })
+        } else if (error.code === 'over_email_send_rate_limit' || /rate limit/i.test(error.message)) {
+          setErrorsEmail({ global: "Trop de demandes d'email. Réessayez dans quelques minutes." })
+        } else {
+          setErrorsEmail({ global: "Impossible de modifier l'adresse pour le moment. Réessayez." })
+        }
+        return
+      }
+
+      setChangerEmail(false)
+      setNouvelEmail("")
+      setMdpEmail("")
+      setErrorsEmail({})
+      if (data.user?.email?.toLowerCase() === nouvelle) {
+        // Confirmation d'email désactivée côté Supabase : le changement est immédiat
+        setClient(prev => prev ? { ...prev, email: nouvelle } : prev)
+        setEmailMessage("✓ Adresse email mise à jour.")
+      } else {
+        setEmailMessage("Un lien de confirmation vous a été envoyé (à votre adresse actuelle et à la nouvelle). Votre adresse ne changera qu'après confirmation.")
+      }
+    } catch (err) {
+      console.error('[profil] demanderChangementEmail error:', err)
+      setErrorsEmail({ global: "Une erreur est survenue. Veuillez réessayer." })
+    } finally {
+      setChangementEnCours(false)
+    }
+  }
+
   async function saveInfos() {
     if (savingInfos) return
     const newErrors: Record<string, string> = {}
     if (!prenomEdit.trim()) newErrors.prenom = "Prénom requis"
     if (!nomEdit.trim()) newErrors.nom = "Nom requis"
-    const telNormalise = normaliserTelephone(telephoneEdit)
-    if (!/^\+33[1-9]\d{8}$/.test(telNormalise)) newErrors.telephone = "Numéro invalide"
     setErrorsInfos(newErrors)
     if (Object.keys(newErrors).length > 0) return
 
@@ -85,10 +147,10 @@ export default function ProfilPage() {
     try {
       await supabase
         .from('clients')
-        .update({ prenom: prenomEdit, nom: nomEdit, telephone: telNormalise })
+        .update({ prenom: prenomEdit, nom: nomEdit })
         .eq('id', client!.id)
 
-      setClient(prev => prev ? { ...prev, prenom: prenomEdit, nom: nomEdit, telephone: telNormalise } : prev)
+      setClient(prev => prev ? { ...prev, prenom: prenomEdit, nom: nomEdit } : prev)
       setSaveInfosSuccess(true)
       setEditInfos(false)
       setTimeout(() => setSaveInfosSuccess(false), 3000)
@@ -171,17 +233,120 @@ export default function ProfilPage() {
   }
 
   async function handleSupprimerCompte() {
-    if (deleteConfirmText !== 'SUPPRIMER') return
+    if (deleteConfirmText !== 'SUPPRIMER' || deleting) return
+    setDeleting(true)
+    setDeleteError("")
     try {
-      await supabase.from('clients').update({ user_id: null }).eq('id', client!.id)
-      await supabase.auth.signOut()
-      router.push('/')
+      const res = await fetch('/api/compte/supprimer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmation: deleteConfirmText }),
+      })
+      if (res.ok) {
+        try { await supabase.auth.signOut() } catch { /* le compte n'existe plus : la session locale est simplement effacée */ }
+        window.location.href = '/'
+        return
+      }
+      const { error } = await res.json().catch(() => ({ error: '' }))
+      if (error === 'commandes_a_venir') {
+        setDeleteError("Vous avez des commandes payées à venir. Vous pourrez supprimer votre compte après leur livraison.")
+      } else if (error === 'paiement_en_cours') {
+        setDeleteError("Un paiement est en cours. Réessayez dans une trentaine de minutes.")
+      } else if (error === 'trop_de_requetes') {
+        setDeleteError("Trop de tentatives. Réessayez dans quelques minutes.")
+      } else {
+        setDeleteError("La suppression n'a pas pu être finalisée. Réessayez, ou contactez-nous si le problème persiste.")
+      }
     } catch (err) {
       console.error('[profil] handleSupprimerCompte error:', err)
+      setDeleteError("Une erreur est survenue. Veuillez réessayer.")
+    } finally {
+      setDeleting(false)
     }
   }
 
   const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#FD3D6B] bg-white"
+
+  const emailSection = (
+    <div style={{ marginBottom: "16px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+        <p style={{ fontSize: "11px", color: "#9B9B9B" }}>Email</p>
+        {!changerEmail && (
+          <button
+            onClick={() => { setChangerEmail(true); setEmailMessage(""); setErrorsEmail({}) }}
+            style={{ fontSize: "12px", color: "#007FFF", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}
+          >
+            Changer
+          </button>
+        )}
+      </div>
+      <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{client?.email}</p>
+
+      {emailMessage && (
+        <div style={{ background: "#E8FFF8", borderRadius: "10px", padding: "10px 14px", marginTop: "10px" }}>
+          <p style={{ fontSize: "12px", color: "#0B5A5A", lineHeight: 1.5 }}>{emailMessage}</p>
+        </div>
+      )}
+
+      {changerEmail && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
+          {errorsEmail.global && (
+            <div style={{ background: "#FDD5D9", borderRadius: "10px", padding: "10px 14px" }}>
+              <p style={{ fontSize: "12px", color: "#4D0F1F" }}>{errorsEmail.global}</p>
+            </div>
+          )}
+          <div>
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "6px" }}>Nouvelle adresse</label>
+            <input
+              type="email"
+              value={nouvelEmail}
+              onChange={e => setNouvelEmail(e.target.value)}
+              placeholder="nouvelle@email.fr"
+              className={inputClass}
+              style={{ borderColor: errorsEmail.nouvelEmail ? "#ef4444" : undefined }}
+            />
+            {errorsEmail.nouvelEmail && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{errorsEmail.nouvelEmail}</p>}
+          </div>
+          <div>
+            <label style={{ fontSize: "12px", fontWeight: 600, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "6px" }}>Mot de passe actuel</label>
+            <input
+              type="password"
+              value={mdpEmail}
+              onChange={e => setMdpEmail(e.target.value)}
+              placeholder="Votre mot de passe"
+              className={inputClass}
+              style={{ borderColor: errorsEmail.mdpEmail ? "#ef4444" : undefined }}
+              onKeyDown={e => e.key === 'Enter' && demanderChangementEmail()}
+            />
+            {errorsEmail.mdpEmail && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{errorsEmail.mdpEmail}</p>}
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              onClick={demanderChangementEmail}
+              disabled={changementEnCours}
+              style={{
+                flex: 1, background: changementEnCours ? "#E8E3D8" : "#4D0F1F", color: changementEnCours ? "#9B9B9B" : "#fff",
+                fontSize: "13px", fontWeight: 600, padding: "12px",
+                borderRadius: "999px", border: "none", cursor: changementEnCours ? "not-allowed" : "pointer",
+              }}
+            >
+              {changementEnCours ? "Envoi..." : "Envoyer le lien"}
+            </button>
+            <button
+              onClick={() => { setChangerEmail(false); setNouvelEmail(""); setMdpEmail(""); setErrorsEmail({}) }}
+              style={{
+                flex: 1, background: "#F5F0E8", color: "#1A1A1A",
+                fontSize: "13px", fontWeight: 600, padding: "12px",
+                borderRadius: "999px", border: "none", cursor: "pointer",
+              }}
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 
   if (loading) return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#FAFAF8" }}>
@@ -228,10 +393,7 @@ export default function ProfilPage() {
                   <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{client?.nom}</p>
                 </div>
               </div>
-              <div style={{ marginBottom: "16px" }}>
-                <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>Email</p>
-                <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{client?.email}</p>
-              </div>
+              {emailSection}
               <div>
                 <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>Téléphone</p>
                 <p style={{ fontSize: "14px", fontWeight: 500, color: "#1A1A1A" }}>{displayTelephone(client?.telephone ?? '')}</p>
@@ -253,14 +415,11 @@ export default function ProfilPage() {
               </div>
               <div>
                 <label style={{ fontSize: "12px", fontWeight: 600, color: "#6B6B6B", textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: "6px" }}>Téléphone</label>
-                <input type="tel" value={telephoneEdit} onChange={e => setTelephoneEdit(formatTelephone(e.target.value))} placeholder="06 12 34 56 78" className={inputClass} style={{ borderColor: errorsInfos.telephone ? "#ef4444" : undefined }} />
+                <input type="tel" value={telephoneEdit} readOnly disabled title="Le numéro ne peut pas être modifié ici" className={inputClass} style={{ opacity: 0.6, cursor: "not-allowed" }} />
+                <p style={{ fontSize: "11px", color: "#9B9B9B", marginTop: "4px" }}>Pour changer de numéro, contactez-nous.</p>
                 {errorsInfos.telephone && <p style={{ fontSize: "11px", color: "#ef4444", marginTop: "4px" }}>{errorsInfos.telephone}</p>}
               </div>
-              <div>
-                <p style={{ fontSize: "11px", color: "#9B9B9B", marginBottom: "4px" }}>Email</p>
-                <p style={{ fontSize: "14px", fontWeight: 500, color: "#6B6B6B" }}>{client?.email}</p>
-                <p style={{ fontSize: "11px", color: "#9B9B9B", marginTop: "2px", fontStyle: "italic" }}>L'email ne peut pas être modifié</p>
-              </div>
+              {emailSection}
               <div style={{ display: "flex", gap: "8px", marginTop: "8px" }}>
                 <button onClick={saveInfos} disabled={savingInfos} style={{
                   flex: 1, background: "#4D0F1F", color: "#fff",
@@ -404,7 +563,7 @@ export default function ProfilPage() {
           ) : (
             <div>
               <p style={{ fontSize: "13px", color: "#6B6B6B", marginBottom: "12px" }}>
-                Tapez <strong>SUPPRIMER</strong> pour confirmer la suppression définitive de votre compte.
+                Cette action est <strong>définitive</strong>. Votre compte, vos informations personnelles (nom, email, téléphone), vos points de livraison et l'historique de vos échanges WhatsApp seront effacés. Vos commandes passées sont conservées de façon anonyme (obligation comptable). Tapez <strong>SUPPRIMER</strong> pour confirmer.
               </p>
               <input
                 type="text"
@@ -414,10 +573,13 @@ export default function ProfilPage() {
                 className={inputClass}
                 style={{ marginBottom: "12px" }}
               />
+              {deleteError && (
+                <p style={{ fontSize: "12px", color: "#ef4444", marginBottom: "12px" }}>{deleteError}</p>
+              )}
               <div style={{ display: "flex", gap: "8px" }}>
                 <button
                   onClick={handleSupprimerCompte}
-                  disabled={deleteConfirmText !== 'SUPPRIMER'}
+                  disabled={deleteConfirmText !== 'SUPPRIMER' || deleting}
                   style={{
                     flex: 1, background: deleteConfirmText === 'SUPPRIMER' ? "#FD3D6B" : "#E8E3D8",
                     color: deleteConfirmText === 'SUPPRIMER' ? "#fff" : "#9B9B9B",
@@ -426,9 +588,9 @@ export default function ProfilPage() {
                     cursor: deleteConfirmText === 'SUPPRIMER' ? "pointer" : "not-allowed",
                   }}
                 >
-                  Confirmer la suppression
+                  {deleting ? "Suppression..." : "Confirmer la suppression"}
                 </button>
-                <button onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText("") }} style={{
+                <button onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(""); setDeleteError("") }} style={{
                   flex: 1, background: "#F5F0E8", color: "#1A1A1A",
                   fontSize: "13px", fontWeight: 600, padding: "12px",
                   borderRadius: "999px", border: "none", cursor: "pointer",

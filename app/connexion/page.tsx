@@ -10,11 +10,15 @@ function ConnexionContent() {
   const supabase = createSupabaseBrowserClient()
   const searchParams = useSearchParams()
   const redirect = searchParams.get('redirect')
+  const emailConfirme = searchParams.get('confirme') === '1'
 
   const [email, setEmail] = useState("")
   const [motDePasse, setMotDePasse] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
+  const [nonConfirme, setNonConfirme] = useState(false)
+  const [renvoiBloque, setRenvoiBloque] = useState(false)
+  const [renvoiMessage, setRenvoiMessage] = useState("")
 
   async function handleConnexion() {
     setErrors({})
@@ -25,7 +29,13 @@ function ConnexionContent() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password: motDePasse })
       if (error) {
-        setErrors({ global: "Email ou mot de passe incorrect" })
+        if (error.code === 'email_not_confirmed' || /not confirmed/i.test(error.message)) {
+          setNonConfirme(true)
+          setErrors({ global: "Votre adresse email n'est pas encore confirmée. Cliquez sur le lien reçu par email." })
+        } else {
+          setNonConfirme(false)
+          setErrors({ global: "Email ou mot de passe incorrect" })
+        }
         return
       }
       if (redirect === 'checkout') {
@@ -38,6 +48,21 @@ function ConnexionContent() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function renvoyerConfirmation() {
+    if (!email.trim() || renvoiBloque) return
+    setRenvoiBloque(true)
+    setRenvoiMessage("")
+    const destination = redirect === 'checkout' ? '/checkout?auth=success' : '/espace-client'
+    const echec = redirect === 'checkout' ? '/connexion?confirme=1&redirect=checkout' : '/connexion?confirme=1'
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}&echec=${encodeURIComponent(echec)}` },
+    })
+    setRenvoiMessage(error ? "Impossible de renvoyer l'email pour le moment. Réessayez dans quelques minutes." : "Email renvoyé. Pensez à vérifier vos courriers indésirables.")
+    setTimeout(() => setRenvoiBloque(false), 60000)
   }
 
   const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-sm text-[#1A1A1A] focus:outline-none focus:border-[#FD3D6B] bg-white"
@@ -61,9 +86,25 @@ function ConnexionContent() {
           </Link>
         </p>
 
+        {emailConfirme && (
+          <div style={{ background: "#E6F7F7", borderRadius: "12px", padding: "12px 16px", marginBottom: "20px" }}>
+            <p style={{ fontSize: "13px", color: "#0B5A5A" }}>Votre adresse email est confirmée. Connectez-vous pour continuer.</p>
+          </div>
+        )}
+
         {errors.global && (
           <div style={{ background: "#FDD5D9", borderRadius: "12px", padding: "12px 16px", marginBottom: "20px" }}>
             <p style={{ fontSize: "13px", color: "#4D0F1F" }}>{errors.global}</p>
+            {nonConfirme && (
+              <button
+                onClick={renvoyerConfirmation}
+                disabled={renvoiBloque}
+                style={{ marginTop: "8px", background: "none", border: "none", padding: 0, fontSize: "13px", fontWeight: 600, color: renvoiBloque ? "#9B9B9B" : "#4D0F1F", cursor: renvoiBloque ? "not-allowed" : "pointer", textDecoration: "underline" }}
+              >
+                Renvoyer l'email de confirmation
+              </button>
+            )}
+            {renvoiMessage && <p style={{ fontSize: "12px", color: "#4D0F1F", marginTop: "6px" }}>{renvoiMessage}</p>}
           </div>
         )}
 

@@ -29,13 +29,8 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/nos-engagements" className="text-white/70 hover:text-white transition-colors">
-                  Nos engagements
-                </Link>
-              </li>
-              <li>
-                <Link href="/notre-histoire" className="text-white/70 hover:text-white transition-colors">
-                  Notre histoire
+                <Link href="/qui-sommes-nous" className="text-white/70 hover:text-white transition-colors">
+                  Qui sommes-nous
                 </Link>
               </li>
               <li>
@@ -57,6 +52,16 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/nous-contacter" className="text-white/70 hover:text-white transition-colors">
+                  Nous contacter
+                </Link>
+              </li>
+              <li>
+                <Link href="/confidentialite" className="text-white/70 hover:text-white transition-colors">
+                  Politique de confidentialité
+                </Link>
+              </li>
+              <li>
                 <Link href="/mentions-legales" className="text-white/70 hover:text-white transition-colors">
                   Mentions légales
                 </Link>
@@ -66,7 +71,7 @@ export default function Footer() {
         </div>
 
         <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-white/40">
-          <p>© 2025 Clodia. Tous droits réservés.</p>
+          <p>© {new Date().getFullYear()} Clodia. Tous droits réservés.</p>
         </div>
       </div>
     </footer>
