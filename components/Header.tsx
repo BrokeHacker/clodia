@@ -8,7 +8,7 @@ import { createSupabaseBrowserClient } from "@/lib/supabase";
 const navLinks = [
   { href: "/comment-ca-marche", label: "Comment ça marche" },
   { href: "/formules", label: "Formules" },
-  { href: "/qui-sommes-nous", label: "Qui sommes-nous" },
+  { href: "/nos-engagements", label: "Nos engagements" },
   { href: "/nous-contacter", label: "Nous contacter" },
 ];
 

@@ -11,7 +11,7 @@ Site et espace client de Clodia : repas du jour livrés dans les frigos des serv
 
 ## Structure
 
-- `app/` : pages publiques (accueil, formules, qui-sommes-nous, faq, nous-contacter, mentions-legales, confidentialite), parcours `commander` → `checkout` → `confirmation`, comptes (`connexion`, `inscription`, `mot-de-passe-oublie`, `reinitialiser-mot-de-passe`, `auth`), `espace-client/` (accueil, commandes en cours, historique, programmation, profil).
+- `app/` : pages publiques (accueil, formules, nos-engagements, qui-sommes-nous, faq, nous-contacter, mentions-legales, confidentialite), parcours `commander` → `checkout` → `confirmation`, comptes (`connexion`, `inscription`, `mot-de-passe-oublie`, `reinitialiser-mot-de-passe`, `auth`), `espace-client/` (accueil, commandes en cours, historique, programmation, profil).
 - `app/api/` : `checkout` (création des commandes + session Stripe), `webhook/stripe`, `tickets` (demandes SAV), `auth/telephone`, `compte/supprimer`.
 - `lib/` : `supabase.ts` (navigateur), `supabase-server.ts` (serveur, cookies), `supabase-admin.ts` (service_role, **serveur seulement**), `menus.ts` (semaines, slots, tarifs, points de livraison), `stripe.ts` (initialisation paresseuse), `rate-limit.ts`, `utils.ts` (téléphone, prix), `data.ts` (FAQ, contenus).
 - `components/` : Header, Footer, FAQSection/FAQAccordion, ContactForm, DemandeCommande, PointLivraisonSelector, MenuCarousel, CookieBanner.

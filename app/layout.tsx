@@ -5,7 +5,9 @@ import Footer from "@/components/Footer";
 import CookieBanner from "@/components/CookieBanner";
 import BottomBanner from "@/components/BottomBanner";
 
+// Base des URLs relatives des métadonnées (canonical, Open Graph)
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? "https://clodia.vercel.app"),
   title: "Clodia — Repas gastronomiques en milieu hospitalier",
   description:
     "Des repas gastronomiques livrés chaque midi aux soignants du CHU et des cliniques de Limoges. Menus élaborés par un chef Gault & Millau.",

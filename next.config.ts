@@ -21,12 +21,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/notre-histoire",
-        destination: "/qui-sommes-nous#histoire",
-        permanent: true,
-      },
-      {
-        source: "/nos-engagements",
-        destination: "/qui-sommes-nous#engagements",
+        destination: "/qui-sommes-nous",
         permanent: true,
       },
     ];
